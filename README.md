@@ -60,7 +60,7 @@ The library was ported for version 0.6 and 0.7 by Jaimy Azle.
 Port for version 0.8 and modernization of test suite by Mike Bayer.
 Port for sqlalchemy-ibmi by Naveen Ram/Kevin Adler
 
-Contributing to IBM_DB_SA python project
+Contributing to sqlalchemy-ibmi python project
 ----------------------------------------
 See `CONTRIBUTING
 <https://github.com/ibmdb/python-ibmdbsa/tree/master/ibm_db_sa/contributing/CONTRIBUTING.md>`_.

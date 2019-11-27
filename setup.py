@@ -16,7 +16,7 @@ setup(
          name='pyodbc_sa',
          version=VERSION,
          license='Apache License 2.0',
-         description==,
+         description='SQLAlchemy support for IBM i Db2',
          author='IBM Application Development Team',
          author_email='opendev@us.ibm.com',
          keywords='sqlalchemy database ibm ibmi db2',
