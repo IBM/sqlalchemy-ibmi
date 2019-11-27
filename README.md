@@ -1,48 +1,25 @@
-IBM_DB_SA
+SQLAlchemy-IBMi
 =========
 
-The IBM_DB_SA adapter provides the Python/SQLAlchemy interface to IBM Data Servers.
+The SQLAlchemy-IBMi adapter provides the Python/SQLAlchemy interface to IBM i db2.
 
 Version
 --------
-0.3.5 (2019/05/30)
+0.1 (2019/11/26)
 
 Prerequisites
 --------------
-1. Install Python 2.7 or newer versions except python 3.3 or Jython 2.5.x .
-2. SQLAlchemy 0.7.3 or above.
-3. IBM_DB driver and IBM_DB_DBI wrapper 1.0.1 or higher.
+1. Install Python 2.7 or newer versions except python 3.3
+2. SQLAlchemy 1.3 or above.
+3. PyODBC
 ```
-   Install ibm_db driver with below commands:
+   Install pyodbc driver with below commands:
 	    Linux and Windows: 
-	   	   pip install ibm_db
-	    Mac:
-		   pip install --no-cache-dir ibm_db
+	   	   pip install pyodbc
 ```
 
 Install and Configuration
 =========================
-The IBM_DB_SA Python Egg component (.egg) can be installed using the standard setuptools provided by the Python Easy Install through Python Entreprise 
-Application Kit community portal:
-  http://peak.telecommunity.com/DevCenter/EasyInstall
-
-Please follow the steps provided to Install "Easy Install" in the link above and follow up with these additional steps to install IBM_DB_SA:
-
-  1. To install IBM_DB_SA from pypi repository(pypi.python.org):
-    Windows:
-      > pip install ibm_db_sa
-    Linux/Unix:
-      $ sudo pip install ibm_db_sa
-  
-  2. To install IBM_DB_SA egg component from the downloaded .egg file
-    Windows:
-      > easy_install ibm_db_sa-x.x.x-pyx.x.egg
-    Linux/Unix:
-      $ sudo easy_install ibm_db_sa-x.x.x-pyx.x.egg
-  
-  3. To install IBM_DB_SA from source
-    Standard Python setup should be used::
-        python setup.py install
 
 Connecting
 ----------
@@ -50,7 +27,7 @@ A TCP/IP connection can be specified as the following::
 ```
 	from sqlalchemy import create_engine
 
-	e = create_engine("db2+ibm_db://user:pass@host[:port]/database")
+	e = create_engine("ibmi://user:pass@dsn")
 ```
 
 For a local socket connection, exclude the "host" and "port" portions::
@@ -58,7 +35,7 @@ For a local socket connection, exclude the "host" and "port" portions::
 ```
 	from sqlalchemy import create_engine
 
-	e = create_engine("db2+ibm_db://user:pass@/database")
+	e = create_engine("ibmi://user:pass@/database")
 ```
 
 Supported Databases
@@ -74,7 +51,6 @@ Known Limitations in ibm_db_sa adapter for DB2 databases
 4) UPDATE CASCADE for foreign keys not supported
 5) DEFERRABLE INITIALLY deferred not supported
 6) Subquery in ON clause of LEFT OUTER JOIN not supported
-7) PyODBC and Jython/zxjdbc support is experimental
 
 
 Credits
@@ -82,6 +58,7 @@ Credits
 ibm_db_sa for SQLAlchemy was first produced by IBM Inc., targeting version 0.4.
 The library was ported for version 0.6 and 0.7 by Jaimy Azle.
 Port for version 0.8 and modernization of test suite by Mike Bayer.
+Port for sqlalchemy-ibmi by Naveen Ram/Kevin Adler
 
 Contributing to IBM_DB_SA python project
 ----------------------------------------

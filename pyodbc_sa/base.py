@@ -650,7 +650,7 @@ class DB2ExecutionContext(_SelectLastRowIDMixin,default.DefaultExecutionContext)
 
 class DB2Dialect(default.DefaultDialect):
 
-    name = 'ibm_db_sa'
+    name = 'pyodbc_sa'
     max_identifier_length = 128
     encoding = 'utf-8'
     default_paramstyle = 'qmark'

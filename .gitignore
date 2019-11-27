@@ -5,5 +5,5 @@ build
 tmp
 dist
 .venv
-ibm_db_sa.egg-info/
+*.egg-info/
 .coverage

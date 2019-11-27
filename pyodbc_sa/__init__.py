@@ -17,13 +17,13 @@
 # | Contributors: Jaimy Azle, Mike Bayer                                     |
 # +--------------------------------------------------------------------------+
 
-__version__ = '0.3.5'
+__version__ = '0.1'
 
-from . import ibm_db, pyodbc, base, zxjdbc
+from . import backend, base
 
 
 # default dialect
-base.dialect = ibm_db.dialect
+base.dialect = backend.dialect
 
 from .base import \
     BIGINT, BLOB, CHAR, CLOB, DATE, DATETIME, \

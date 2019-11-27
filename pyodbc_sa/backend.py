@@ -144,5 +144,5 @@ class AS400Dialect_pyodbc(PyODBCConnector, DB2Dialect):
 
           connectors.extend(['%s=%s' % (k,v) for k,v in keys.items()])
         return [[";".join (connectors)], connect_args]
-
+dialect = DB2Dialect_pyodbc
 
