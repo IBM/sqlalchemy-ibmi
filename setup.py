@@ -30,7 +30,7 @@ setup(
         ],
          long_description=open(readme).read(),
          platforms='All',
-         install_requires=['sqlalchemy>=1.3', 'pyodbc'],
+         install_requires=['sqlalchemy>=1.3', 'pyodbc>=4.0'],
          packages=['sqlalchemy-ibmi'],
         entry_points={
          'sqlalchemy.dialects': [
