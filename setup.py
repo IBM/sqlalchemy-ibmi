@@ -5,7 +5,7 @@ import os
 import re
 
 
-v = open(os.path.join(os.path.dirname(__file__), 'pyodbc_sa', '__init__.py'))
+v = open(os.path.join(os.path.dirname(__file__), 'sqlalchemy-ibmi', '__init__.py'))
 VERSION = re.compile(r".*__version__ = '(.*?)'", re.S).match(v.read()).group(1)
 v.close()
 
@@ -13,16 +13,15 @@ readme = os.path.join(os.path.dirname(__file__), 'README.md')
     
 
 setup(
-         name='pyodbc_sa',
+         name='sqlalchemy-ibmi',
          version=VERSION,
          license='Apache License 2.0',
-         description='SQLAlchemy support for IBM i Db2',
-         author='IBM Application Development Team',
-         author_email='opendev@us.ibm.com',
+         description='SQLAlchemy support for Db2 on IBM i',
+         author='IBM',
          keywords='sqlalchemy database ibm ibmi db2',
          long_description_content_type='text/markdown',
          classifiers=[
-            'Development Status :: 4 - Beta',
+            'Development Status :: 3 - Alpha',
             'Intended Audience :: Developers',
             'License :: OSI Approved :: Apache License 2.0',
             'Operating System :: OS Independent',
@@ -30,11 +29,12 @@ setup(
         ],
          long_description=open(readme).read(),
          platforms='All',
-         install_requires=['sqlalchemy>=1.3', 'pyodbc>=4.0'],
+         install_requires=['sqlalchemy>=1.3',
+                           'pyodbc>=4.0'],
          packages=['sqlalchemy-ibmi'],
         entry_points={
          'sqlalchemy.dialects': [
-                     'ibmi=pyodbc_sa.backend:DB2Dialect_pyodbc'
+                     'ibmi=sqlalchemy-ibmi.backend:DB2Dialect_pyodbc'
                     ]
        },
        zip_safe=False,
