@@ -1,12 +1,9 @@
-[![Build Status](https://travis-ci.com/IBM/sqlalchemy-ibmi.svg?branch=master)](https://travis-ci.com/IBM/sqlalchemy-ibmi)
-[![Latest version released on PyPi](https://img.shields.io/pypi/v/sqlalchemy-ibmi.svg)]()
-[![](https://img.shields.io/pypi/pyversions/sqlalchemy-ibmi.svg)]()
-[![Documentation Status](https://readthedocs.org/projects/sqlalchemy-ibmi/badge/?version=latest)]()
-
-SQLAlchemy-IBMi
+SQLAlchemy adapter for IBM i
 =========
 
-The SQLAlchemy-IBMi adapter provides the Python/[SQLAlchemy](https://www.sqlalchemy.org/) interface to Db2 for [IBM i](https://en.wikipedia.org/wiki/IBM_i).
+The IBM i SQLAlchemy adapter provides a [SQLAlchemy](https://www.sqlalchemy.org/) interface to Db2 for [IBM i](https://en.wikipedia.org/wiki/IBM_i).
+
+**Please note that this project is still in active development and is not ready for use.** :rotating_light: 
 
 ```python
 from sqlalchemy import create_engine, db
@@ -54,15 +51,7 @@ Known Limitations in ibm_db_sa adapter for DB2 databases
 5) DEFERRABLE INITIALLY deferred not supported
 6) Subquery in ON clause of LEFT OUTER JOIN not supported
 
-
-Credits
--------
-- ibm_db_sa for SQLAlchemy was first produced by IBM Inc., targeting version 0.4.
-- The library was ported for version 0.6 and 0.7 by Jaimy Azle.
-- Port for version 0.8 and modernization of test suite by Mike Bayer.
-- Port for sqlalchemy-ibmi by Naveen Ram/Kevin Adler.
-
-Contributing to sqlalchemy-ibmi python project
+Contributing to the IBM i SQLAlchemy adapter
 ----------------------------------------
 Please read the [contribution guidelines](contributing/CONTRIBUTING.md).
 
@@ -71,36 +60,14 @@ The developer sign-off should include the reference to the DCO in remarks(exampl
 DCO 1.1 Signed-off-by: Random J Developer <random@developer.org>
 ```
 
-Releasing a New Version
------------------------
-
-Run the following commands
-
-```bash
-# checkout and pull the latest code from master
-git checkout master
-git pull
-
-# bump to a release version (a tag and commit are made)
-bumpversion release
-
-# remove any old distributions
-rm dist/*
-
-# build the new distribution
-python setup.py sdist
-
-# bump to the new dev version (a commit is made)
-bumpversion --no-tag patch
-
-# push the new tag and commits
-git push origin master --tags
-
-# upload the distribution to PyPI
-twine upload dist/*
-```
-
 License
 -------
 
-TODO
+[Apache 2.0](LICENSE)
+
+Credits
+-------
+- ibm_db_sa for SQLAlchemy was first produced by IBM Inc., targeting version 0.4.
+- The library was ported for version 0.6 and 0.7 by Jaimy Azle.
+- Port for version 0.8 and modernization of test suite by Mike Bayer.
+- Port for sqlalchemy-ibmi by Naveen Ram/Kevin Adler.

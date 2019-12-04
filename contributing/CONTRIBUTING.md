@@ -52,21 +52,9 @@ git commit -s
 
 #Install
 ```
-pip install .
+pip install sqlalchemy-ibmi
 ```
 
 ## Testing
 
-This package uses [pytest](https://docs.pytest.org/en/latest/) for its tests.
-You can run them like so:
-
-```bash
-# Test installed package (python setup.py install)
-python -m pytest tests
-
-# Test local changes which haven't been installed
-PYTHONPATH=src python -m pytest tests
-
-## Coding style guidelines
-
-This project will attempt to follow [PEP 8](https://www.python.org/dev/peps/pep-0008) guidelines. New contributions should engorce PEP-8 style, and we welcome any changes.
+TODO
