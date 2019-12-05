@@ -42,7 +42,7 @@ Documentation
 TODO
 
 
-Known Limitations in ibm_db_sa adapter for DB2 databases
+Known Limitations 
 -------------------------------------------------------------
 1) Non-standard SQL queries are not supported. e.g. "SELECT ? FROM TAB1"
 2) For updations involving primary/foreign key references, the entries should be made in correct order. Integrity check is always on and thus the primary keys referenced by the foreign keys in the referencing tables should always exist in the parent table.

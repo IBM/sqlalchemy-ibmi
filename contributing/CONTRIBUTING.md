@@ -52,7 +52,7 @@ git commit -s
 
 #Install
 ```
-pip install sqlalchemy-ibmi
+pip install .
 ```
 
 ## Testing
