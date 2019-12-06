@@ -650,7 +650,7 @@ class DB2ExecutionContext(_SelectLastRowIDMixin,default.DefaultExecutionContext)
 
 class DB2Dialect(default.DefaultDialect):
 
-    name = 'sqlalchemy-ibmi'
+    name = 'sqlalchemy_ibmi'
     max_identifier_length = 128
     encoding = 'utf-8'
     default_paramstyle = 'qmark'
