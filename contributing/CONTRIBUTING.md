@@ -1,6 +1,6 @@
-#Contributing 
+# Contributing 
 
-##Contributing in General
+## Contributing in General
 
 Our project welcomes external contributions. If you see something that you want to change, please feel free to. 
 
@@ -50,7 +50,7 @@ local git repository using the following command:
 git commit -s
 ```
 
-#Install
+# Install
 ```
 pip install .
 ```
