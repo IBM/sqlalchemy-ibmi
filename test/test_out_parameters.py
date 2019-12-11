@@ -26,7 +26,7 @@ class OutParamTest(fixtures.TestBase):
                                outparam('y_out'),
                                outparam('z_out')]), x_in=5, x_out=0, y_out=0, z_out='')
         eq_(result.out_parameters, {'x_out': 10, 'y_out': 75, 'z_out': None})
-        assert isinstance(result.out_parameters['x_out'], long)
+        assert isinstance(result.out_parameters['x_out'], int)
 
     @classmethod
     def teardown_class(cls):

@@ -71,8 +71,6 @@ class DB2Dialect_zxjdbc(ZxJDBCConnector, DB2Dialect):
                 if dbtype is None:
                     if (isinstance(object, int)):
                         statement.setObject(index, str(object), java_Types.INTEGER)
-                    elif (isinstance(object, long)):
-                        statement.setObject(index, str(object), java_Types.BIGINT)
                     elif (isinstance(object, _python_Decimal)):
                         statement.setObject(index, str(object), java_Types.DECIMAL)
                     else:

@@ -60,10 +60,7 @@ class BaseReflector(object):
             else:
                 name = codecs.decode(name)
         else:
-            if version_info[0] < 3:
-                name = unicode(name)
-            else:
-                name = str(name)
+            name = str(name)
         return name
 
     def _get_default_schema_name(self, connection):
@@ -72,12 +69,6 @@ class BaseReflector(object):
                     u'SELECT CURRENT_SCHEMA FROM SYSIBM.SYSDUMMY1').scalar()
         if isinstance(default_schema_name, str):
             default_schema_name = default_schema_name.strip()
-        elif version_info[0] < 3:
-            if isinstance(default_schema_name, unicode):
-                default_schema_name = default_schema_name.strip().__str__()
-            else:
-                if isinstance(default_schema_name, str):
-                    default_schema_name = default_schema_name.strip().__str__()
         return self.normalize_name(default_schema_name)
 
     @property

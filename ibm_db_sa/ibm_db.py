@@ -77,7 +77,11 @@ class DB2ExecutionContext_ibm_db(DB2ExecutionContext):
             else:
                 result = _result.ResultProxy(self)
             return result
-         
+
+
+
+
+
 class DB2Dialect_ibm_db(DB2Dialect):
 
     driver = 'ibm_db_sa'
@@ -114,18 +118,15 @@ class DB2Dialect_ibm_db(DB2Dialect):
     def _get_server_version_info(self, connection):
         return connection.connection.server_info()
     
-    _isolation_lookup = set(['READ STABILITY','RS', 'UNCOMMITTED READ','UR',
-                             'CURSOR STABILITY','CS', 'REPEATABLE READ','RR'])
+    _isolation_lookup = {'READ STABILITY', 'RS', 'UNCOMMITTED READ', 'UR', 'CURSOR STABILITY', 'CS', 'REPEATABLE READ',
+                         'RR'}
    
-    _isolation_levels_cli = {'RR': SQL_TXN_SERIALIZABLE, 'REPEATABLE READ': SQL_TXN_SERIALIZABLE, 
+    _isolation_levels_cli = {'RR': SQL_TXN_SERIALIZABLE, 'REPEATABLE READ': SQL_TXN_SERIALIZABLE,
                             'UR': SQL_TXN_READ_UNCOMMITTED, 'UNCOMMITTED READ': SQL_TXN_READ_UNCOMMITTED,
-                             'RS': SQL_TXN_REPEATABLE_READ, 'READ STABILITY': SQL_TXN_REPEATABLE_READ,   
+                             'RS': SQL_TXN_REPEATABLE_READ, 'READ STABILITY': SQL_TXN_REPEATABLE_READ,
                              'CS': SQL_TXN_READ_COMMITTED, 'CURSOR STABILITY': SQL_TXN_READ_COMMITTED }
     
     _isolation_levels_returned = { value : key for key, value in _isolation_levels_cli.items()}
-
-    def _get_cli_isolation_levels(self, level):
-        return _isolation_levels_cli[level]
 
     def set_isolation_level(self, connection, level):    
         if level is  None:
@@ -140,10 +141,14 @@ class DB2Dialect_ibm_db(DB2Dialect):
                 "Valid isolation levels for %s are %s" %
                 (level, self.name, ", ".join(self._isolation_lookup))
             )
-        attrib = {SQL_ATTR_TXN_ISOLATION:_get_cli_isolation_levels(self,level)}
+        attrib = {SQL_ATTR_TXN_ISOLATION:self._get_cli_isolation_levels(level)}
         res = connection.set_option(attrib)
 
-        
+    def _get_cli_isolation_levels(self, level):
+
+        return self._isolation_levels_cli[level]
+
+
     def get_isolation_level(self, connection):
                 
         attrib = SQL_ATTR_TXN_ISOLATION
