@@ -22,7 +22,7 @@ jobs:
     - name: Install dependencies
       run: |
         pip install poetry
-        python -m poetry install
+        poetry install
     - name: Lint with flake8
       run: |
         pip install flake8
