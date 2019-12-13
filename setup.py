@@ -27,14 +27,17 @@ setup(
     ],
     long_description=open(readme).read(),
     platforms='All',
-    install_requires=['sqlalchemy>=1.3',
-                      'pyodbc>=4.0'],
-    packages=['sqlalchemy_ibmi'],
+    install_requires=[
+        'sqlalchemy>=1.3',
+        'pyodbc>=4.0'
+    ],
+    packages=[
+        'sqlalchemy_ibmi'
+    ],
     entry_points={
         'sqlalchemy.dialects': [
             'ibmi=sqlalchemy_ibmi.backend:AS400Dialect_pyodbc'
         ]
     },
     zip_safe=False,
-    tests_require=['nose >= 0.11'],
 )
