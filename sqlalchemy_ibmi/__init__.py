@@ -19,11 +19,11 @@
 
 __version__ = '0.1.0-dev'
 
-from . import ibm_db, pyodbc, base, zxjdbc
+from . import backend, base
 
 
 # default dialect
-base.dialect = ibm_db.dialect
+base.dialect = backend.dialect
 
 from .base import \
     BIGINT, BLOB, CHAR, CLOB, DATE, DATETIME, \

@@ -18,7 +18,6 @@ table = db.Table('table_name', metadata, autoload=True, autoload_with=e)
 query = db.select([table])
 result = cnxn.execute(query)
 result = result.fetchall()
-
 print(result[0])
 
 ```
