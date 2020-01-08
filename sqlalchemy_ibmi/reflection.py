@@ -54,13 +54,6 @@ class BaseReflector(object):
         elif name.lower() == name and \
                 not self.identifier_preparer._requires_quotes(name.lower()):
             name = name.upper()
-        if not self.dialect.supports_unicode_binds:
-            if(isinstance(name, str)):
-                name = name
-            else:
-                name = codecs.decode(name)
-        else:
-            name = str(name)
         return name
 
     def _get_default_schema_name(self, connection):
