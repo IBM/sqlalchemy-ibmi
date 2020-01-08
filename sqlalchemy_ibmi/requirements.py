@@ -1,16 +1,11 @@
-"""requirements.py
-
-
-This file is used by the SQLAlchemy 0.8 testing suite to mark various
-optional behaviors as non-supported.
-
-"""
 from sqlalchemy.testing.requirements import SuiteRequirements
 
 from sqlalchemy.testing import exclusions
 
-class Requirements(SuiteRequirements):
+from sqlalchemy.testing.exclusions import SpecPredicate
 
+
+class Requirements(SuiteRequirements):
     @property
     def on_update_cascade(self):
         """"target database must support ON UPDATE..CASCADE behavior in
@@ -38,8 +33,8 @@ class Requirements(SuiteRequirements):
 
         return exclusions.closed()
 
-    #@property
-    #def offset(self):
+    # @property
+    # def offset(self):
     #    return exclusions.closed()
 
     @property
@@ -63,11 +58,10 @@ class Requirements(SuiteRequirements):
     def precision_numerics_many_significant_digits(self):
         """target backend supports values with many digits on both sides,
         such as 319438950232418390.273596, 87673.594069654243
-
         """
         return exclusions.fails_if(lambda: True,
-                    "Throws error SQL0604N, regarding Decimal(38, 12)"
-            )
+                                   "Throws error SQL0604N, regarding Decimal(38, 12)"
+                                   )
 
     @property
     def precision_numerics_retains_significant_digits(self):
@@ -76,3 +70,32 @@ class Requirements(SuiteRequirements):
         the .000 maintained."""
 
         return exclusions.open()
+
+    @property
+    def temp_table_names(self):
+        """target dialect supports listing of temporary table names"""
+        return exclusions.closed()
+
+    @property
+    def temporary_tables(self):
+        """target database supports temporary tables"""
+        return exclusions.closed()
+
+    @property
+    def temporary_views(self):
+        """target database supports temporary views"""
+        return exclusions.closed()
+
+    @property
+    def temp_table_reflection(self):
+        return exclusions.closed()
+
+    @property
+    def implicitly_named_constraints(self):
+        """target database must apply names to unnamed constraints."""
+
+        return exclusions.skip_if([SpecPredicate("sqlite", "not supported by database")])
+
+    @property
+    def bound_limit_offset(self):
+        return exclusions.closed()
