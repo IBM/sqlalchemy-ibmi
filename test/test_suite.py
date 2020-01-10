@@ -5,6 +5,14 @@ from sqlalchemy.testing.suite import ComponentReflectionTest as _ComponentReflec
 from sqlalchemy.testing.suite import ExpandingBoundInTest as _ExpandingBoundInTest
 from sqlalchemy.testing.suite import InsertBehaviorTest as _InsertBehaviorTest
 from sqlalchemy.testing.suite import SequenceCompilerTest as _SequenceCompilerTest
+from sqlalchemy.testing.suite import StringTest as _StringTest
+from sqlalchemy.testing.suite import TextTest as _TextTest
+from sqlalchemy.testing.suite import UnicodeTextTest as _UnicodeTextTest
+from sqlalchemy.testing.suite import UnicodeVarcharTest as _UnicodeVarcharTest
+from sqlalchemy.testing.suite import NormalizedNameTest as _NormalizedNameTest
+from sqlalchemy.testing.suite import NormalizedNameTest as _NormalizedNameTest
+
+from sqlalchemy.sql.elements import quoted_name
 
 
 class ComponentReflectionTest(_ComponentReflectionTest):
@@ -107,64 +115,3 @@ class ExpandingBoundInTest(_ExpandingBoundInTest):
         return
 
 
-class InsertBehaviorTest(_InsertBehaviorTest):
-    @requirements.insert_from_select
-    def test_insert_from_select_with_defaults(self):
-        return
-        # table = self.tables.includes_defaults
-        # config.db.execute(
-        #     table.insert(),
-        #     [
-        #         dict(id=1, data="data1"),
-        #         dict(id=2, data="data2"),
-        #         dict(id=3, data="data3"),
-        #     ],
-        # )
-        #
-        # config.db.execute(
-        #     table.insert(inline=True).from_select(
-        #         ("id", "data"),
-        #         select([table.c.id + 5, table.c.data]).where(
-        #             table.c.data.in_(["data2", "data3"])
-        #         ),
-        #     )
-        # )
-        #
-        # eq_(
-        #     config.db.execute(
-        #         select([table]).order_by(table.c.data, table.c.id)
-        #     ).fetchall(),
-        #     [
-        #         (1, "data1", 5, 4),
-        #         (2, "data2", 5, 4),
-        #         (7, "data2", 5, 4),
-        #         (3, "data3", 5, 4),
-        #         (8, "data3", 5, 4),
-        #     ],
-        # )
-
-
-class SequenceCompilerTest(_SequenceCompilerTest):
-    __requires__ = ("sequences",)
-    __backend__ = True
-
-    def test_literal_binds_inline_compile(self):
-        table = Table(
-            "x",
-            MetaData(),
-            Column("y", Integer, Sequence("y_seq")),
-            Column("q", Integer),
-        )
-
-        stmt = table.insert().values(q=5)
-
-        seq_nextval = testing.db.dialect.statement_compiler(
-            statement=None, dialect=testing.db.dialect
-        ).visit_sequence(Sequence("y_seq"))
-
-        self.assert_compile(
-            stmt,
-            "INSERT INTO x (y, q) VALUES (%s, 5)" % seq_nextval,
-            literal_binds=True,
-            dialect=testing.db.dialect,
-        )

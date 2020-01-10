@@ -261,10 +261,10 @@ class DB2TypeCompiler(compiler.GenericTypeCompiler):
             "DBCLOB(%(length)s)" % {'length': type_.length}
 
     def visit_VARCHAR(self, type_):
-        return "VARCHAR(%(length)s)" % {'length': type_.length}
+        return "VARCHAR(%(length)s) CCSID 1208" % {'length': type_.length}
 
     def visit_LONGVARCHAR(self, type_):
-        return "LONG VARCHAR"
+        return "LONG VARCHAR CCSID 1208"
 
     def visit_VARGRAPHIC(self, type_):
         return "VARGRAPHIC(%(length)s)" % {'length': type_.length}
@@ -311,10 +311,10 @@ class DB2TypeCompiler(compiler.GenericTypeCompiler):
         return self.visit_FLOAT(type_)
 
     def visit_unicode(self, type_):
-        return self.visit_VARGRAPHIC(type_)
+        return self.visit_VARCHAR(type_)
 
     def visit_unicode_text(self, type_):
-        return self.visit_LONGVARGRAPHIC(type_)
+        return self.visit_LONGVARCHAR(type_)
 
     def visit_string(self, type_):
         return self.visit_VARCHAR(type_)
@@ -419,7 +419,7 @@ class DB2Compiler(compiler.SQLCompiler):
         else:
             return sql_ori
 
-    def visit_sequence(self, sequence):
+    def visit_sequence(self, sequence, **kwargs):
         return "NEXT VALUE FOR %s" % sequence.name
 
     def default_from(self):
