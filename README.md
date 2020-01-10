@@ -1,3 +1,5 @@
+[![GitHub Actions status | sdras/awesome-actions](https://github.com/IBM/sqlalchemy-ibmi/workflows/Python%20package/badge.svg)](https://github.com/IBM/sqlalchemy-ibmi/actions?workflow=Python+package)
+
 SQLAlchemy adapter for IBM i
 =========
 
