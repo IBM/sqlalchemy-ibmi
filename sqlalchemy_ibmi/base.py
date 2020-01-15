@@ -448,7 +448,7 @@ class DB2Compiler(compiler.SQLCompiler):
         # for example
         if isinstance(type_, (
                 sa_types.DateTime, sa_types.Date, sa_types.Time,
-                sa_types.DECIMAL, sa_types.String)):
+                sa_types.DECIMAL, sa_types.String, sa_types.FLOAT, sa_types.NUMERIC, sa_types.INT)):
             return super(DB2Compiler, self).visit_cast(cast, **kw)
         else:
             return self.process(cast.clause)
@@ -698,7 +698,7 @@ class DB2Dialect(default.DefaultDialect):
     preparer = DB2IdentifierPreparer
     execution_ctx_cls = DB2ExecutionContext
 
-    _reflector_cls = ibm_reflection.DB2Reflector
+    _reflector_cls = ibm_reflection.AS400Reflector
 
     def __init__(self, **kw):
         super(DB2Dialect, self).__init__(**kw)

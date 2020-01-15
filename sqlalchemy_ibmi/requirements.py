@@ -33,10 +33,6 @@ class Requirements(SuiteRequirements):
 
         return exclusions.closed()
 
-    # @property
-    # def offset(self):
-    #    return exclusions.closed()
-
     @property
     def window_functions(self):
         """Target database must support window functions."""
@@ -71,6 +67,7 @@ class Requirements(SuiteRequirements):
 
         return exclusions.open()
 
+    # DB2 for i does not support temporary tables
     @property
     def temp_table_names(self):
         """target dialect supports listing of temporary table names"""
@@ -90,12 +87,33 @@ class Requirements(SuiteRequirements):
     def temp_table_reflection(self):
         return exclusions.closed()
 
+    # adding implicitly_named_constraints which is not included in the requirements.py in testing suite
     @property
     def implicitly_named_constraints(self):
         """target database must apply names to unnamed constraints."""
 
         return exclusions.skip_if([SpecPredicate("sqlite", "not supported by database")])
 
+    # closed due to sqlalchemy.exc.CompileError: This SELECT structure does not use a simple integer value for limit
     @property
     def bound_limit_offset(self):
         return exclusions.closed()
+
+    @property
+    def floats_to_four_decimals(self):
+        return exclusions.closed()
+
+    @property
+    def on_update_cascade(self):
+        """"target database must support ON UPDATE..CASCADE behavior in
+        foreign keys."""
+
+        return exclusions.closed()
+
+    @property
+    def non_updating_cascade(self):
+        """target database must *not* support ON UPDATE..CASCADE behavior in
+        foreign keys."""
+        return exclusions.open()
+
+

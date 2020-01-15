@@ -92,9 +92,8 @@ class AS400Dialect_pyodbc(PyODBCConnector, DB2Dialect):
     supports_unicode_statements = True
     supports_sane_rowcount = False
     supports_sane_multi_rowcount = False
-    supports_native_decimal = True
     supports_char_length = True
-    supports_native_decimal = False
+    supports_native_decimal = True
 
     pyodbc_driver_name = "iSeries Access ODBC Driver"
 

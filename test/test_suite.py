@@ -1,20 +1,15 @@
+from sqlalchemy import Numeric, literal
 from sqlalchemy.testing.suite import *
 import sqlalchemy as sa
 import operator
 from sqlalchemy.testing.suite import ComponentReflectionTest as _ComponentReflectionTest
 from sqlalchemy.testing.suite import ExpandingBoundInTest as _ExpandingBoundInTest
+from sqlalchemy.testing.suite import NumericTest as _NumericTest
+import decimal
 from sqlalchemy.testing.suite import InsertBehaviorTest as _InsertBehaviorTest
-from sqlalchemy.testing.suite import SequenceCompilerTest as _SequenceCompilerTest
-from sqlalchemy.testing.suite import StringTest as _StringTest
-from sqlalchemy.testing.suite import TextTest as _TextTest
-from sqlalchemy.testing.suite import UnicodeTextTest as _UnicodeTextTest
-from sqlalchemy.testing.suite import UnicodeVarcharTest as _UnicodeVarcharTest
-from sqlalchemy.testing.suite import NormalizedNameTest as _NormalizedNameTest
-from sqlalchemy.testing.suite import NormalizedNameTest as _NormalizedNameTest
-
-from sqlalchemy.sql.elements import quoted_name
 
 
+# removed constraint that used same columns with different name as it caused a duplicate constraint error
 class ComponentReflectionTest(_ComponentReflectionTest):
     def _test_get_unique_constraints(self, schema=None):
         # SQLite dialect needs to parse the names of the constraints
@@ -94,6 +89,7 @@ class ComponentReflectionTest(_ComponentReflectionTest):
             eq_(uq_names, set())
 
 
+# empty set tests not possible on DB2 for i
 class ExpandingBoundInTest(_ExpandingBoundInTest):
 
     def test_multiple_empty_sets(self):
@@ -115,3 +111,104 @@ class ExpandingBoundInTest(_ExpandingBoundInTest):
         return
 
 
+class NumericTest(_NumericTest):
+
+    # casting the value to avoid untyped parameter markers
+    @testing.emits_warning(r".*does \*not\* support Decimal objects natively")
+    def test_decimal_coerce_round_trip_w_cast(self):
+        expr = decimal.Decimal("15.7563")
+
+        val = testing.db.scalar(select([sa.cast(expr, sa.types.DECIMAL(10, 4))]))
+        eq_(val, expr)
+
+    # casting the value to avoid untyped parameter markers
+    @testing.requires.implicit_decimal_binds
+    @testing.emits_warning(r".*does \*not\* support Decimal objects natively")
+    def test_decimal_coerce_round_trip(self):
+        expr = decimal.Decimal("15.7563")
+
+        val = testing.db.scalar(select([sa.cast(sa.literal(expr), sa.types.DECIMAL(10, 4))]))
+        eq_(val, expr)
+
+    # casting the value to avoid untyped parameter markers
+    def test_float_coerce_round_trip(self):
+        expr = 15.7563
+
+        val = testing.db.scalar(select([sa.cast(sa.literal(expr), sa.types.DECIMAL(10, 4, asdecimal=False))]))
+        eq_(val, expr)
+
+    # changed Numeric precision to 31 from 38 as DB2 for i supports a max precision of 31 digits
+    @testing.requires.precision_numerics_many_significant_digits
+    def test_many_significant_digits(self):
+        numbers = {decimal.Decimal("31943874831932418390.01"), decimal.Decimal("319438950232418390.273596"),
+                   decimal.Decimal("87673.594069654243")}
+        self._do_test(Numeric(precision=31, scale=12), numbers, numbers)
+
+
+class InsertBehaviorTest(_InsertBehaviorTest):
+
+    @classmethod
+    def define_tables(cls, metadata):
+        Table(
+            "autoinc_pk",
+            metadata,
+            Column(
+                "id", Integer, primary_key=True, test_needs_autoincrement=True
+            ),
+            Column("data", String(50)),
+        )
+        Table(
+            "manual_pk",
+            metadata,
+            Column("id", Integer, primary_key=True, autoincrement=False),
+            Column("data", String(50)),
+        )
+        Table(
+            "includes_defaults",
+            metadata,
+            Column(
+                "id", Integer, primary_key=True, test_needs_autoincrement=True
+            ),
+            Column("data", String(50)),
+            Column("x", Integer, default=5),
+            Column(
+                "y",
+                Integer,
+                default=literal_column("2", type_=Integer) + literal(2),
+            ),
+        )
+
+
+    @requirements.insert_from_select
+    def test_insert_from_select_with_defaults(self):
+        table = self.tables.includes_defaults
+        config.db.execute(
+            table.insert(),
+            [
+                dict(id=1, data="data1"),
+                dict(id=2, data="data2"),
+                dict(id=3, data="data3"),
+            ],
+        )
+
+        config.db.execute(
+            table.insert(inline=True).from_select(
+                ("id", "data"),
+                select([table.c.id + sa.cast(5, sa.types.INT), table.c.data]).where(
+                    table.c.data.in_([sa.cast("data2", sa.types.String), sa.cast("data3", sa.types.String)])
+                ),
+            )
+        )
+
+        eq_(
+            config.db.execute(
+                select([table]).order_by(table.c.data, table.c.id)
+            ).fetchall(),
+            [
+                (1, "data1", 5, 4),
+                (2, "data2", 5, 4),
+                (7, "data2", 5, 4),
+                (3, "data3", 5, 4),
+                (8, "data3", 5, 4),
+            ],
+        )
