@@ -1,6 +1,6 @@
 name: Python package
 
-on: [push, pull_request]
+on: [pull_request]
 
 jobs:
   build:
@@ -24,8 +24,12 @@ jobs:
         pip install poetry
         poetry config virtualenvs.create false
         poetry install
-    - name: Lint with flake8
+    - name: Lint with autopep8 and flake8
       run: |
+        pip install autopep8
+        autopep8 --in-place --aggressive --aggressive base.py
+        autopep8 --in-place --aggressive --aggressive backend.py
+        autopep8 --in-place --aggressive --aggressive requirements.py
         pip install flake8
         # stop the build if there are Python syntax errors or undefined names
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics

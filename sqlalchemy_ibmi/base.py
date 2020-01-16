@@ -40,7 +40,6 @@ class CoerceUnicode(sa_types.TypeDecorator):
 
     impl = sa_types.Unicode
 
-
 # as documented from:
 # http://publib.boulder.ibm.com/infocenter/db2luw/v9/index.jsp?topic=/com.ibm.db2.udb.doc/admin/r0001095.htm
 RESERVED_WORDS = set(
@@ -191,8 +190,6 @@ class XML(sa_types.Text):
 colspecs = {
     sa_types.Boolean: _IBM_Boolean,
     sa_types.Date: _IBM_Date
-    # really ?
-    #    sa_types.Unicode: DB2VARGRAPHIC
 }
 
 ischema_names = {
@@ -610,8 +607,9 @@ class DB2DDLCompiler(compiler.DDLCompiler):
         result = super(
             DB2DDLCompiler,
             self).create_table_constraints(
-            table,
-            **kw)
+                table,
+                **kw
+            )
         return result
 
     def visit_create_index(
@@ -625,9 +623,10 @@ class DB2DDLCompiler(compiler.DDLCompiler):
             sql = super(
                 DB2DDLCompiler,
                 self).visit_create_index(
-                create,
-                include_schema,
-                include_table_schema)
+                    create,
+                    include_schema,
+                    include_table_schema
+                )
         if getattr(create.element, 'uConstraint_as_index', None):
             sql += ' EXCLUDE NULL KEYS'
         return sql
@@ -643,7 +642,7 @@ class DB2DDLCompiler(compiler.DDLCompiler):
                     if not create.element.name:
                         index_name = "%s_%s_%s" % ('uk_index', self.preparer.format_table(
                             create.element.table), '_'.join(
-                            column.name for column in create.element))
+                                column.name for column in create.element))
                     else:
                         index_name = create.element.name
                     index = sa_schema.Index(
@@ -674,7 +673,8 @@ class _SelectLastRowIDMixin(object):
             seq_column = tbl._autoincrement_column
             insert_has_sequence = seq_column is not None
 
-            self._select_lastrowid = insert_has_sequence and not self.compiled.returning and not self.compiled.inline
+            self._select_lastrowid = insert_has_sequence and not \
+                self.compiled.returning and not self.compiled.inline
 
     def post_exec(self):
         conn = self.root_connection
@@ -690,8 +690,9 @@ class _SelectLastRowIDMixin(object):
 
 
 class DB2ExecutionContext(
-    _SelectLastRowIDMixin,
+        _SelectLastRowIDMixin,
         default.DefaultExecutionContext):
+
     def fire_sequence(self, seq, type_):
         return self._execute_scalar(
             "SELECT NEXTVAL FOR " +
@@ -750,11 +751,11 @@ class DB2Dialect(default.DefaultDialect):
     sys_table_constraints = Table(
         "SYSCST", ischema, Column(
             "CONSTRAINT_SCHEMA", CoerceUnicode, key="conschema"), Column(
-            "CONSTRAINT_NAME", CoerceUnicode, key="conname"), Column(
-            "CONSTRAINT_TYPE", CoerceUnicode, key="contype"), Column(
-            "TABLE_SCHEMA", CoerceUnicode, key="tabschema"), Column(
-            "TABLE_NAME", CoerceUnicode, key="tabname"), Column(
-            "TABLE_TYPE", CoerceUnicode, key="tabtype"), schema="QSYS2")
+                "CONSTRAINT_NAME", CoerceUnicode, key="conname"), Column(
+                    "CONSTRAINT_TYPE", CoerceUnicode, key="contype"), Column(
+                        "TABLE_SCHEMA", CoerceUnicode, key="tabschema"), Column(
+                            "TABLE_NAME", CoerceUnicode, key="tabname"), Column(
+                                "TABLE_TYPE", CoerceUnicode, key="tabtype"), schema="QSYS2")
 
     sys_key_constraints = Table("SYSKEYCST", ischema,
                                 Column("CONSTRAINT_SCHEMA", CoerceUnicode, key="conschema"),
@@ -1032,11 +1033,11 @@ class DB2Dialect(default.DefaultDialect):
 
         query = sql.select([sysidx.c.indname,
                             sysidx.c.uniquerule, syskey.c.colname], sql.and_(
-            syskey.c.indschema == sysidx.c.indschema,
-            syskey.c.indname == sysidx.c.indname,
-            sysidx.c.tabschema == current_schema,
-            sysidx.c.tabname == table_name
-        ),
+                                syskey.c.indschema == sysidx.c.indschema,
+                                syskey.c.indname == sysidx.c.indname,
+                                sysidx.c.tabschema == current_schema,
+                                sysidx.c.tabname == table_name
+                            ),
                            order_by=[syskey.c.indname, syskey.c.colno]
                            )
         indexes = {}
