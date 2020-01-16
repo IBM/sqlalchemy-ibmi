@@ -19,31 +19,26 @@
 """Support for IBM DB2 database
 
 """
-import datetime, re
+import datetime
+import re
 from sqlalchemy import types as sa_types
 from sqlalchemy import schema as sa_schema
 from sqlalchemy import util, sql, Table, MetaData, Column
 from sqlalchemy.sql import compiler, operators
 from sqlalchemy.engine import default, reflection
-from sqlalchemy import __version__ as SA_Version
+from sqlalchemy import __version__ as SA_VERSION
 
 from sqlalchemy.types import BLOB, CHAR, CLOB, DATE, DATETIME, INTEGER, \
     SMALLINT, BIGINT, DECIMAL, NUMERIC, REAL, TIME, TIMESTAMP, \
     VARCHAR, FLOAT
 
-SA_Version = [int(ver_token) for ver_token in SA_Version.split('.')[0:2]]
+SA_VERSION = [int(ver_token) for ver_token in SA_VERSION.split('.')[0:2]]
 
 
 class CoerceUnicode(sa_types.TypeDecorator):
-    def process_literal_param(self, value, dialect):
-        pass
+    """ Coerce type Unicode """
 
     impl = sa_types.Unicode
-
-    def process_bind_param(self, value, dialect):
-        if isinstance(value, str):
-            value = value
-        return value
 
 
 # as documented from:
@@ -338,7 +333,7 @@ class DB2TypeCompiler(compiler.GenericTypeCompiler):
 
 
 class DB2Compiler(compiler.SQLCompiler):
-    if SA_Version < [0, 9]:
+    if SA_VERSION < [0, 9]:
         def visit_false(self, expr, **kw):
             return '0'
 
@@ -352,7 +347,7 @@ class DB2Compiler(compiler.SQLCompiler):
         return "CURRENT_TIMESTAMP"
 
     def for_update_clause(self, select):
-        if select.for_update == True:
+        if select.for_update:
             return ' WITH RS USE AND KEEP UPDATE LOCKS'
         elif select.for_update == 'read':
             return ' WITH RS USE AND KEEP SHARE LOCKS'
@@ -374,7 +369,7 @@ class DB2Compiler(compiler.SQLCompiler):
         sql_ori = compiler.SQLCompiler.visit_select(self, select, **kwargs)
         if offset is not None:
             __rownum = 'Z.__ROWNUM'
-            sql_split = re.split("[\s+]FROM ", sql_ori, 1)
+            sql_split = re.split(r"[\s+]FROM ", sql_ori, 1)
             sql_sec = ""
             sql_sec = " \nFROM %s " % (sql_split[1])
 
@@ -387,8 +382,9 @@ class DB2Compiler(compiler.SQLCompiler):
 
             sql_select_token = sql_split[0].split(",")
             i = 0
-            while (i < len(sql_select_token)):
-                if sql_select_token[i].count("TIMESTAMP(DATE(SUBSTR(CHAR(") == 1:
+            while i < len(sql_select_token):
+                if sql_select_token[i].count(
+                        "TIMESTAMP(DATE(SUBSTR(CHAR(") == 1:
                     sql_sel = "%s \"%s%d\"," % (sql_sel, dummyVal, i + 1)
                     sql_pri = '%s %s,%s,%s,%s AS "%s%d",' % (
                         sql_pri,
@@ -407,14 +403,16 @@ class DB2Compiler(compiler.SQLCompiler):
                     i = i + 1
                     continue
 
-                sql_pri = '%s %s AS "%s%d",' % (sql_pri, sql_select_token[i], dummyVal, i + 1)
+                sql_pri = '%s %s AS "%s%d",' % (
+                    sql_pri, sql_select_token[i], dummyVal, i + 1)
                 sql_sel = "%s \"%s%d\"," % (sql_sel, dummyVal, i + 1)
                 i = i + 1
 
             sql_pri = sql_pri[:len(sql_pri) - 1]
             sql_pri = "%s%s" % (sql_pri, sql_sec)
             sql_sel = sql_sel[:len(sql_sel) - 1]
-            sql = '%s, ( ROW_NUMBER() OVER() ) AS "%s" FROM ( %s ) AS M' % (sql_sel, __rownum, sql_pri)
+            sql = '%s, ( ROW_NUMBER() OVER() ) AS "%s" FROM ( %s ) AS M' % (
+                sql_sel, __rownum, sql_pri)
             sql = '%s FROM ( %s ) Z WHERE' % (sql_sel, sql)
 
             if offset != 0:
@@ -438,7 +436,8 @@ class DB2Compiler(compiler.SQLCompiler):
         if func.name.upper() == "AVG":
             return "AVG(DOUBLE(%s))" % (self.function_argspec(func, **kwargs))
         elif func.name.upper() == "CHAR_LENGTH":
-            return "CHAR_LENGTH(%s, %s)" % (self.function_argspec(func, **kwargs), 'OCTETS')
+            return "CHAR_LENGTH(%s, %s)" % (
+                self.function_argspec(func, **kwargs), 'OCTETS')
         else:
             return compiler.SQLCompiler.visit_function(self, func, **kwargs)
 
@@ -453,7 +452,7 @@ class DB2Compiler(compiler.SQLCompiler):
 
         # TODO: verify that CAST shouldn't be called with
         # other types, I was able to CAST against VARCHAR
-        # for example
+        #         #         # for example
         if isinstance(type_, (
                 sa_types.DateTime, sa_types.Date, sa_types.Time,
                 sa_types.DECIMAL, sa_types.String)):
@@ -480,16 +479,20 @@ class DB2Compiler(compiler.SQLCompiler):
              self.process(join.onclause, **kwargs)))
 
     def visit_savepoint(self, savepoint_stmt):
-        return "SAVEPOINT %(sid)s ON ROLLBACK RETAIN CURSORS" % {'sid': self.preparer.format_savepoint(savepoint_stmt)}
+        return "SAVEPOINT %(sid)s ON ROLLBACK RETAIN CURSORS" % {
+            'sid': self.preparer.format_savepoint(savepoint_stmt)}
 
     def visit_rollback_to_savepoint(self, savepoint_stmt):
-        return 'ROLLBACK TO SAVEPOINT %(sid)s' % {'sid': self.preparer.format_savepoint(savepoint_stmt)}
+        return 'ROLLBACK TO SAVEPOINT %(sid)s' % {
+            'sid': self.preparer.format_savepoint(savepoint_stmt)}
 
     def visit_release_savepoint(self, savepoint_stmt):
-        return 'RELEASE TO SAVEPOINT %(sid)s' % {'sid': self.preparer.format_savepoint(savepoint_stmt)}
+        return 'RELEASE TO SAVEPOINT %(sid)s' % {
+            'sid': self.preparer.format_savepoint(savepoint_stmt)}
 
     def visit_unary(self, unary, **kw):
-        if (unary.operator == operators.exists) and kw.get('within_columns_clause', False):
+        if (unary.operator == operators.exists) and kw.get(
+                'within_columns_clause', False):
             usql = super(DB2Compiler, self).visit_unary(unary, **kw)
             usql = "CASE WHEN " + usql + " THEN 1 ELSE 0 END"
             return usql
@@ -502,7 +505,8 @@ class DB2DDLCompiler(compiler.DDLCompiler):
     def get_server_version_info(self, dialect):
         """Returns the DB2 server major and minor version as a list of ints."""
         if hasattr(dialect, 'dbms_ver'):
-            return [int(ver_token) for ver_token in dialect.dbms_ver.split('.')[0:2]]
+            return [int(ver_token)
+                    for ver_token in dialect.dbms_ver.split('.')[0:2]]
         else:
             return []
 
@@ -513,14 +517,17 @@ class DB2DDLCompiler(compiler.DDLCompiler):
 
         dbms_name = getattr(dialect, 'dbms_name', None)
         if hasattr(dialect, 'dbms_name'):
-            if dbms_name != None and (dbms_name.find('DB2/') != -1):
+            if dbms_name is not None and (dbms_name.find('DB2/') != -1):
                 return self.get_server_version_info(dialect) >= [10, 5]
         else:
             return False
 
     def get_column_specification(self, column, **kw):
         col_spec = [self.preparer.format_column(column)]
-        col_spec.append(self.dialect.type_compiler.process(column.type, type_expression=column))
+        col_spec.append(
+            self.dialect.type_compiler.process(
+                column.type,
+                type_expression=column))
 
         # column-options: "NOT NULL"
         if not column.nullable or column.primary_key:
@@ -572,7 +579,9 @@ class DB2DDLCompiler(compiler.DDLCompiler):
             qual = ""
             const = self.preparer.format_constraint(constraint)
 
-        if hasattr(constraint, 'uConstraint_as_index') and constraint.uConstraint_as_index:
+        if hasattr(
+                constraint,
+                'uConstraint_as_index') and constraint.uConstraint_as_index:
             return "DROP %s%s" % \
                    (qual, const)
         return "ALTER TABLE %s DROP %s%s" % \
@@ -590,21 +599,35 @@ class DB2DDLCompiler(compiler.DDLCompiler):
                             break
                     if getattr(constraint, 'uConstraint_as_index', None):
                         if not constraint.name:
-                            index_name = "%s_%s_%s" % ('ukey', self.preparer.format_table(constraint.table),
-                                                       '_'.join(column.name for column in constraint))
+                            index_name = "%s_%s_%s" % ('ukey', self.preparer.format_table(
+                                constraint.table), '_'.join(column.name for column in constraint))
                         else:
                             index_name = constraint.name
-                        index = sa_schema.Index(index_name, *(column for column in constraint))
+                        index = sa_schema.Index(
+                            index_name, *(column for column in constraint))
                         index.unique = True
                         index.uConstraint_as_index = True
-        result = super(DB2DDLCompiler, self).create_table_constraints(table, **kw)
+        result = super(
+            DB2DDLCompiler,
+            self).create_table_constraints(
+            table,
+            **kw)
         return result
 
-    def visit_create_index(self, create, include_schema=True, include_table_schema=True):
-        if SA_Version < [0, 8]:
+    def visit_create_index(
+            self,
+            create,
+            include_schema=True,
+            include_table_schema=True):
+        if SA_VERSION < [0, 8]:
             sql = super(DB2DDLCompiler, self).visit_create_index(create)
         else:
-            sql = super(DB2DDLCompiler, self).visit_create_index(create, include_schema, include_table_schema)
+            sql = super(
+                DB2DDLCompiler,
+                self).visit_create_index(
+                create,
+                include_schema,
+                include_table_schema)
         if getattr(create.element, 'uConstraint_as_index', None):
             sql += ' EXCLUDE NULL KEYS'
         return sql
@@ -618,11 +641,13 @@ class DB2DDLCompiler(compiler.DDLCompiler):
                         break
                 if getattr(create.element, 'uConstraint_as_index', None):
                     if not create.element.name:
-                        index_name = "%s_%s_%s" % ('uk_index', self.preparer.format_table(create.element.table),
-                                                   '_'.join(column.name for column in create.element))
+                        index_name = "%s_%s_%s" % ('uk_index', self.preparer.format_table(
+                            create.element.table), '_'.join(
+                            column.name for column in create.element))
                     else:
                         index_name = create.element.name
-                    index = sa_schema.Index(index_name, *(column for column in create.element))
+                    index = sa_schema.Index(
+                        index_name, *(column for column in create.element))
                     index.unique = True
                     index.uConstraint_as_index = True
                     sql = self.visit_create_index(sa_schema.CreateIndex(index))
@@ -649,26 +674,30 @@ class _SelectLastRowIDMixin(object):
             seq_column = tbl._autoincrement_column
             insert_has_sequence = seq_column is not None
 
-            self._select_lastrowid = insert_has_sequence and \
-                                     not self.compiled.returning and \
-                                     not self.compiled.inline
+            self._select_lastrowid = insert_has_sequence and not self.compiled.returning and not self.compiled.inline
 
     def post_exec(self):
         conn = self.root_connection
         if self._select_lastrowid:
-            conn._cursor_execute(self.cursor,
-                                 "SELECT IDENTITY_VAL_LOCAL() FROM SYSIBM.SYSDUMMY1",
-                                 (), self)
+            conn._cursor_execute(
+                self.cursor,
+                "SELECT IDENTITY_VAL_LOCAL() FROM SYSIBM.SYSDUMMY1",
+                (),
+                self)
             row = self.cursor.fetchall()[0]
             if row[0] is not None:
                 self._lastrowid = int(row[0])
 
 
-class DB2ExecutionContext(_SelectLastRowIDMixin, default.DefaultExecutionContext):
+class DB2ExecutionContext(
+    _SelectLastRowIDMixin,
+        default.DefaultExecutionContext):
     def fire_sequence(self, seq, type_):
-        return self._execute_scalar("SELECT NEXTVAL FOR " +
-                                    self.dialect.identifier_preparer.format_sequence(seq) +
-                                    " FROM SYSIBM.SYSDUMMY1", type_)
+        return self._execute_scalar(
+            "SELECT NEXTVAL FOR " +
+            self.dialect.identifier_preparer.format_sequence(seq) +
+            " FROM SYSIBM.SYSDUMMY1",
+            type_)
 
 
 class DB2Dialect(default.DefaultDialect):
@@ -718,14 +747,14 @@ class DB2Dialect(default.DefaultDialect):
                        Column("TABLE_TYPE", CoerceUnicode, key="tabtype"),
                        schema="QSYS2")
 
-    sys_table_constraints = Table("SYSCST", ischema,
-                                  Column("CONSTRAINT_SCHEMA", CoerceUnicode, key="conschema"),
-                                  Column("CONSTRAINT_NAME", CoerceUnicode, key="conname"),
-                                  Column("CONSTRAINT_TYPE", CoerceUnicode, key="contype"),
-                                  Column("TABLE_SCHEMA", CoerceUnicode, key="tabschema"),
-                                  Column("TABLE_NAME", CoerceUnicode, key="tabname"),
-                                  Column("TABLE_TYPE", CoerceUnicode, key="tabtype"),
-                                  schema="QSYS2")
+    sys_table_constraints = Table(
+        "SYSCST", ischema, Column(
+            "CONSTRAINT_SCHEMA", CoerceUnicode, key="conschema"), Column(
+            "CONSTRAINT_NAME", CoerceUnicode, key="conname"), Column(
+            "CONSTRAINT_TYPE", CoerceUnicode, key="contype"), Column(
+            "TABLE_SCHEMA", CoerceUnicode, key="tabschema"), Column(
+            "TABLE_NAME", CoerceUnicode, key="tabname"), Column(
+            "TABLE_TYPE", CoerceUnicode, key="tabtype"), schema="QSYS2")
 
     sys_key_constraints = Table("SYSKEYCST", ischema,
                                 Column("CONSTRAINT_SCHEMA", CoerceUnicode, key="conschema"),
@@ -785,10 +814,18 @@ class DB2Dialect(default.DefaultDialect):
                       Column("VIEW_DEFINITION", CoerceUnicode, key="text"),
                       schema="QSYS2")
 
-    sys_sequences = Table("SYSSEQUENCES", ischema,
-                          Column("SEQUENCE_SCHEMA", CoerceUnicode, key="seqschema"),
-                          Column("SEQUENCE_NAME", CoerceUnicode, key="seqname"),
-                          schema="QSYS2")
+    sys_sequences = Table(
+        "SYSSEQUENCES",
+        ischema,
+        Column(
+            "SEQUENCE_SCHEMA",
+            CoerceUnicode,
+            key="seqschema"),
+        Column(
+            "SEQUENCE_NAME",
+            CoerceUnicode,
+            key="seqname"),
+        schema="QSYS2")
 
     # reflection: these all defer to an BaseDB2Reflector
     # object which selects between DB2 and AS/400 schemas
@@ -850,7 +887,8 @@ class DB2Dialect(default.DefaultDialect):
     # Retrieves a list of table names for a given schema
     @reflection.cache
     def get_table_names(self, connection, schema=None, **kw):
-        current_schema = self.denormalize_name(schema or self.default_schema_name)
+        current_schema = self.denormalize_name(
+            schema or self.default_schema_name)
         systbl = self.sys_tables
         query = sql.select([systbl.c.tabname]). \
             where(systbl.c.tabtype == 'T'). \
@@ -883,7 +921,8 @@ class DB2Dialect(default.DefaultDialect):
 
     @reflection.cache
     def get_columns(self, connection, table_name, schema=None, **kw):
-        current_schema = self.denormalize_name(schema or self.default_schema_name)
+        current_schema = self.denormalize_name(
+            schema or self.default_schema_name)
         table_name = self.denormalize_name(table_name)
         syscols = self.sys_columns
 
@@ -919,7 +958,7 @@ class DB2Dialect(default.DefaultDialect):
                 'type': coltype,
                 'nullable': r[3] == 'Y',
                 'default': r[2],
-                'autoincrement': (r[6] == 'YES') and (r[7] != None),
+                'autoincrement': (r[6] == 'YES') and (r[7] is not None),
             })
         return sa_columns
 
@@ -937,8 +976,8 @@ class DB2Dialect(default.DefaultDialect):
                                syskeyconst.c.conname == sysconst.c.conname,
                                sysconst.c.tabschema == current_schema,
                                sysconst.c.tabname == table_name,
-                               sysconst.c.contype == 'PRIMARY KEY'
-                           ), order_by=[syskeyconst.c.colno])
+                               sysconst.c.contype == 'PRIMARY KEY'),
+                           order_by=[syskeyconst.c.colno])
 
         return [self.normalize_name(key[0])
                 for key in connection.execute(query)]
@@ -950,15 +989,14 @@ class DB2Dialect(default.DefaultDialect):
         default_schema = self.normalize_name(default_schema)
         table_name = self.denormalize_name(table_name)
         sysfkeys = self.sys_foreignkeys
-        query = sql.select([sysfkeys.c.fkname, sysfkeys.c.fktabschema, \
-                            sysfkeys.c.fktabname, sysfkeys.c.fkcolname, \
-                            sysfkeys.c.pkname, sysfkeys.c.pktabschema, \
+        query = sql.select([sysfkeys.c.fkname, sysfkeys.c.fktabschema,
+                            sysfkeys.c.fktabname, sysfkeys.c.fkcolname,
+                            sysfkeys.c.pkname, sysfkeys.c.pktabschema,
                             sysfkeys.c.pktabname, sysfkeys.c.pkcolname],
                            sql.and_(
                                sysfkeys.c.fktabschema == current_schema,
                                sysfkeys.c.fktabname == table_name
-                           ),
-                           order_by=[sysfkeys.c.colno]
+                           ), order_by=[sysfkeys.c.colno]
                            )
         fschema = {}
         for r in connection.execute(query):
@@ -977,8 +1015,10 @@ class DB2Dialect(default.DefaultDialect):
                                  'referred_table': self.normalize_name(r[6]),
                                  'referred_columns': [self.normalize_name(r[7])]}
             else:
-                fschema[r[0]]['constrained_columns'].append(self.normalize_name(r[3]))
-                fschema[r[0]]['referred_columns'].append(self.normalize_name(r[7]))
+                fschema[r[0]]['constrained_columns'].append(
+                    self.normalize_name(r[3]))
+                fschema[r[0]]['referred_columns'].append(
+                    self.normalize_name(r[7]))
         return [value for key, value in fschema.items()]
 
     # Retrieves a list of index names for a given schema
@@ -996,7 +1036,8 @@ class DB2Dialect(default.DefaultDialect):
             syskey.c.indname == sysidx.c.indname,
             sysidx.c.tabschema == current_schema,
             sysidx.c.tabname == table_name
-        ), order_by=[syskey.c.indname, syskey.c.colno]
+        ),
+                           order_by=[syskey.c.indname, syskey.c.colno]
                            )
         indexes = {}
         for r in connection.execute(query):
@@ -1012,8 +1053,11 @@ class DB2Dialect(default.DefaultDialect):
         return [value for key, value in indexes.items()]
 
     @reflection.cache
-    def get_unique_constraints(self, connection, table_name, schema=None, **kw):
+    def get_unique_constraints(
+            self,
+            connection,
+            table_name,
+            schema=None,
+            **kw):
         uniqueConsts = []
         return uniqueConsts
-
-
