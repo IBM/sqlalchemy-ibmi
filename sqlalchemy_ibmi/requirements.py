@@ -12,9 +12,14 @@ from sqlalchemy.testing import exclusions
 
 class Requirements(SuiteRequirements):
 
+    """ Overrides the SuiteRequirements class in SQLAlchemy """
+
+    def get_order_by_collation(self, config):
+        pass
+
     @property
     def on_update_cascade(self):
-        """"target database must support ON UPDATE..CASCADE behavior in
+        """target database must support ON UPDATE..CASCADE behavior in
         foreign keys."""
 
         return exclusions.closed()

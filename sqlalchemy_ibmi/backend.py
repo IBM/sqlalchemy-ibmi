@@ -1,3 +1,4 @@
+""" This module specifies the specific dialect for the AS400 using the PyODBCConnector"""
 # +--------------------------------------------------------------------------+
 # |  Licensed Materials - Property of IBM                                    |
 # |                                                                          |
@@ -91,4 +92,4 @@ class AS400DialectPyodbc(PyODBCConnector, DB2Dialect):
         return [[";".join(connectors)], connect_args]
 
 
-dialect = AS400DialectPyodbc
+DIALECT = AS400DialectPyodbc
