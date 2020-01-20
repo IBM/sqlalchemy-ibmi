@@ -246,69 +246,69 @@ ISCHEMA_NAMES = {
 
 class DB2TypeCompiler(compiler.GenericTypeCompiler):
     """ Compiler for DB2 Types """
-    def visit_TIMESTAMP(self, type_, **kwargs):
+    def visit_TIMESTAMP(self, type_, **_):
         return "TIMESTAMP"
 
-    def visit_DATE(self, type_, **kwargs):
+    def visit_DATE(self, type_, **_):
         return "DATE"
 
-    def visit_TIME(self, type_, **kwargs):
+    def visit_TIME(self, type_, **_):
         return "TIME"
 
-    def visit_DATETIME(self, type_, **kwargs):
+    def visit_DATETIME(self, type_, **_):
         return self.visit_TIMESTAMP(type_, )
 
-    def visit_SMALLINT(self, type_, **kwargs):
+    def visit_SMALLINT(self, type_, **_):
         return "SMALLINT"
 
-    def visit_BIGINT(self, type_, **kwargs):
+    def visit_BIGINT(self, type_, **_):
         return "BIGINT"
 
-    def visit_INTEGER(self, type_, **kwargs):
+    def visit_INTEGER(self, type_, **_):
         return "INT"
 
-    def visit_FLOAT(self, type_, **kwargs):
+    def visit_FLOAT(self, type_, **_):
         return "FLOAT" if type_.precision is None else \
             "FLOAT(%(precision)s)" % {'precision': type_.precision}
 
-    def visit_DOUBLE(self, type_):
+    def visit_double(self, _):
         return "DOUBLE"
 
-    def visit_XML(self, type_):
+    def visit_xml(self, _):
         return "XML"
 
-    def visit_CLOB(self, type_, **kwargs):
+    def visit_CLOB(self, type_, **_):
         return "CLOB"
 
-    def visit_BLOB(self, type_, **kwargs):
+    def visit_BLOB(self, type_, **_):
         return "BLOB(1M)" if type_.length in (None, 0) else \
             "BLOB(%(length)s)" % {'length': type_.length}
 
-    def visit_DBCLOB(self, type_):
+    def visit_dbclob(self, type_):
         return "DBCLOB(1M)" if type_.length in (None, 0) else \
             "DBCLOB(%(length)s)" % {'length': type_.length}
 
-    def visit_VARCHAR(self, type_, **kwargs):
+    def visit_VARCHAR(self, type_, **_):
         return "VARCHAR(%(length)s)" % {'length': type_.length}
 
-    def visit_LONGVARCHAR(self, type_):
+    def visit_longvarchar(self, _):
         return "LONG VARCHAR"
 
-    def visit_VARGRAPHIC(self, type_):
+    def visit_vargraphic(self, type_):
         return "VARGRAPHIC(%(length)s)" % {'length': type_.length}
 
-    def visit_LONGVARGRAPHIC(self, type_):
+    def visit_longvargraphic(self, type_):
         return "LONG VARGRAPHIC"
 
-    def visit_CHAR(self, type_, **kwargs):
+    def visit_CHAR(self, type_, **_):
         return "CHAR" if type_.length in (None, 0) else \
             "CHAR(%(length)s)" % {'length': type_.length}
 
-    def visit_GRAPHIC(self, type_):
+    def visit_graphic(self, type_):
         return "GRAPHIC" if type_.length in (None, 0) else \
             "GRAPHIC(%(length)s)" % {'length': type_.length}
 
-    def visit_DECIMAL(self, type_, **kwargs):
+    def visit_DECIMAL(self, type_, **_):
         if not type_.precision:
             return "DECIMAL(31, 0)"
         if not type_.scale:
@@ -316,40 +316,40 @@ class DB2TypeCompiler(compiler.GenericTypeCompiler):
         return "DECIMAL(%(precision)s, %(scale)s)" % {
             'precision': type_.precision, 'scale': type_.scale}
 
-    def visit_numeric(self, type_, **kwargs):
+    def visit_numeric(self, type_, **_):
         return self.visit_DECIMAL(type_, )
 
-    def visit_datetime(self, type_, **kwargs):
+    def visit_datetime(self, type_, **_):
         return self.visit_TIMESTAMP(type_, )
 
-    def visit_date(self, type_, **kwargs):
+    def visit_date(self, type_, **_):
         return self.visit_DATE(type_, )
 
-    def visit_time(self, type_, **kwargs):
+    def visit_time(self, type_, **_):
         return self.visit_TIME(type_, )
 
-    def visit_integer(self, type_, **kwargs):
+    def visit_integer(self, type_, **_):
         return self.visit_INTEGER(type_)
 
-    def visit_boolean(self, type_, **kwargs):
+    def visit_boolean(self, type_, **_):
         return self.visit_SMALLINT(type_, )
 
-    def visit_float(self, type_, **kwargs):
+    def visit_float(self, type_, **_):
         return self.visit_FLOAT(type_, )
 
-    def visit_unicode(self, type_, **kwargs):
-        return self.visit_VARGRAPHIC(type_)
+    def visit_unicode(self, type_, **_):
+        return self.visit_vargraphic(type_)
 
-    def visit_unicode_text(self, type_, **kwargs):
-        return self.visit_LONGVARGRAPHIC(type_)
+    def visit_unicode_text(self, type_, **_):
+        return self.visit_longvargraphic(type_)
 
-    def visit_string(self, type_, **kwargs):
+    def visit_string(self, type_, **_):
         return self.visit_VARCHAR(type_, )
 
-    def visit_TEXT(self, type_, **kwargs):
+    def visit_TEXT(self, type_, **_):
         return self.visit_CLOB(type_, )
 
-    def visit_large_binary(self, type_, **kwargs):
+    def visit_large_binary(self, type_, **_):
         return self.visit_BLOB(type_, )
 
 
@@ -470,18 +470,8 @@ class DB2Compiler(compiler.SQLCompiler):
 
         return compiler.SQLCompiler.visit_function(self, func, **kwargs)
 
-    # TODO: this is wrong but need to know what DB2 is expecting here
-    #    if func.name.upper() == "LENGTH":
-    #        return "LENGTH('%s')" % func.compile().params[func.name + '_1']
-    #    else:
-    #        return compiler.SQLCompiler.visit_function(self, func, **kwargs)
-
     def visit_cast(self, cast, **kw):
         type_ = cast.typeclause.type
-
-        # TODO: verify that CAST shouldn't be called with
-        # other types, I was able to CAST against VARCHAR
-        #         #         # for example
         if isinstance(type_, (
                 sa_types.DateTime, sa_types.Date, sa_types.Time,
                 sa_types.DECIMAL, sa_types.String)):
@@ -548,11 +538,9 @@ class DB2DDLCompiler(compiler.DDLCompiler):
             return False
 
     def get_column_specification(self, column, **kw):
-        col_spec = [self.preparer.format_column(column)]
-        col_spec.append(
-            self.dialect.type_compiler.process(
-                column.type,
-                type_expression=column))
+        col_spec = [self.preparer.format_column(column), self.dialect.type_compiler.process(
+            column.type,
+            type_expression=column)]
 
         # column-options: "NOT NULL"
         if not column.nullable or column.primary_key:
