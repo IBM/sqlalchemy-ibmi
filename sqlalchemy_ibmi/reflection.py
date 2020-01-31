@@ -16,14 +16,12 @@
 # | Authors: Alex Pitigoi, Abhigyan Agrawal, Rahul Priyadarshi,Abhinav Radke |
 # | Contributors: Jaimy Azle, Mike Bayer,Hemlata Bhatt                       |
 # +--------------------------------------------------------------------------+
-import sys
+
 from sqlalchemy import types as sa_types
 from sqlalchemy import sql, util
 from sqlalchemy import Table, MetaData, Column
 from sqlalchemy.engine import reflection
 import re
-import codecs
-from sys import version_info
 
 
 class CoerceUnicode(sa_types.TypeDecorator):
@@ -79,7 +77,8 @@ class DB2Reflector(BaseReflector):
                         Column("OWNER", CoerceUnicode, key="owner"),
                         Column("OWNERTYPE", CoerceUnicode, key="ownertype"),
                         Column("DEFINER", CoerceUnicode, key="definer"),
-                        Column("DEFINERTYPE", CoerceUnicode, key="definertype"),
+                        Column("DEFINERTYPE", CoerceUnicode,
+                               key="definertype"),
                         Column("REMARK", CoerceUnicode, key="remark"),
                         schema="SYSCAT")
 
@@ -98,7 +97,8 @@ class DB2Reflector(BaseReflector):
                         Column("INDNAME", CoerceUnicode, key="indname"),
                         Column("COLNAMES", CoerceUnicode, key="colnames"),
                         Column("UNIQUERULE", CoerceUnicode, key="uniquerule"),
-                        Column("SYSTEM_REQUIRED", CoerceUnicode, key="system_required"),
+                        Column("SYSTEM_REQUIRED", CoerceUnicode,
+                               key="system_required"),
                         schema="SYSCAT")
 
     sys_tabconst = Table("TABCONST", ischema,
@@ -117,13 +117,19 @@ class DB2Reflector(BaseReflector):
 
     sys_foreignkeys = Table("SQLFOREIGNKEYS", ischema,
                             Column("FK_NAME", CoerceUnicode, key="fkname"),
-                            Column("FKTABLE_SCHEM", CoerceUnicode, key="fktabschema"),
-                            Column("FKTABLE_NAME", CoerceUnicode, key="fktabname"),
-                            Column("FKCOLUMN_NAME", CoerceUnicode, key="fkcolname"),
+                            Column("FKTABLE_SCHEM", CoerceUnicode,
+                                   key="fktabschema"),
+                            Column("FKTABLE_NAME", CoerceUnicode,
+                                   key="fktabname"),
+                            Column("FKCOLUMN_NAME", CoerceUnicode,
+                                   key="fkcolname"),
                             Column("PK_NAME", CoerceUnicode, key="pkname"),
-                            Column("PKTABLE_SCHEM", CoerceUnicode, key="pktabschema"),
-                            Column("PKTABLE_NAME", CoerceUnicode, key="pktabname"),
-                            Column("PKCOLUMN_NAME", CoerceUnicode, key="pkcolname"),
+                            Column("PKTABLE_SCHEM", CoerceUnicode,
+                                   key="pktabschema"),
+                            Column("PKTABLE_NAME", CoerceUnicode,
+                                   key="pktabname"),
+                            Column("PKCOLUMN_NAME", CoerceUnicode,
+                                   key="pkcolname"),
                             Column("KEY_SEQ", sa_types.Integer, key="colno"),
                             schema="SYSIBM")
 
@@ -453,37 +459,53 @@ class AS400Reflector(BaseReflector):
                        Column("TABLE_TYPE", CoerceUnicode, key="tabtype"),
                        schema="QSYS2")
 
-    sys_table_constraints = Table(
-        "SYSCST", ischema, Column(
-            "CONSTRAINT_SCHEMA", CoerceUnicode, key="conschema"), Column(
-            "CONSTRAINT_NAME", CoerceUnicode, key="conname"), Column(
-                "CONSTRAINT_TYPE", CoerceUnicode, key="contype"), Column(
-                    "TABLE_SCHEMA", CoerceUnicode, key="tabschema"), Column(
-                        "TABLE_NAME", CoerceUnicode, key="tabname"), Column(
-                            "TABLE_TYPE", CoerceUnicode, key="tabtype"), schema="QSYS2")
+    sys_table_constraints = Table("SYSCST", ischema,
+                                  Column("CONSTRAINT_SCHEMA", CoerceUnicode,
+                                         key="conschema"),
+                                  Column("CONSTRAINT_NAME", CoerceUnicode,
+                                         key="conname"),
+                                  Column("CONSTRAINT_TYPE", CoerceUnicode,
+                                         key="contype"),
+                                  Column("TABLE_SCHEMA", CoerceUnicode,
+                                         key="tabschema"),
+                                  Column("TABLE_NAME", CoerceUnicode,
+                                         key="tabname"),
+                                  Column("TABLE_TYPE", CoerceUnicode,
+                                         key="tabtype"),
+                                  schema="QSYS2")
 
     sys_key_constraints = Table("SYSKEYCST", ischema,
-                                Column("CONSTRAINT_SCHEMA", CoerceUnicode, key="conschema"),
-                                Column("CONSTRAINT_NAME", CoerceUnicode, key="conname"),
-                                Column("TABLE_SCHEMA", CoerceUnicode, key="tabschema"),
-                                Column("TABLE_NAME", CoerceUnicode, key="tabname"),
-                                Column("COLUMN_NAME", CoerceUnicode, key="colname"),
-                                Column("ORDINAL_POSITION", sa_types.Integer, key="colno"),
+                                Column("CONSTRAINT_SCHEMA", CoerceUnicode,
+                                       key="conschema"),
+                                Column("CONSTRAINT_NAME", CoerceUnicode,
+                                       key="conname"),
+                                Column("TABLE_SCHEMA", CoerceUnicode,
+                                       key="tabschema"),
+                                Column("TABLE_NAME", CoerceUnicode,
+                                       key="tabname"),
+                                Column("COLUMN_NAME", CoerceUnicode,
+                                       key="colname"),
+                                Column("ORDINAL_POSITION", sa_types.Integer,
+                                       key="colno"),
                                 schema="QSYS2")
 
     sys_columns = Table("SYSCOLUMNS", ischema,
                         Column("TABLE_SCHEMA", CoerceUnicode, key="tabschema"),
                         Column("TABLE_NAME", CoerceUnicode, key="tabname"),
                         Column("COLUMN_NAME", CoerceUnicode, key="colname"),
-                        Column("ORDINAL_POSITION", sa_types.Integer, key="colno"),
+                        Column("ORDINAL_POSITION", sa_types.Integer,
+                               key="colno"),
                         Column("DATA_TYPE", CoerceUnicode, key="typename"),
                         Column("LENGTH", sa_types.Integer, key="length"),
                         Column("NUMERIC_SCALE", sa_types.Integer, key="scale"),
-                        Column("IS_NULLABLE", sa_types.Integer, key="nullable"),
-                        Column("COLUMN_DEFAULT", CoerceUnicode, key="defaultval"),
+                        Column("IS_NULLABLE", sa_types.Integer,
+                               key="nullable"),
+                        Column("COLUMN_DEFAULT", CoerceUnicode,
+                               key="defaultval"),
                         Column("HAS_DEFAULT", CoerceUnicode, key="hasdef"),
                         Column("IS_IDENTITY", CoerceUnicode, key="isid"),
-                        Column("IDENTITY_GENERATION", CoerceUnicode, key="idgenerate"),
+                        Column("IDENTITY_GENERATION", CoerceUnicode,
+                               key="idgenerate"),
                         schema="QSYS2")
 
     sys_indexes = Table("SYSINDEXES", ischema,
@@ -504,13 +526,19 @@ class AS400Reflector(BaseReflector):
 
     sys_foreignkeys = Table("SQLFOREIGNKEYS", ischema,
                             Column("FK_NAME", CoerceUnicode, key="fkname"),
-                            Column("FKTABLE_SCHEM", CoerceUnicode, key="fktabschema"),
-                            Column("FKTABLE_NAME", CoerceUnicode, key="fktabname"),
-                            Column("FKCOLUMN_NAME", CoerceUnicode, key="fkcolname"),
+                            Column("FKTABLE_SCHEM", CoerceUnicode,
+                                   key="fktabschema"),
+                            Column("FKTABLE_NAME", CoerceUnicode,
+                                   key="fktabname"),
+                            Column("FKCOLUMN_NAME", CoerceUnicode,
+                                   key="fkcolname"),
                             Column("PK_NAME", CoerceUnicode, key="pkname"),
-                            Column("PKTABLE_SCHEM", CoerceUnicode, key="pktabschema"),
-                            Column("PKTABLE_NAME", CoerceUnicode, key="pktabname"),
-                            Column("PKCOLUMN_NAME", CoerceUnicode, key="pkcolname"),
+                            Column("PKTABLE_SCHEM", CoerceUnicode,
+                                   key="pktabschema"),
+                            Column("PKTABLE_NAME", CoerceUnicode,
+                                   key="pktabname"),
+                            Column("PKCOLUMN_NAME", CoerceUnicode,
+                                   key="pkcolname"),
                             Column("KEY_SEQ", sa_types.Integer, key="colno"),
                             schema="SYSIBM")
 
@@ -520,18 +548,12 @@ class AS400Reflector(BaseReflector):
                       Column("VIEW_DEFINITION", CoerceUnicode, key="text"),
                       schema="QSYS2")
 
-    sys_sequences = Table(
-        "SYSSEQUENCES",
-        ischema,
-        Column(
-            "SEQUENCE_SCHEMA",
-            CoerceUnicode,
-            key="seqschema"),
-        Column(
-            "SEQUENCE_NAME",
-            CoerceUnicode,
-            key="seqname"),
-        schema="QSYS2")
+    sys_sequences = Table("SYSSEQUENCES", ischema,
+                          Column("SEQUENCE_SCHEMA", CoerceUnicode,
+                                 key="seqschema"),
+                          Column("SEQUENCE_NAME", CoerceUnicode,
+                                 key="seqname"),
+                          schema="QSYS2")
 
     def has_table(self, connection, table_name, schema=None):
         current_schema = self.denormalize_name(
@@ -698,10 +720,12 @@ class AS400Reflector(BaseReflector):
                     referred_schema = None
 
                 fschema[r[0]] = {'name': self.normalize_name(r[0]),
-                                 'constrained_columns': [self.normalize_name(r[3])],
+                                 'constrained_columns':
+                                     [self.normalize_name(r[3])],
                                  'referred_schema': referred_schema,
                                  'referred_table': self.normalize_name(r[6]),
-                                 'referred_columns': [self.normalize_name(r[7])]}
+                                 'referred_columns':
+                                     [self.normalize_name(r[7])]}
             else:
                 fschema[r[0]]['constrained_columns'].append(
                     self.normalize_name(r[3]))

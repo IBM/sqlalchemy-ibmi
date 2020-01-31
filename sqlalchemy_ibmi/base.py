@@ -30,83 +30,112 @@ from sqlalchemy.engine import default
 from sqlalchemy import __version__ as SA_Version
 from . import reflection as ibm_reflection
 
-from sqlalchemy.types import BLOB, CHAR, CLOB, DATE, DATETIME, INTEGER,\
-    SMALLINT, BIGINT, DECIMAL, NUMERIC, REAL, TIME, TIMESTAMP,\
+from sqlalchemy.types import BLOB, CHAR, CLOB, DATE, DATETIME, INTEGER, \
+    SMALLINT, BIGINT, DECIMAL, NUMERIC, REAL, TIME, TIMESTAMP, \
     VARCHAR, FLOAT
 
 SA_Version = [int(ver_token) for ver_token in SA_Version.split('.')[0:2]]
 
 # as documented from:
 # http://publib.boulder.ibm.com/infocenter/db2luw/v9/index.jsp?topic=/com.ibm.db2.udb.doc/admin/r0001095.htm
-RESERVED_WORDS = set(
-    ['activate', 'disallow', 'locale', 'result', 'add', 'disconnect', 'localtime',
-     'result_set_locator', 'after', 'distinct', 'localtimestamp', 'return', 'alias',
-     'do', 'locator', 'returns', 'all', 'double', 'locators', 'revoke', 'allocate', 'drop',
-     'lock', 'right', 'allow', 'dssize', 'lockmax', 'rollback', 'alter', 'dynamic',
-     'locksize', 'routine', 'and', 'each', 'long', 'row', 'any', 'editproc', 'loop',
-     'row_number', 'as', 'else', 'maintained', 'rownumber', 'asensitive', 'elseif',
-     'materialized', 'rows', 'associate', 'enable', 'maxvalue', 'rowset', 'asutime',
-     'encoding', 'microsecond', 'rrn', 'at', 'encryption', 'microseconds', 'run',
-     'attributes', 'end', 'minute', 'savepoint', 'audit', 'end-exec', 'minutes', 'schema',
-     'authorization', 'ending', 'minvalue', 'scratchpad', 'aux', 'erase', 'mode', 'scroll',
-     'auxiliary', 'escape', 'modifies', 'search', 'before', 'every', 'month', 'second',
-     'begin', 'except', 'months', 'seconds', 'between', 'exception', 'new', 'secqty',
-     'binary', 'excluding', 'new_table', 'security', 'bufferpool', 'exclusive',
-     'nextval', 'select', 'by', 'execute', 'no', 'sensitive', 'cache', 'exists', 'nocache',
-     'sequence', 'call', 'exit', 'nocycle', 'session', 'called', 'explain', 'nodename',
-     'session_user', 'capture', 'external', 'nodenumber', 'set', 'cardinality',
-     'extract', 'nomaxvalue', 'signal', 'cascaded', 'fenced', 'nominvalue', 'simple',
-     'case', 'fetch', 'none', 'some', 'cast', 'fieldproc', 'noorder', 'source', 'ccsid',
-     'file', 'normalized', 'specific', 'char', 'final', 'not', 'sql', 'character', 'for',
-     'null', 'sqlid', 'check', 'foreign', 'nulls', 'stacked', 'close', 'free', 'numparts',
-     'standard', 'cluster', 'from', 'obid', 'start', 'collection', 'full', 'of', 'starting',
-     'collid', 'function', 'old', 'statement', 'column', 'general', 'old_table', 'static',
-     'comment', 'generated', 'on', 'stay', 'commit', 'get', 'open', 'stogroup', 'concat',
-     'global', 'optimization', 'stores', 'condition', 'go', 'optimize', 'style', 'connect',
-     'goto', 'option', 'substring', 'connection', 'grant', 'or', 'summary', 'constraint',
-     'graphic', 'order', 'synonym', 'contains', 'group', 'out', 'sysfun', 'continue',
-     'handler', 'outer', 'sysibm', 'count', 'hash', 'over', 'sysproc', 'count_big',
-     'hashed_value', 'overriding', 'system', 'create', 'having', 'package',
-     'system_user', 'cross', 'hint', 'padded', 'table', 'current', 'hold', 'pagesize',
-     'tablespace', 'current_date', 'hour', 'parameter', 'then', 'current_lc_ctype',
-     'hours', 'part', 'time', 'current_path', 'identity', 'partition', 'timestamp',
-     'current_schema', 'if', 'partitioned', 'to', 'current_server', 'immediate',
-     'partitioning', 'transaction', 'current_time', 'in', 'partitions', 'trigger',
-     'current_timestamp', 'including', 'password', 'trim', 'current_timezone',
-     'inclusive', 'path', 'type', 'current_user', 'increment', 'piecesize', 'undo',
-     'cursor', 'index', 'plan', 'union', 'cycle', 'indicator', 'position', 'unique', 'data',
-     'inherit', 'precision', 'until', 'database', 'inner', 'prepare', 'update',
-     'datapartitionname', 'inout', 'prevval', 'usage', 'datapartitionnum',
-     'insensitive', 'primary', 'user', 'date', 'insert', 'priqty', 'using', 'day',
-     'integrity', 'privileges', 'validproc', 'days', 'intersect', 'procedure', 'value',
-     'db2general', 'into', 'program', 'values', 'db2genrl', 'is', 'psid', 'variable',
-     'db2sql', 'isobid', 'query', 'variant', 'dbinfo', 'isolation', 'queryno', 'vcat',
-     'dbpartitionname', 'iterate', 'range', 'version', 'dbpartitionnum', 'jar', 'rank',
-     'view', 'deallocate', 'java', 'read', 'volatile', 'declare', 'join', 'reads', 'volumes',
-     'default', 'key', 'recovery', 'when', 'defaults', 'label', 'references', 'whenever',
-     'definition', 'language', 'referencing', 'where', 'delete', 'lateral', 'refresh',
-     'while', 'dense_rank', 'lc_ctype', 'release', 'with', 'denserank', 'leave', 'rename',
-     'without', 'describe', 'left', 'repeat', 'wlm', 'descriptor', 'like', 'reset', 'write',
-     'deterministic', 'linktype', 'resignal', 'xmlelement', 'diagnostics', 'local',
-     'restart', 'year', 'disable', 'localdate', 'restrict', 'years', '', 'abs', 'grouping',
-     'regr_intercept', 'are', 'int', 'regr_r2', 'array', 'integer', 'regr_slope',
-     'asymmetric', 'intersection', 'regr_sxx', 'atomic', 'interval', 'regr_sxy', 'avg',
-     'large', 'regr_syy', 'bigint', 'leading', 'rollup', 'blob', 'ln', 'scope', 'boolean',
-     'lower', 'similar', 'both', 'match', 'smallint', 'ceil', 'max', 'specifictype',
-     'ceiling', 'member', 'sqlexception', 'char_length', 'merge', 'sqlstate',
-     'character_length', 'method', 'sqlwarning', 'clob', 'min', 'sqrt', 'coalesce', 'mod',
-     'stddev_pop', 'collate', 'module', 'stddev_samp', 'collect', 'multiset',
-     'submultiset', 'convert', 'national', 'sum', 'corr', 'natural', 'symmetric',
-     'corresponding', 'nchar', 'tablesample', 'covar_pop', 'nclob', 'timezone_hour',
-     'covar_samp', 'normalize', 'timezone_minute', 'cube', 'nullif', 'trailing',
-     'cume_dist', 'numeric', 'translate', 'current_default_transform_group',
-     'octet_length', 'translation', 'current_role', 'only', 'treat',
-     'current_transform_group_for_type', 'overlaps', 'true', 'dec', 'overlay',
-     'uescape', 'decimal', 'percent_rank', 'unknown', 'deref', 'percentile_cont',
-     'unnest', 'element', 'percentile_disc', 'upper', 'exec', 'power', 'var_pop', 'exp',
-     'real', 'var_samp', 'false', 'recursive', 'varchar', 'filter', 'ref', 'varying',
-     'float', 'regr_avgx', 'width_bucket', 'floor', 'regr_avgy', 'window', 'fusion',
-     'regr_count', 'within', 'asc'])
+RESERVED_WORDS = {'activate', 'disallow', 'locale', 'result', 'add',
+                  'disconnect', 'localtime', 'result_set_locator', 'after',
+                  'distinct', 'localtimestamp', 'return', 'alias', 'do',
+                  'locator', 'returns', 'all', 'double', 'locators', 'revoke',
+                  'allocate', 'drop', 'lock', 'right', 'allow', 'dssize',
+                  'lockmax', 'rollback', 'alter', 'dynamic', 'locksize',
+                  'routine', 'and', 'each', 'long', 'row', 'any', 'editproc',
+                  'loop', 'row_number', 'as', 'else', 'maintained',
+                  'rownumber', 'asensitive', 'elseif', 'materialized', 'rows',
+                  'associate', 'enable', 'maxvalue', 'rowset', 'asutime',
+                  'encoding', 'microsecond', 'rrn', 'at', 'encryption',
+                  'microseconds', 'run', 'attributes', 'end', 'minute',
+                  'savepoint', 'audit', 'end-exec', 'minutes', 'schema',
+                  'authorization', 'ending', 'minvalue', 'scratchpad', 'aux',
+                  'erase', 'mode', 'scroll', 'auxiliary', 'escape', 'modifies',
+                  'search', 'before', 'every', 'month', 'second', 'begin',
+                  'except', 'months', 'seconds', 'between', 'exception',
+                  'new', 'secqty', 'binary', 'excluding', 'new_table',
+                  'security', 'bufferpool', 'exclusive', 'nextval', 'select',
+                  'by', 'execute', 'no', 'sensitive', 'cache', 'exists',
+                  'nocache', 'sequence', 'call', 'exit', 'nocycle', 'session',
+                  'called', 'explain', 'nodename', 'session_user', 'capture',
+                  'external', 'nodenumber', 'set', 'cardinality', 'extract',
+                  'nomaxvalue', 'signal', 'cascaded', 'fenced', 'nominvalue',
+                  'simple', 'case', 'fetch', 'none', 'some', 'cast',
+                  'fieldproc', 'noorder', 'source', 'ccsid', 'file',
+                  'normalized', 'specific', 'char', 'final', 'not', 'sql',
+                  'character', 'for', 'null', 'sqlid', 'check', 'foreign',
+                  'nulls', 'stacked', 'close', 'free', 'numparts', 'standard',
+                  'cluster', 'from', 'obid', 'start', 'collection', 'full',
+                  'of', 'starting', 'collid', 'function', 'old', 'statement',
+                  'column', 'general', 'old_table', 'static', 'comment',
+                  'generated', 'on', 'stay', 'commit', 'get', 'open',
+                  'stogroup', 'concat', 'global', 'optimization', 'stores',
+                  'condition', 'go', 'optimize', 'style', 'connect', 'goto',
+                  'option', 'substring', 'connection', 'grant', 'or',
+                  'summary', 'constraint', 'graphic', 'order', 'synonym',
+                  'contains', 'group', 'out', 'sysfun', 'continue', 'handler',
+                  'outer', 'sysibm', 'count', 'hash', 'over', 'sysproc',
+                  'count_big', 'hashed_value', 'overriding', 'system',
+                  'create', 'having', 'package', 'system_user', 'cross',
+                  'hint', 'padded', 'table', 'current', 'hold', 'pagesize',
+                  'tablespace', 'current_date', 'hour', 'parameter', 'then',
+                  'current_lc_ctype', 'hours', 'part', 'time',
+                  'current_path', 'identity', 'partition', 'timestamp',
+                  'current_schema', 'if', 'partitioned', 'to',
+                  'current_server', 'immediate', 'partitioning', 'transaction',
+                  'current_time', 'in', 'partitions', 'trigger',
+                  'current_timestamp', 'including', 'password', 'trim',
+                  'current_timezone', 'inclusive', 'path', 'type',
+                  'current_user', 'increment', 'piecesize', 'undo',
+                  'cursor', 'index', 'plan', 'union', 'cycle', 'indicator',
+                  'position', 'unique', 'data', 'inherit', 'precision',
+                  'until', 'database', 'inner', 'prepare', 'update',
+                  'datapartitionname', 'inout', 'prevval', 'usage',
+                  'datapartitionnum', 'insensitive', 'primary', 'user',
+                  'date', 'insert', 'priqty', 'using', 'day', 'integrity',
+                  'privileges', 'validproc', 'days', 'intersect',
+                  'procedure', 'value', 'db2general', 'into', 'program',
+                  'values', 'db2genrl', 'is', 'psid', 'variable', 'db2sql',
+                  'isobid', 'query', 'variant', 'dbinfo', 'isolation',
+                  'queryno', 'vcat', 'dbpartitionname', 'iterate', 'range',
+                  'version', 'dbpartitionnum', 'jar', 'rank', 'view',
+                  'deallocate', 'java', 'read', 'volatile', 'declare', 'join',
+                  'reads', 'volumes', 'default', 'key', 'recovery', 'when',
+                  'defaults', 'label', 'references', 'whenever', 'definition',
+                  'language', 'referencing', 'where', 'delete', 'lateral',
+                  'refresh', 'while', 'dense_rank', 'lc_ctype', 'release',
+                  'with', 'denserank', 'leave', 'rename', 'without',
+                  'describe', 'left', 'repeat', 'wlm', 'descriptor', 'like',
+                  'reset', 'write', 'deterministic', 'linktype', 'resignal',
+                  'xmlelement', 'diagnostics', 'local', 'restart', 'year',
+                  'disable', 'localdate', 'restrict', 'years', '', 'abs',
+                  'grouping', 'regr_intercept', 'are', 'int', 'regr_r2',
+                  'array', 'integer', 'regr_slope', 'asymmetric',
+                  'intersection', 'regr_sxx', 'atomic', 'interval', 'regr_sxy',
+                  'avg', 'large', 'regr_syy', 'bigint', 'leading', 'rollup',
+                  'blob', 'ln', 'scope', 'boolean', 'lower', 'similar', 'both',
+                  'match', 'smallint', 'ceil', 'max', 'specifictype',
+                  'ceiling', 'member', 'sqlexception', 'char_length', 'merge',
+                  'sqlstate', 'character_length', 'method', 'sqlwarning',
+                  'clob', 'min', 'sqrt', 'coalesce', 'mod', 'stddev_pop',
+                  'collate', 'module', 'stddev_samp', 'collect', 'multiset',
+                  'submultiset', 'convert', 'national', 'sum', 'corr',
+                  'natural', 'symmetric', 'corresponding', 'nchar',
+                  'tablesample', 'covar_pop', 'nclob', 'timezone_hour',
+                  'covar_samp', 'normalize', 'timezone_minute', 'cube',
+                  'nullif', 'trailing', 'cume_dist', 'numeric', 'translate',
+                  'current_default_transform_group', 'octet_length',
+                  'translation', 'current_role', 'only', 'treat',
+                  'current_transform_group_for_type', 'overlaps', 'true',
+                  'dec', 'overlay', 'uescape', 'decimal', 'percent_rank',
+                  'unknown', 'deref', 'percentile_cont', 'unnest', 'element',
+                  'percentile_disc', 'upper', 'exec', 'power', 'var_pop',
+                  'exp', 'real', 'var_samp', 'false', 'recursive', 'varchar',
+                  'filter', 'ref', 'varying', 'float', 'regr_avgx',
+                  'width_bucket', 'floor', 'regr_avgy', 'window', 'fusion',
+                  'regr_count', 'within', 'asc'}
 
 
 class _IBM_Boolean(sa_types.Boolean):
@@ -117,6 +146,7 @@ class _IBM_Boolean(sa_types.Boolean):
                 return None
             else:
                 return bool(value)
+
         return process
 
     def bind_processor(self, dialect):
@@ -127,6 +157,7 @@ class _IBM_Boolean(sa_types.Boolean):
                 return '1'
             else:
                 return '0'
+
         return process
 
 
@@ -139,6 +170,7 @@ class _IBM_Date(sa_types.Date):
             if isinstance(value, datetime.datetime):
                 value = datetime.date(value.year, value.month, value.day)
             return value
+
         return process
 
     def bind_processor(self, dialect):
@@ -148,6 +180,7 @@ class _IBM_Date(sa_types.Date):
             if isinstance(value, datetime.datetime):
                 value = datetime.date(value.year, value.month, value.day)
             return str(value)
+
         return process
 
 
@@ -324,7 +357,6 @@ class DB2TypeCompiler(compiler.GenericTypeCompiler):
 
 
 class DB2Compiler(compiler.SQLCompiler):
-
     if SA_Version < [0, 9]:
         def visit_false(self, expr, **kw):
             return '0'
@@ -413,7 +445,7 @@ class DB2Compiler(compiler.SQLCompiler):
                 sql = '%s AND ' % (sql)
             if limit is not None:
                 sql = '%s "%s" <= %d' % (sql, __rownum, offset + limit)
-            return "( %s )" % (sql, )
+            return "( %s )" % (sql,)
         else:
             return sql_ori
 
@@ -432,6 +464,7 @@ class DB2Compiler(compiler.SQLCompiler):
                 self.function_argspec(func, **kwargs), 'OCTETS')
         else:
             return compiler.SQLCompiler.visit_function(self, func, **kwargs)
+
     # TODO: this is wrong but need to know what DB2 is expecting here
     #    if func.name.upper() == "LENGTH":
     #        return "LENGTH('%s')" % func.compile().params[func.name + '_1']
@@ -503,7 +536,8 @@ class DB2DDLCompiler(compiler.DDLCompiler):
 
     def _is_nullable_unique_constraint_supported(self, dialect):
         """Checks to see if the DB2 version is at least 10.5.
-        This is needed for checking if unique constraints with null columns are supported.
+        This is needed for checking if unique constraints with null columns
+        are supported.
         """
 
         dbms_name = getattr(dialect, 'dbms_name', None)
@@ -574,10 +608,10 @@ class DB2DDLCompiler(compiler.DDLCompiler):
                 constraint,
                 'uConstraint_as_index') and constraint.uConstraint_as_index:
             return "DROP %s%s" % \
-                (qual, const)
+                   (qual, const)
         return "ALTER TABLE %s DROP %s%s" % \
-            (self.preparer.format_table(constraint.table),
-             qual, const)
+               (self.preparer.format_table(constraint.table),
+                qual, const)
 
     def create_table_constraints(self, table, **kw):
         if self._is_nullable_unique_constraint_supported(self.dialect):
@@ -590,8 +624,11 @@ class DB2DDLCompiler(compiler.DDLCompiler):
                             break
                     if getattr(constraint, 'uConstraint_as_index', None):
                         if not constraint.name:
-                            index_name = "%s_%s_%s" % ('ukey', self.preparer.format_table(
-                                constraint.table), '_'.join(column.name for column in constraint))
+                            index_name = "%s_%s_%s" % \
+                                         ('ukey', self.preparer.format_table(
+                                             constraint.table), '_'.join(
+                                             column.name for column in
+                                             constraint))
                         else:
                             index_name = constraint.name
                         index = sa_schema.Index(
@@ -632,8 +669,10 @@ class DB2DDLCompiler(compiler.DDLCompiler):
                         break
                 if getattr(create.element, 'uConstraint_as_index', None):
                     if not create.element.name:
-                        index_name = "%s_%s_%s" % ('uk_index', self.preparer.format_table(
-                            create.element.table), '_'.join(column.name for column in create.element))
+                        index_name = "%s_%s_%s" % (
+                            'uk_index', self.preparer.format_table(
+                                create.element.table),
+                            '_'.join(column.name for column in create.element))
                     else:
                         index_name = create.element.name
                     index = sa_schema.Index(
@@ -647,7 +686,6 @@ class DB2DDLCompiler(compiler.DDLCompiler):
 
 
 class DB2IdentifierPreparer(compiler.IdentifierPreparer):
-
     reserved_words = RESERVED_WORDS
     illegal_initial_characters = set(range(0, 10)).union(["_", "$"])
 
@@ -683,7 +721,7 @@ class _SelectLastRowIDMixin(object):
 
 
 class DB2ExecutionContext(
-        _SelectLastRowIDMixin,
+    _SelectLastRowIDMixin,
         default.DefaultExecutionContext):
     def fire_sequence(self, seq, type_):
         return self._execute_scalar(
@@ -694,7 +732,6 @@ class DB2ExecutionContext(
 
 
 class DB2Dialect(default.DefaultDialect):
-
     name = 'sqlalchemy_ibmi'
     max_identifier_length = 128
     encoding = 'utf-8'

@@ -19,7 +19,7 @@
 from sqlalchemy import util
 import urllib
 from sqlalchemy.connectors.pyodbc import PyODBCConnector
-from .base import _SelectLastRowIDMixin, DB2ExecutionContext, DB2Dialect
+from .base import DB2ExecutionContext, DB2Dialect
 from . import reflection as ibm_reflection
 
 
@@ -113,7 +113,6 @@ class AS400Dialect_pyodbc(PyODBCConnector, DB2Dialect):
         opts.update(url.query)
 
         keys = opts
-        query = url.query
 
         connect_args = {}
         for param in ('ansi', 'unicode_results', 'autocommit'):
@@ -153,8 +152,8 @@ class AS400Dialect_pyodbc(PyODBCConnector, DB2Dialect):
 
             # if set to 'Yes', the ODBC layer will try to automagically convert
             # textual data from your database encoding to your client encoding
-            # This should obviously be set to 'No' if you query a cp1253 encoded
-            # database from a latin1 client...
+            # This should obviously be set to 'No' if you query a cp1253
+            # encoded database from a latin1 client...
             if 'odbc_autotranslate' in keys:
                 connectors.append(
                     "AutoTranslate=%s" %
