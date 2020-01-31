@@ -7,11 +7,11 @@ Welcome to sqlalchemy-ibmi's documentation!
 ===========================================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Contents:
 
-   usage/installation
-   usage/quickstart
+   installation
+   quickstart
    examples
 
 
