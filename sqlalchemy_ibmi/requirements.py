@@ -9,6 +9,7 @@ from sqlalchemy.testing.requirements import SuiteRequirements
 
 from sqlalchemy.testing import exclusions
 
+
 class Requirements(SuiteRequirements):
 
     @property
@@ -38,8 +39,8 @@ class Requirements(SuiteRequirements):
 
         return exclusions.closed()
 
-    #@property
-    #def offset(self):
+    # @property
+    # def offset(self):
     #    return exclusions.closed()
 
     @property
@@ -65,9 +66,9 @@ class Requirements(SuiteRequirements):
         such as 319438950232418390.273596, 87673.594069654243
 
         """
-        return exclusions.fails_if(lambda: True,
-                    "Throws error SQL0604N, regarding Decimal(38, 12)"
-            )
+        return exclusions.fails_if(
+            lambda: True,
+            "Throws error SQL0604N, regarding Decimal(38, 12)")
 
     @property
     def precision_numerics_retains_significant_digits(self):

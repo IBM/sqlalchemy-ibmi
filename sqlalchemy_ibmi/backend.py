@@ -54,19 +54,27 @@ class DB2Dialect_pyodbc(PyODBCConnector, DB2Dialect):
             dsn_connection = 'dsn' in keys or \
                              ('host' in keys and 'database' not in keys)
             if dsn_connection:
-                connectors = ['dsn=%s' % (keys.pop('host', '') or \
+                connectors = ['dsn=%s' % (keys.pop('host', '') or
                                           keys.pop('dsn', ''))]
             else:
                 port = ''
-                if 'port' in keys and not 'port' in query:
+                if 'port' in keys and 'port' not in query:
                     port = '%d' % int(keys.pop('port'))
 
                 database = keys.pop('database', '')
 
-                connectors = ["DRIVER={%s}" %
-                              keys.pop('driver', self.pyodbc_driver_name),
-                              'hostname=%s;port=%s' % (keys.pop('host', ''), port),
-                              'database=%s' % database]
+                connectors = [
+                    "DRIVER={%s}" %
+                    keys.pop(
+                        'driver',
+                        self.pyodbc_driver_name),
+                    'hostname=%s;port=%s' %
+                    (keys.pop(
+                        'host',
+                        ''),
+                        port),
+                    'database=%s' %
+                    database]
 
             user = keys.pop("user", None)
             if user:
@@ -118,12 +126,19 @@ class AS400Dialect_pyodbc(PyODBCConnector, DB2Dialect):
             dsn_connection = 'dsn' in keys or \
                              ('host' in keys and 'database' not in keys)
             if dsn_connection:
-                connectors = ['dsn=%s' % (keys.pop('host', '') or \
+                connectors = ['dsn=%s' % (keys.pop('host', '') or
                                           keys.pop('dsn', ''))]
             else:
-                connectors = ["DRIVER={%s}" % keys.pop('driver', self.pyodbc_driver_name),
-                              'System=%s' % keys.pop('host', ''),
-                              'DBQ=QGPL']
+                connectors = [
+                    "DRIVER={%s}" %
+                    keys.pop(
+                        'driver',
+                        self.pyodbc_driver_name),
+                    'System=%s' %
+                    keys.pop(
+                        'host',
+                        ''),
+                    'DBQ=QGPL']
                 connectors.append("PKG=QGPL/DEFAULT(IBM),2,0,1,0,512")
                 db_name = keys.pop('database', '')
                 if db_name:
@@ -141,7 +156,9 @@ class AS400Dialect_pyodbc(PyODBCConnector, DB2Dialect):
             # This should obviously be set to 'No' if you query a cp1253 encoded
             # database from a latin1 client...
             if 'odbc_autotranslate' in keys:
-                connectors.append("AutoTranslate=%s" % keys.pop("odbc_autotranslate"))
+                connectors.append(
+                    "AutoTranslate=%s" %
+                    keys.pop("odbc_autotranslate"))
 
             connectors.extend(['%s=%s' % (k, v) for k, v in keys.items()])
         return [[";".join(connectors)], connect_args]

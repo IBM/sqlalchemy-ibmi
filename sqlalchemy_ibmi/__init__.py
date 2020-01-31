@@ -19,20 +19,20 @@
 
 __version__ = '0.1.0-dev'
 
-from . import backend, base
-
-
-# default dialect
-base.dialect = backend.dialect
-
 from .base import \
     BIGINT, BLOB, CHAR, CLOB, DATE, DATETIME, \
     DECIMAL, DOUBLE, DECIMAL,\
     GRAPHIC, INTEGER, INTEGER, LONGVARCHAR, \
     NUMERIC, SMALLINT, REAL, TIME, TIMESTAMP, \
     VARCHAR, VARGRAPHIC, dialect
+from . import backend, base
 
-#__all__ = (
-    # TODO: (put types here)
+
+# default dialect
+base.dialect = backend.dialect
+
+
+# __all__ = (
+# TODO: (put types here)
 #    'dialect'
-#)
+# )
