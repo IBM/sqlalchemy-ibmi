@@ -1,3 +1,4 @@
+"""Reflection for IBM i which overrides methods from base dialect"""
 # +--------------------------------------------------------------------------+
 # |  Licensed Materials - Property of IBM                                    |
 # |                                                                          |
@@ -17,31 +18,40 @@
 # | Contributors: Jaimy Azle, Mike Bayer,Hemlata Bhatt                       |
 # +--------------------------------------------------------------------------+
 
+import re
 from sqlalchemy import types as sa_types
 from sqlalchemy import sql, util
 from sqlalchemy import Table, MetaData, Column
 from sqlalchemy.engine import reflection
-import re
 
 
 class CoerceUnicode(sa_types.TypeDecorator):
+    """Coerce unicode to string"""
+
+    def process_literal_param(self, value, dialect):
+        pass
+
+    def process_result_value(self, value, dialect):
+        pass
+
+    @property
+    def python_type(self):
+        pass
+
     impl = sa_types.Unicode
 
     def process_bind_param(self, value, dialect):
-        if isinstance(value, str):
-            value = value
         return value
 
 
-class BaseReflector(object):
+class BaseReflector:
+    """ Reflection methods common to db2 and db2 on i """
     def __init__(self, dialect):
         self.dialect = dialect
         self.ischema_names = dialect.ischema_names
         self.identifier_preparer = dialect.identifier_preparer
 
     def normalize_name(self, name):
-        if isinstance(name, str):
-            name = name
         if name is not None:
             return name.lower() if name.upper() == name and \
                 not self.identifier_preparer._requires_quotes(name.lower()) \
@@ -51,7 +61,7 @@ class BaseReflector(object):
     def denormalize_name(self, name):
         if name is None:
             return None
-        elif name.lower() == name and \
+        if name.lower() == name and \
                 not self.identifier_preparer._requires_quotes(name.lower()):
             name = name.upper()
         return name
@@ -240,11 +250,9 @@ class DB2Reflector(BaseReflector):
                             syscols.c.length, syscols.c.scale,
                             syscols.c.identity, syscols.c.generated],
                            sql.and_(
-            syscols.c.tabschema == current_schema,
-            syscols.c.tabname == table_name
-        ),
-            order_by=[syscols.c.colno]
-        )
+                               syscols.c.tabschema == current_schema,
+                               syscols.c.tabname == table_name),
+                           order_by=[syscols.c.colno])
         sa_columns = []
         for r in connection.execute(query):
             coltype = r[1].upper()
@@ -279,12 +287,11 @@ class DB2Reflector(BaseReflector):
         col_finder = re.compile(r"(\w+)")
         query = sql.select([sysindexes.c.colnames],
                            sql.and_(
-            sysindexes.c.tabschema == current_schema,
-            sysindexes.c.tabname == table_name,
-            sysindexes.c.uniquerule == 'P'
-        ),
-            order_by=[sysindexes.c.tabschema, sysindexes.c.tabname]
-        )
+                               sysindexes.c.tabschema == current_schema,
+                               sysindexes.c.tabname == table_name,
+                               sysindexes.c.uniquerule == 'P'),
+                           order_by=[sysindexes.c.tabschema,
+                                     sysindexes.c.tabname])
         pk_columns = []
         for r in connection.execute(query):
             cols = col_finder.findall(r[0])
@@ -303,15 +310,13 @@ class DB2Reflector(BaseReflector):
                             sysfkeys.c.pkname, sysfkeys.c.pktabschema,
                             sysfkeys.c.pktabname, sysfkeys.c.pkcolname],
                            sql.and_(
-            sysfkeys.c.fktabschema == current_schema,
-            sysfkeys.c.fktabname == table_name
-        ),
-            order_by=[sysfkeys.c.colno]
-        )
+                               sysfkeys.c.fktabschema == current_schema,
+                               sysfkeys.c.fktabname == table_name),
+                           order_by=[sysfkeys.c.colno])
 
         fschema = {}
         for r in connection.execute(query):
-            if not (r[0]) in fschema:
+            if not r[0] in fschema:
                 referred_schema = self.normalize_name(r[5])
 
                 # if no schema specified and referred schema here is the
@@ -350,11 +355,9 @@ class DB2Reflector(BaseReflector):
                             sysfkeys.c.pkname, sysfkeys.c.pktabschema,
                             sysfkeys.c.pktabname, sysfkeys.c.pkcolname],
                            sql.and_(
-            sysfkeys.c.pktabschema == current_schema,
-            sysfkeys.c.pktabname == table_name
-        ),
-            order_by=[sysfkeys.c.colno]
-        )
+                               sysfkeys.c.pktabschema == current_schema,
+                               sysfkeys.c.pktabname == table_name),
+                           order_by=[sysfkeys.c.colno])
 
         fschema = {}
         for r in connection.execute(query):
@@ -423,13 +426,11 @@ class DB2Reflector(BaseReflector):
         sysconst = self.sys_tabconst
         query = sql.select([syskeycol.c.constname, syskeycol.c.colname],
                            sql.and_(
-            syskeycol.c.constname == sysconst.c.constname,
-            sysconst.c.tabname == table_name,
-            sysconst.c.tabschema == current_schema,
-            sysconst.c.type == 'U'
-        ),
-            order_by=[syskeycol.c.constname]
-        )
+                               syskeycol.c.constname == sysconst.c.constname,
+                               sysconst.c.tabname == table_name,
+                               sysconst.c.tabschema == current_schema,
+                               sysconst.c.type == 'U'
+                           ), order_by=[syskeycol.c.constname])
         uniqueConsts = []
         currConst = None
         for r in connection.execute(query):
@@ -446,6 +447,7 @@ class DB2Reflector(BaseReflector):
 
 
 class AS400Reflector(BaseReflector):
+    """ Reflection for Db2 on IBM i """
 
     ischema = MetaData()
 
@@ -565,9 +567,9 @@ class AS400Reflector(BaseReflector):
                 self.sys_tables.c.tabname == table_name)
         else:
             whereclause = self.sys_tables.c.tabname == table_name
-        s = sql.select([self.sys_tables], whereclause)
-        c = connection.execute(s)
-        return c.first() is not None
+        select_statement = sql.select([self.sys_tables], whereclause)
+        results = connection.execute(select_statement)
+        return results.first() is not None
 
     def has_sequence(self, connection, sequence_name, schema=None):
         current_schema = self.denormalize_name(
@@ -579,9 +581,9 @@ class AS400Reflector(BaseReflector):
                 self.sys_sequences.c.seqname == sequence_name)
         else:
             whereclause = self.sys_sequences.c.seqname == sequence_name
-        s = sql.select([self.sys_sequences.c.seqname], whereclause)
-        c = connection.execute(s)
-        return c.first() is not None
+        select_statement = sql.select([self.sys_sequences.c.seqname], whereclause)
+        results = connection.execute(select_statement)
+        return results.first() is not None
 
     @reflection.cache
     def get_schema_names(self, connection, **kw):
@@ -640,34 +642,31 @@ class AS400Reflector(BaseReflector):
                             syscols.c.defaultval, syscols.c.nullable,
                             syscols.c.length, syscols.c.scale,
                             syscols.c.isid, syscols.c.idgenerate],
-                           sql.and_(
-            syscols.c.tabschema == current_schema,
-            syscols.c.tabname == table_name
-        ),
-            order_by=[syscols.c.colno]
-        )
+                           sql.and_(syscols.c.tabschema == current_schema,
+                                    syscols.c.tabname == table_name),
+                           order_by=[syscols.c.colno])
         sa_columns = []
-        for r in connection.execute(query):
-            coltype = r[1].upper()
+        for row in connection.execute(query):
+            coltype = row[1].upper()
             if coltype in ['DECIMAL', 'NUMERIC']:
-                coltype = self.ischema_names.get(coltype)(int(r[4]), int(r[5]))
-            elif coltype in ['CHARACTER', 'CHAR', 'VARCHAR',
-                             'GRAPHIC', 'VARGRAPHIC']:
-                coltype = self.ischema_names.get(coltype)(int(r[4]))
+                coltype = self.ischema_names.get(coltype)(int(row[4]), int(row[5]))
+            elif coltype in ['CHARACTER', 'CHAR', 'VARCHAR', 'GRAPHIC',
+                             'VARGRAPHIC']:
+                coltype = self.ischema_names.get(coltype)(int(row[4]))
             else:
                 try:
                     coltype = self.ischema_names[coltype]
                 except KeyError:
                     util.warn("Did not recognize type '%s' of column '%s'" %
-                              (coltype, r[0]))
+                              (coltype, row[0]))
                     coltype = coltype = sa_types.NULLTYPE
 
             sa_columns.append({
-                'name': self.normalize_name(r[0]),
+                'name': self.normalize_name(row[0]),
                 'type': coltype,
-                'nullable': r[3] == 'Y',
-                'default': r[2],
-                'autoincrement': (r[6] == 'YES') and (r[7] is not None),
+                'nullable': row[3] == 'Y',
+                'default': row[2],
+                'autoincrement': (row[6] == 'YES') and (row[7] is not None),
             })
         return sa_columns
 
@@ -681,12 +680,12 @@ class AS400Reflector(BaseReflector):
 
         query = sql.select([syskeyconst.c.colname, sysconst.c.tabname],
                            sql.and_(
-            syskeyconst.c.conschema == sysconst.c.conschema,
-            syskeyconst.c.conname == sysconst.c.conname,
-            sysconst.c.tabschema == current_schema,
-            sysconst.c.tabname == table_name,
-            sysconst.c.contype == 'PRIMARY KEY'
-        ), order_by=[syskeyconst.c.colno])
+                               syskeyconst.c.conschema == sysconst.c.conschema,
+                               syskeyconst.c.conname == sysconst.c.conname,
+                               sysconst.c.tabschema == current_schema,
+                               sysconst.c.tabname == table_name,
+                               sysconst.c.contype == 'PRIMARY KEY'),
+                           order_by=[syskeyconst.c.colno])
 
         return [self.normalize_name(key[0])
                 for key in connection.execute(query)]
@@ -703,15 +702,13 @@ class AS400Reflector(BaseReflector):
                             sysfkeys.c.pkname, sysfkeys.c.pktabschema,
                             sysfkeys.c.pktabname, sysfkeys.c.pkcolname],
                            sql.and_(
-            sysfkeys.c.fktabschema == current_schema,
-            sysfkeys.c.fktabname == table_name
-        ),
-            order_by=[sysfkeys.c.colno]
-        )
+                               sysfkeys.c.fktabschema == current_schema,
+                               sysfkeys.c.fktabname == table_name),
+                           order_by=[sysfkeys.c.colno])
         fschema = {}
-        for r in connection.execute(query):
-            if r[0] not in fschema:
-                referred_schema = self.normalize_name(r[5])
+        for row in connection.execute(query):
+            if row[0] not in fschema:
+                referred_schema = self.normalize_name(row[5])
 
                 # if no schema specified and referred schema here is the
                 # default, then set to None
@@ -719,18 +716,19 @@ class AS400Reflector(BaseReflector):
                         referred_schema == default_schema:
                     referred_schema = None
 
-                fschema[r[0]] = {'name': self.normalize_name(r[0]),
-                                 'constrained_columns':
-                                     [self.normalize_name(r[3])],
-                                 'referred_schema': referred_schema,
-                                 'referred_table': self.normalize_name(r[6]),
-                                 'referred_columns':
-                                     [self.normalize_name(r[7])]}
+                fschema[row[0]] = {'name': self.normalize_name(row[0]),
+                                   'constrained_columns':
+                                       [self.normalize_name(row[3])],
+                                   'referred_schema': referred_schema,
+                                   'referred_table':
+                                       self.normalize_name(row[6]),
+                                   'referred_columns':
+                                       [self.normalize_name(row[7])]}
             else:
-                fschema[r[0]]['constrained_columns'].append(
-                    self.normalize_name(r[3]))
-                fschema[r[0]]['referred_columns'].append(
-                    self.normalize_name(r[7]))
+                fschema[row[0]]['constrained_columns'].append(
+                    self.normalize_name(row[3]))
+                fschema[row[0]]['referred_columns'].append(
+                    self.normalize_name(row[7]))
         return [value for key, value in fschema.items()]
 
     # Retrieves a list of index names for a given schema
@@ -743,32 +741,27 @@ class AS400Reflector(BaseReflector):
         syskey = self.sys_keys
 
         query = sql.select([sysidx.c.indname,
-                            sysidx.c.uniquerule, syskey.c.colname], sql.and_(
-            syskey.c.indschema == sysidx.c.indschema,
-            syskey.c.indname == sysidx.c.indname,
-            sysidx.c.tabschema == current_schema,
-            sysidx.c.tabname == table_name
-        ), order_by=[syskey.c.indname, syskey.c.colno]
-        )
+                            sysidx.c.uniquerule,
+                            syskey.c.colname],
+                           sql.and_(syskey.c.indschema == sysidx.c.indschema,
+                                    syskey.c.indname == sysidx.c.indname,
+                                    sysidx.c.tabschema == current_schema,
+                                    sysidx.c.tabname == table_name),
+                           order_by=[syskey.c.indname, syskey.c.colno])
         indexes = {}
-        for r in connection.execute(query):
-            key = r[0].upper()
+        for row in connection.execute(query):
+            key = row[0].upper()
             if key in indexes:
-                indexes[key]['column_names'].append(self.normalize_name(r[2]))
+                indexes[key]['column_names'].append(self.normalize_name(row[2]))
             else:
                 indexes[key] = {
-                    'name': self.normalize_name(r[0]),
-                    'column_names': [self.normalize_name(r[2])],
-                    'unique': r[1] == 'Y'
+                    'name': self.normalize_name(row[0]),
+                    'column_names': [self.normalize_name(row[2])],
+                    'unique': row[1] == 'Y'
                 }
         return [value for key, value in indexes.items()]
 
     @reflection.cache
-    def get_unique_constraints(
-            self,
-            connection,
-            table_name,
-            schema=None,
-            **kw):
-        uniqueConsts = []
-        return uniqueConsts
+    def get_unique_constraints(self):
+        unique_consts = []
+        return unique_consts

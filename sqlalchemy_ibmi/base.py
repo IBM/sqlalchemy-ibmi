@@ -27,14 +27,10 @@ from sqlalchemy import util
 from sqlalchemy.sql import compiler
 from sqlalchemy.sql import operators
 from sqlalchemy.engine import default
-from sqlalchemy import __version__ as SA_Version
-from . import reflection as ibm_reflection
-
 from sqlalchemy.types import BLOB, CHAR, CLOB, DATE, DATETIME, INTEGER, \
     SMALLINT, BIGINT, DECIMAL, NUMERIC, REAL, TIME, TIMESTAMP, \
     VARCHAR, FLOAT
-
-SA_Version = [int(ver_token) for ver_token in SA_Version.split('.')[0:2]]
+from . import reflection as ibm_reflection
 
 # as documented from:
 # http://publib.boulder.ibm.com/infocenter/db2luw/v9/index.jsp?topic=/com.ibm.db2.udb.doc/admin/r0001095.htm
@@ -138,32 +134,30 @@ RESERVED_WORDS = {'activate', 'disallow', 'locale', 'result', 'add',
                   'regr_count', 'within', 'asc'}
 
 
-class _IBM_Boolean(sa_types.Boolean):
-
-    def result_processor(self, dialect, coltype):
+class IBMBoolean(sa_types.Boolean):
+    """IBM i DB2 Boolean class"""
+    def result_processor(self, _, coltype):
         def process(value):
             if value is None:
                 return None
-            else:
-                return bool(value)
+            return bool(value)
 
         return process
 
-    def bind_processor(self, dialect):
+    def bind_processor(self, _):
         def process(value):
             if value is None:
                 return None
-            elif bool(value):
+            if bool(value):
                 return '1'
-            else:
-                return '0'
+            return '0'
 
         return process
 
 
-class _IBM_Date(sa_types.Date):
-
-    def result_processor(self, dialect, coltype):
+class IBMDate(sa_types.Date):
+    """IBM i DB2 Date class"""
+    def result_processor(self, _, coltype):
         def process(value):
             if value is None:
                 return None
@@ -173,7 +167,7 @@ class _IBM_Date(sa_types.Date):
 
         return process
 
-    def bind_processor(self, dialect):
+    def bind_processor(self, _):
         def process(value):
             if value is None:
                 return None
@@ -185,41 +179,46 @@ class _IBM_Date(sa_types.Date):
 
 
 class DOUBLE(sa_types.Numeric):
+    """IBM i DB2 Double class"""
     __visit_name__ = 'DOUBLE'
 
 
 class LONGVARCHAR(sa_types.VARCHAR):
+    """IBM i DB2 LONGVARCHAR class"""
     __visit_name_ = 'LONGVARCHAR'
 
 
 class DBCLOB(sa_types.CLOB):
+    """IBM i DB2 DBCLOB class"""
     __visit_name__ = "DBCLOB"
 
 
 class GRAPHIC(sa_types.CHAR):
+    """IBM i DB2 GRAPHIC class"""
     __visit_name__ = "GRAPHIC"
 
 
 class VARGRAPHIC(sa_types.Unicode):
+    """IBM i DB2 VARGRAPHIC class"""
     __visit_name__ = "VARGRAPHIC"
 
 
 class LONGVARGRAPHIC(sa_types.UnicodeText):
+    """IBM i DB2 LONGVARGRAPHIC class"""
     __visit_name__ = "LONGVARGRAPHIC"
 
 
 class XML(sa_types.Text):
+    """IBM i DB2 XML class"""
     __visit_name__ = "XML"
 
 
-colspecs = {
-    sa_types.Boolean: _IBM_Boolean,
-    sa_types.Date: _IBM_Date
-    # really ?
-    #    sa_types.Unicode: DB2VARGRAPHIC
+COLSPECS = {
+    sa_types.Boolean: IBMBoolean,
+    sa_types.Date: IBMDate
 }
 
-ischema_names = {
+ISCHEMA_NAMES = {
     'BLOB': BLOB,
     'CHAR': CHAR,
     'CHARACTER': CHAR,
@@ -247,29 +246,30 @@ ischema_names = {
 
 
 class DB2TypeCompiler(compiler.GenericTypeCompiler):
+    """IBM i DB2 Type Compiler"""
 
-    def visit_TIMESTAMP(self, type_):
+    def visit_TIMESTAMP(self, type_, **kw):
         return "TIMESTAMP"
 
-    def visit_DATE(self, type_):
+    def visit_DATE(self, type_, **kw):
         return "DATE"
 
-    def visit_TIME(self, type_):
+    def visit_TIME(self, type_, **kw):
         return "TIME"
 
-    def visit_DATETIME(self, type_):
+    def visit_DATETIME(self, type_, **kw):
         return self.visit_TIMESTAMP(type_)
 
-    def visit_SMALLINT(self, type_):
+    def visit_SMALLINT(self, type_, **kw):
         return "SMALLINT"
 
     def visit_INT(self, type_):
         return "INT"
 
-    def visit_BIGINT(self, type_):
+    def visit_BIGINT(self, type_, **kw):
         return "BIGINT"
 
-    def visit_FLOAT(self, type_):
+    def visit_FLOAT(self, type_, **kw):
         return "FLOAT" if type_.precision is None else \
             "FLOAT(%(precision)s)" % {'precision': type_.precision}
 
@@ -279,18 +279,18 @@ class DB2TypeCompiler(compiler.GenericTypeCompiler):
     def visit_XML(self, type_):
         return "XML"
 
-    def visit_CLOB(self, type_):
+    def visit_CLOB(self, type_, **kw):
         return "CLOB"
 
-    def visit_BLOB(self, type_):
+    def visit_BLOB(self, type_, **kw):
         return "BLOB(1M)" if type_.length in (None, 0) else \
             "BLOB(%(length)s)" % {'length': type_.length}
 
-    def visit_DBCLOB(self, type_):
+    def visit_DBCLOB(self, type_, **kw):
         return "DBCLOB(1M)" if type_.length in (None, 0) else \
             "DBCLOB(%(length)s)" % {'length': type_.length}
 
-    def visit_VARCHAR(self, type_):
+    def visit_VARCHAR(self, type_, **kw):
         return "VARCHAR(%(length)s)" % {'length': type_.length}
 
     def visit_LONGVARCHAR(self, type_):
@@ -302,7 +302,7 @@ class DB2TypeCompiler(compiler.GenericTypeCompiler):
     def visit_LONGVARGRAPHIC(self, type_):
         return "LONG VARGRAPHIC"
 
-    def visit_CHAR(self, type_):
+    def visit_CHAR(self, type_, **kw):
         return "CHAR" if type_.length in (None, 0) else \
             "CHAR(%(length)s)" % {'length': type_.length}
 
@@ -310,59 +310,64 @@ class DB2TypeCompiler(compiler.GenericTypeCompiler):
         return "GRAPHIC" if type_.length in (None, 0) else \
             "GRAPHIC(%(length)s)" % {'length': type_.length}
 
-    def visit_DECIMAL(self, type_):
+    def visit_DECIMAL(self, type_, **kw):
         if not type_.precision:
             return "DECIMAL(31, 0)"
-        elif not type_.scale:
+        if not type_.scale:
             return "DECIMAL(%(precision)s, 0)" % {'precision': type_.precision}
-        else:
-            return "DECIMAL(%(precision)s, %(scale)s)" % {
-                'precision': type_.precision, 'scale': type_.scale}
+        return "DECIMAL(%(precision)s, %(scale)s)" % {
+            'precision': type_.precision, 'scale': type_.scale}
 
-    def visit_numeric(self, type_):
+    def visit_numeric(self, type_, **kw):
         return self.visit_DECIMAL(type_)
 
-    def visit_datetime(self, type_):
+    def visit_datetime(self, type_, **kw):
         return self.visit_TIMESTAMP(type_)
 
-    def visit_date(self, type_):
+    def visit_date(self, type_, **kw):
         return self.visit_DATE(type_)
 
-    def visit_time(self, type_):
+    def visit_time(self, type_, **kw):
         return self.visit_TIME(type_)
 
-    def visit_integer(self, type_):
+    def visit_integer(self, type_, **kw):
         return self.visit_INT(type_)
 
-    def visit_boolean(self, type_):
+    def visit_boolean(self, type_, **kw):
         return self.visit_SMALLINT(type_)
 
-    def visit_float(self, type_):
+    def visit_float(self, type_, **kw):
         return self.visit_FLOAT(type_)
 
-    def visit_unicode(self, type_):
+    def visit_unicode(self, type_, **kw):
         return self.visit_VARGRAPHIC(type_)
 
-    def visit_unicode_text(self, type_):
+    def visit_unicode_text(self, type_, **kw):
         return self.visit_LONGVARGRAPHIC(type_)
 
-    def visit_string(self, type_):
+    def visit_string(self, type_, **kw):
         return self.visit_VARCHAR(type_)
 
-    def visit_TEXT(self, type_):
+    def visit_TEXT(self, type_, **kw):
         return self.visit_CLOB(type_)
 
-    def visit_large_binary(self, type_):
+    def visit_large_binary(self, type_, **kw):
         return self.visit_BLOB(type_)
 
 
 class DB2Compiler(compiler.SQLCompiler):
-    if SA_Version < [0, 9]:
-        def visit_false(self, expr, **kw):
-            return '0'
+    """IBM i DB2 compiler class"""
 
-        def visit_true(self, expr, **kw):
-            return '1'
+    def visit_empty_set_expr(self, element_types):
+        pass
+
+    def update_from_clause(self, update_stmt, from_table, extra_froms,
+                           from_hints, **kw):
+        pass
+
+    def delete_extra_from_clause(self, update_stmt, from_table, extra_froms,
+                                 from_hints, **kw):
+        pass
 
     def get_cte_preamble(self, recursive):
         return "WITH"
@@ -370,13 +375,12 @@ class DB2Compiler(compiler.SQLCompiler):
     def visit_now_func(self, fn, **kw):
         return "CURRENT_TIMESTAMP"
 
-    def for_update_clause(self, select):
+    def for_update_clause(self, select, **kw):
         if select.for_update:
             return ' WITH RS USE AND KEEP UPDATE LOCKS'
-        elif select.for_update == 'read':
+        if select.for_update == 'read':
             return ' WITH RS USE AND KEEP SHARE LOCKS'
-        else:
-            return ''
+        return ''
 
     def visit_mod_binary(self, binary, operator, **kw):
         return "mod(%s, %s)" % (self.process(binary.left),
@@ -385,8 +389,7 @@ class DB2Compiler(compiler.SQLCompiler):
     def limit_clause(self, select, **kwargs):
         if (select._limit is not None) and (select._offset is None):
             return " FETCH FIRST %s ROWS ONLY" % select._limit
-        else:
-            return ""
+        return ""
 
     def visit_select(self, select, **kwargs):
         limit, offset = select._limit, select._offset
@@ -406,7 +409,7 @@ class DB2Compiler(compiler.SQLCompiler):
 
             sql_select_token = sql_split[0].split(",")
             i = 0
-            while (i < len(sql_select_token)):
+            while i < len(sql_select_token):
                 if sql_select_token[i].count(
                         "TIMESTAMP(DATE(SUBSTR(CHAR(") == 1:
                     sql_sel = "%s \"%s%d\"," % (sql_sel, dummyVal, i + 1)
@@ -442,14 +445,13 @@ class DB2Compiler(compiler.SQLCompiler):
             if offset != 0:
                 sql = '%s "%s" > %d' % (sql, __rownum, offset)
             if offset != 0 and limit is not None:
-                sql = '%s AND ' % (sql)
+                sql = '%s AND ' % sql
             if limit is not None:
                 sql = '%s "%s" <= %d' % (sql, __rownum, offset + limit)
             return "( %s )" % (sql,)
-        else:
-            return sql_ori
+        return sql_ori
 
-    def visit_sequence(self, sequence):
+    def visit_sequence(self, sequence, **kw):
         return "NEXT VALUE FOR %s" % sequence.name
 
     def default_from(self):
@@ -459,11 +461,10 @@ class DB2Compiler(compiler.SQLCompiler):
     def visit_function(self, func, result_map=None, **kwargs):
         if func.name.upper() == "AVG":
             return "AVG(DOUBLE(%s))" % (self.function_argspec(func, **kwargs))
-        elif func.name.upper() == "CHAR_LENGTH":
+        if func.name.upper() == "CHAR_LENGTH":
             return "CHAR_LENGTH(%s, %s)" % (
                 self.function_argspec(func, **kwargs), 'OCTETS')
-        else:
-            return compiler.SQLCompiler.visit_function(self, func, **kwargs)
+        return compiler.SQLCompiler.visit_function(self, func, **kwargs)
 
     # TODO: this is wrong but need to know what DB2 is expecting here
     #    if func.name.upper() == "LENGTH":
@@ -481,16 +482,14 @@ class DB2Compiler(compiler.SQLCompiler):
                 sa_types.DateTime, sa_types.Date, sa_types.Time,
                 sa_types.DECIMAL, sa_types.String)):
             return super(DB2Compiler, self).visit_cast(cast, **kw)
-        else:
-            return self.process(cast.clause)
+        return self.process(cast.clause)
 
     def get_select_precolumns(self, select, **kwargs):
         if isinstance(select._distinct, str):
             return select._distinct.upper() + " "
-        elif select._distinct:
+        if select._distinct:
             return "DISTINCT "
-        else:
-            return ""
+        return ""
 
     def visit_join(self, join, asfrom=False, **kwargs):
         # NOTE: this is the same method as that used in mysql/base.py
@@ -525,7 +524,7 @@ class DB2Compiler(compiler.SQLCompiler):
 
 
 class DB2DDLCompiler(compiler.DDLCompiler):
-
+    """DDL Compiler for IBM i DB2"""
     def get_server_version_info(self, dialect):
         """Returns the DB2 server major and minor version as a list of ints."""
         if hasattr(dialect, 'dbms_ver'):
@@ -625,21 +624,18 @@ class DB2DDLCompiler(compiler.DDLCompiler):
                     if getattr(constraint, 'uConstraint_as_index', None):
                         if not constraint.name:
                             index_name = "%s_%s_%s" % \
-                                         ('ukey', self.preparer.format_table(
-                                             constraint.table), '_'.join(
-                                             column.name for column in
-                                             constraint))
+                                ('ukey', self.preparer.format_table(
+                                    constraint.table), '_'.join(
+                                        column.name for column in
+                                        constraint))
                         else:
                             index_name = constraint.name
                         index = sa_schema.Index(
                             index_name, *(column for column in constraint))
                         index.unique = True
                         index.uConstraint_as_index = True
-        result = super(
-            DB2DDLCompiler,
-            self).create_table_constraints(
-            table,
-            **kw)
+        result = super(DB2DDLCompiler, self).create_table_constraints(table,
+                                                                      **kw)
         return result
 
     def visit_create_index(
@@ -647,15 +643,10 @@ class DB2DDLCompiler(compiler.DDLCompiler):
             create,
             include_schema=True,
             include_table_schema=True):
-        if SA_Version < [0, 8]:
-            sql = super(DB2DDLCompiler, self).visit_create_index(create)
-        else:
-            sql = super(
-                DB2DDLCompiler,
-                self).visit_create_index(
-                create,
-                include_schema,
-                include_table_schema)
+        sql = super(
+            DB2DDLCompiler,
+            self).visit_create_index(create, include_schema,
+                                     include_table_schema)
         if getattr(create.element, 'uConstraint_as_index', None):
             sql += ' EXCLUDE NULL KEYS'
         return sql
@@ -686,11 +677,13 @@ class DB2DDLCompiler(compiler.DDLCompiler):
 
 
 class DB2IdentifierPreparer(compiler.IdentifierPreparer):
+    """IBM i DB2 specific identifier preparer"""
     reserved_words = RESERVED_WORDS
     illegal_initial_characters = set(range(0, 10)).union(["_", "$"])
 
 
 class _SelectLastRowIDMixin(object):
+    """parent class of DB2 execution context"""
     _select_lastrowid = False
     _lastrowid = None
 
@@ -720,24 +713,34 @@ class _SelectLastRowIDMixin(object):
                 self._lastrowid = int(row[0])
 
 
-class DB2ExecutionContext(
-    _SelectLastRowIDMixin,
-        default.DefaultExecutionContext):
+class DB2ExecutionContext(_SelectLastRowIDMixin,
+                          default.DefaultExecutionContext):
+    """IBM i DB2 Execution Context class"""
+    def create_server_side_cursor(self):
+        pass
+
+    def result(self):
+        pass
+
+    def get_rowcount(self):
+        pass
+
     def fire_sequence(self, seq, type_):
         return self._execute_scalar(
             "SELECT NEXTVAL FOR " +
-            self.dialect.identifier_preparer.format_sequence(seq) +
+            self.connection.dialect.identifier_preparer.format_sequence(seq) +
             " FROM SYSIBM.SYSDUMMY1",
             type_)
 
 
 class DB2Dialect(default.DefaultDialect):
+
     name = 'sqlalchemy_ibmi'
     max_identifier_length = 128
     encoding = 'utf-8'
     default_paramstyle = 'qmark'
-    colspecs = colspecs
-    ischema_names = ischema_names
+    COLSPECS = COLSPECS
+    ISCHEMA_NAMES = ISCHEMA_NAMES
     supports_char_length = False
     supports_unicode_statements = False
     supports_unicode_binds = False
@@ -779,6 +782,44 @@ class DB2Dialect(default.DefaultDialect):
         super(DB2Dialect, self).initialize(connection)
         self.dbms_ver = getattr(connection.connection, 'dbms_ver', None)
         self.dbms_name = getattr(connection.connection, 'dbms_name', None)
+
+    def get_temp_table_names(self, connection, schema=None, **kw):
+        pass
+
+    def get_temp_view_names(self, connection, schema=None, **kw):
+        pass
+
+    def get_check_constraints(self, connection, table_name, schema=None, **kw):
+        pass
+
+    def get_table_comment(self, connection, table_name, schema=None, **kw):
+        pass
+
+    def _get_server_version_info(self, connection):
+        pass
+
+    def do_begin_twophase(self, connection, xid):
+        pass
+
+    def do_prepare_twophase(self, connection, xid):
+        pass
+
+    def do_rollback_twophase(self, connection, xid, is_prepared=True,
+                             recover=False):
+        pass
+
+    def do_commit_twophase(self, connection, xid, is_prepared=True,
+                           recover=False):
+        pass
+
+    def do_recover_twophase(self, connection):
+        pass
+
+    def set_isolation_level(self, dbapi_conn, level):
+        pass
+
+    def get_isolation_level(self, dbapi_conn):
+        pass
 
     def normalize_name(self, name):
         return self._reflector.normalize_name(name)

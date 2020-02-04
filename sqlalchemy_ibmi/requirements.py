@@ -12,6 +12,12 @@ from sqlalchemy.testing import exclusions
 
 class Requirements(SuiteRequirements):
 
+    """sqlalchemy requirements for tests. This class provides the mechanism to
+    set available functionality in the dialect"""
+
+    def get_order_by_collation(self, config):
+        pass
+
     @property
     def on_update_cascade(self):
         """"target database must support ON UPDATE..CASCADE behavior in

@@ -1,3 +1,4 @@
+""" IBMi specific dialect """
 # +--------------------------------------------------------------------------+
 # |  Licensed Materials - Property of IBM                                    |
 # |                                                                          |
@@ -16,15 +17,24 @@
 # | Authors: Jaimy Azle, Rahul Priyadarshi                                   |
 # | Contributors: Mike Bayer                                                 |
 # +--------------------------------------------------------------------------+
-from sqlalchemy import util
 import urllib
+from sqlalchemy import util
 from sqlalchemy.connectors.pyodbc import PyODBCConnector
 from .base import DB2ExecutionContext, DB2Dialect
 from . import reflection as ibm_reflection
 
 
-class DB2ExecutionContext_pyodbc(DB2ExecutionContext):
-    pass
+class DB2ExecutionContextPyodbc(DB2ExecutionContext):
+    """pyodbc DB2 Execution context"""
+
+    def create_server_side_cursor(self):
+        pass
+
+    def result(self):
+        pass
+
+    def get_rowcount(self):
+        pass
 
 
 class DB2Dialect_pyodbc(PyODBCConnector, DB2Dialect):
@@ -32,7 +42,7 @@ class DB2Dialect_pyodbc(PyODBCConnector, DB2Dialect):
     supports_char_length = True
     supports_native_decimal = False
 
-    execution_ctx_cls = DB2ExecutionContext_pyodbc
+    execution_ctx_cls = DB2ExecutionContextPyodbc
 
     pyodbc_driver_name = "IBM DB2 ODBC DRIVER"
 
@@ -72,7 +82,7 @@ class DB2Dialect_pyodbc(PyODBCConnector, DB2Dialect):
                     (keys.pop(
                         'host',
                         ''),
-                        port),
+                     port),
                     'database=%s' %
                     database]
 
@@ -96,14 +106,46 @@ class DB2Dialect_pyodbc(PyODBCConnector, DB2Dialect):
         return [[";".join(connectors)], connect_args]
 
 
-class AS400Dialect_pyodbc(PyODBCConnector, DB2Dialect):
+class AS400DialectPyodbc(PyODBCConnector, DB2Dialect):
+    """ IBMi pyodbc sqlalchemy dialect """
+
+    def get_temp_table_names(self, connection, schema=None, **kw):
+        pass
+
+    def get_temp_view_names(self, connection, schema=None, **kw):
+        pass
+
+    def get_check_constraints(self, connection, table_name, schema=None, **kw):
+        pass
+
+    def get_table_comment(self, connection, table_name, schema=None, **kw):
+        pass
+
+    def do_begin_twophase(self, connection, xid):
+        pass
+
+    def do_prepare_twophase(self, connection, xid):
+        pass
+
+    def do_rollback_twophase(self, connection, xid, is_prepared=True,
+                             recover=False):
+        pass
+
+    def do_commit_twophase(self, connection, xid, is_prepared=True,
+                           recover=False):
+        pass
+
+    def do_recover_twophase(self, connection):
+        pass
+
+    def get_isolation_level(self, dbapi_conn):
+        pass
+
     supports_unicode_statements = True
     supports_sane_rowcount = False
     supports_sane_multi_rowcount = False
-    supports_native_decimal = True
-    supports_char_length = True
     supports_native_decimal = False
-
+    supports_char_length = True
     pyodbc_driver_name = "iSeries Access ODBC Driver"
 
     _reflector_cls = ibm_reflection.AS400Reflector
@@ -120,7 +162,7 @@ class AS400Dialect_pyodbc(PyODBCConnector, DB2Dialect):
                 connect_args[param] = util.asbool(keys.pop(param))
 
         if 'odbc_connect' in keys:
-            connectors = [urllib.unquote_plus(keys.pop('odbc_connect'))]
+            connectors = [urllib.parse.unquote_plus(keys.pop('odbc_connect'))]
         else:
             dsn_connection = 'dsn' in keys or \
                              ('host' in keys and 'database' not in keys)
@@ -163,4 +205,4 @@ class AS400Dialect_pyodbc(PyODBCConnector, DB2Dialect):
         return [[";".join(connectors)], connect_args]
 
 
-dialect = DB2Dialect_pyodbc
+dialect = AS400DialectPyodbc
