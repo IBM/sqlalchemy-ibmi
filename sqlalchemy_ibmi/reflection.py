@@ -267,7 +267,7 @@ class DB2Reflector(BaseReflector):
                 except KeyError:
                     util.warn("Did not recognize type '%s' of column '%s'" %
                               (coltype, r[0]))
-                    coltype = coltype = sa_types.NULLTYPE
+                    coltype = sa_types.NULLTYPE
 
             sa_columns.append({
                 'name': self.normalize_name(r[0]),
@@ -451,111 +451,97 @@ class AS400Reflector(BaseReflector):
 
     ischema = MetaData()
 
-    sys_schemas = Table("SQLSCHEMAS", ischema,
-                        Column("TABLE_SCHEM", CoerceUnicode, key="schemaname"),
-                        schema="SYSIBM")
+    sys_schemas = Table(
+        "SQLSCHEMAS", ischema,
+        Column("TABLE_SCHEM", CoerceUnicode, key="schemaname"),
+        schema="SYSIBM")
 
-    sys_tables = Table("SYSTABLES", ischema,
-                       Column("TABLE_SCHEMA", CoerceUnicode, key="tabschema"),
-                       Column("TABLE_NAME", CoerceUnicode, key="tabname"),
-                       Column("TABLE_TYPE", CoerceUnicode, key="tabtype"),
-                       schema="QSYS2")
+    sys_tables = Table(
+        "SYSTABLES", ischema,
+        Column("TABLE_SCHEMA", CoerceUnicode, key="tabschema"),
+        Column("TABLE_NAME", CoerceUnicode, key="tabname"),
+        Column("TABLE_TYPE", CoerceUnicode, key="tabtype"),
+        schema="QSYS2")
 
-    sys_table_constraints = Table("SYSCST", ischema,
-                                  Column("CONSTRAINT_SCHEMA", CoerceUnicode,
-                                         key="conschema"),
-                                  Column("CONSTRAINT_NAME", CoerceUnicode,
-                                         key="conname"),
-                                  Column("CONSTRAINT_TYPE", CoerceUnicode,
-                                         key="contype"),
-                                  Column("TABLE_SCHEMA", CoerceUnicode,
-                                         key="tabschema"),
-                                  Column("TABLE_NAME", CoerceUnicode,
-                                         key="tabname"),
-                                  Column("TABLE_TYPE", CoerceUnicode,
-                                         key="tabtype"),
-                                  schema="QSYS2")
+    sys_table_constraints = Table(
+        "SYSCST", ischema,
+        Column("CONSTRAINT_SCHEMA", CoerceUnicode, key="conschema"),
+        Column("CONSTRAINT_NAME", CoerceUnicode, key="conname"),
+        Column("CONSTRAINT_TYPE", CoerceUnicode, key="contype"),
+        Column("TABLE_SCHEMA", CoerceUnicode, key="tabschema"),
+        Column("TABLE_NAME", CoerceUnicode, key="tabname"),
+        Column("TABLE_TYPE", CoerceUnicode, key="tabtype"),
+        schema="QSYS2")
 
-    sys_key_constraints = Table("SYSKEYCST", ischema,
-                                Column("CONSTRAINT_SCHEMA", CoerceUnicode,
-                                       key="conschema"),
-                                Column("CONSTRAINT_NAME", CoerceUnicode,
-                                       key="conname"),
-                                Column("TABLE_SCHEMA", CoerceUnicode,
-                                       key="tabschema"),
-                                Column("TABLE_NAME", CoerceUnicode,
-                                       key="tabname"),
-                                Column("COLUMN_NAME", CoerceUnicode,
-                                       key="colname"),
-                                Column("ORDINAL_POSITION", sa_types.Integer,
-                                       key="colno"),
-                                schema="QSYS2")
+    sys_key_constraints = Table(
+        "SYSKEYCST", ischema,
+        Column("CONSTRAINT_SCHEMA", CoerceUnicode, key="conschema"),
+        Column("CONSTRAINT_NAME", CoerceUnicode, key="conname"),
+        Column("TABLE_SCHEMA", CoerceUnicode, key="tabschema"),
+        Column("TABLE_NAME", CoerceUnicode, key="tabname"),
+        Column("COLUMN_NAME", CoerceUnicode, key="colname"),
+        Column("ORDINAL_POSITION", sa_types.Integer, key="colno"),
+        schema="QSYS2")
 
-    sys_columns = Table("SYSCOLUMNS", ischema,
-                        Column("TABLE_SCHEMA", CoerceUnicode, key="tabschema"),
-                        Column("TABLE_NAME", CoerceUnicode, key="tabname"),
-                        Column("COLUMN_NAME", CoerceUnicode, key="colname"),
-                        Column("ORDINAL_POSITION", sa_types.Integer,
-                               key="colno"),
-                        Column("DATA_TYPE", CoerceUnicode, key="typename"),
-                        Column("LENGTH", sa_types.Integer, key="length"),
-                        Column("NUMERIC_SCALE", sa_types.Integer, key="scale"),
-                        Column("IS_NULLABLE", sa_types.Integer,
-                               key="nullable"),
-                        Column("COLUMN_DEFAULT", CoerceUnicode,
-                               key="defaultval"),
-                        Column("HAS_DEFAULT", CoerceUnicode, key="hasdef"),
-                        Column("IS_IDENTITY", CoerceUnicode, key="isid"),
-                        Column("IDENTITY_GENERATION", CoerceUnicode,
-                               key="idgenerate"),
-                        schema="QSYS2")
+    sys_columns = Table(
+        "SYSCOLUMNS", ischema,
+        Column("TABLE_SCHEMA", CoerceUnicode, key="tabschema"),
+        Column("TABLE_NAME", CoerceUnicode, key="tabname"),
+        Column("COLUMN_NAME", CoerceUnicode, key="colname"),
+        Column("ORDINAL_POSITION", sa_types.Integer, key="colno"),
+        Column("DATA_TYPE", CoerceUnicode, key="typename"),
+        Column("LENGTH", sa_types.Integer, key="length"),
+        Column("NUMERIC_SCALE", sa_types.Integer, key="scale"),
+        Column("IS_NULLABLE", sa_types.Integer, key="nullable"),
+        Column("COLUMN_DEFAULT", CoerceUnicode, key="defaultval"),
+        Column("HAS_DEFAULT", CoerceUnicode, key="hasdef"),
+        Column("IS_IDENTITY", CoerceUnicode, key="isid"),
+        Column("IDENTITY_GENERATION", CoerceUnicode, key="idgenerate"),
+        schema="QSYS2")
 
-    sys_indexes = Table("SYSINDEXES", ischema,
-                        Column("TABLE_SCHEMA", CoerceUnicode, key="tabschema"),
-                        Column("TABLE_NAME", CoerceUnicode, key="tabname"),
-                        Column("INDEX_SCHEMA", CoerceUnicode, key="indschema"),
-                        Column("INDEX_NAME", CoerceUnicode, key="indname"),
-                        Column("IS_UNIQUE", CoerceUnicode, key="uniquerule"),
-                        schema="QSYS2")
+    sys_indexes = Table(
+        "SYSINDEXES", ischema,
+        Column("TABLE_SCHEMA", CoerceUnicode, key="tabschema"),
+        Column("TABLE_NAME", CoerceUnicode, key="tabname"),
+        Column("INDEX_SCHEMA", CoerceUnicode, key="indschema"),
+        Column("INDEX_NAME", CoerceUnicode, key="indname"),
+        Column("IS_UNIQUE", CoerceUnicode, key="uniquerule"),
+        schema="QSYS2")
 
-    sys_keys = Table("SYSKEYS", ischema,
-                     Column("INDEX_SCHEMA", CoerceUnicode, key="indschema"),
-                     Column("INDEX_NAME", CoerceUnicode, key="indname"),
-                     Column("COLUMN_NAME", CoerceUnicode, key="colname"),
-                     Column("ORDINAL_POSITION", sa_types.Integer, key="colno"),
-                     Column("ORDERING", CoerceUnicode, key="ordering"),
-                     schema="QSYS2")
+    sys_keys = Table(
+        "SYSKEYS", ischema,
+        Column("INDEX_SCHEMA", CoerceUnicode, key="indschema"),
+        Column("INDEX_NAME", CoerceUnicode, key="indname"),
+        Column("COLUMN_NAME", CoerceUnicode, key="colname"),
+        Column("ORDINAL_POSITION", sa_types.Integer, key="colno"),
+        Column("ORDERING", CoerceUnicode, key="ordering"),
+        schema="QSYS2")
 
-    sys_foreignkeys = Table("SQLFOREIGNKEYS", ischema,
-                            Column("FK_NAME", CoerceUnicode, key="fkname"),
-                            Column("FKTABLE_SCHEM", CoerceUnicode,
-                                   key="fktabschema"),
-                            Column("FKTABLE_NAME", CoerceUnicode,
-                                   key="fktabname"),
-                            Column("FKCOLUMN_NAME", CoerceUnicode,
-                                   key="fkcolname"),
-                            Column("PK_NAME", CoerceUnicode, key="pkname"),
-                            Column("PKTABLE_SCHEM", CoerceUnicode,
-                                   key="pktabschema"),
-                            Column("PKTABLE_NAME", CoerceUnicode,
-                                   key="pktabname"),
-                            Column("PKCOLUMN_NAME", CoerceUnicode,
-                                   key="pkcolname"),
-                            Column("KEY_SEQ", sa_types.Integer, key="colno"),
-                            schema="SYSIBM")
+    sys_foreignkeys = Table(
+        "SQLFOREIGNKEYS", ischema,
+        Column("FK_NAME", CoerceUnicode, key="fkname"),
+        Column("FKTABLE_SCHEM", CoerceUnicode, key="fktabschema"),
+        Column("FKTABLE_NAME", CoerceUnicode, key="fktabname"),
+        Column("FKCOLUMN_NAME", CoerceUnicode, key="fkcolname"),
+        Column("PK_NAME", CoerceUnicode, key="pkname"),
+        Column("PKTABLE_SCHEM", CoerceUnicode, key="pktabschema"),
+        Column("PKTABLE_NAME", CoerceUnicode, key="pktabname"),
+        Column("PKCOLUMN_NAME", CoerceUnicode, key="pkcolname"),
+        Column("KEY_SEQ", sa_types.Integer, key="colno"),
+        schema="SYSIBM")
 
-    sys_views = Table("SYSVIEWS", ischema,
-                      Column("TABLE_SCHEMA", CoerceUnicode, key="viewschema"),
-                      Column("TABLE_NAME", CoerceUnicode, key="viewname"),
-                      Column("VIEW_DEFINITION", CoerceUnicode, key="text"),
-                      schema="QSYS2")
+    sys_views = Table(
+        "SYSVIEWS", ischema,
+        Column("TABLE_SCHEMA", CoerceUnicode, key="viewschema"),
+        Column("TABLE_NAME", CoerceUnicode, key="viewname"),
+        Column("VIEW_DEFINITION", CoerceUnicode, key="text"),
+        schema="QSYS2")
 
-    sys_sequences = Table("SYSSEQUENCES", ischema,
-                          Column("SEQUENCE_SCHEMA", CoerceUnicode,
-                                 key="seqschema"),
-                          Column("SEQUENCE_NAME", CoerceUnicode,
-                                 key="seqname"),
-                          schema="QSYS2")
+    sys_sequences = Table(
+        "SYSSEQUENCES", ischema,
+        Column("SEQUENCE_SCHEMA", CoerceUnicode, key="seqschema"),
+        Column("SEQUENCE_NAME", CoerceUnicode, key="seqname"),
+        schema="QSYS2")
 
     def has_table(self, connection, table_name, schema=None):
         current_schema = self.denormalize_name(
@@ -581,7 +567,8 @@ class AS400Reflector(BaseReflector):
                 self.sys_sequences.c.seqname == sequence_name)
         else:
             whereclause = self.sys_sequences.c.seqname == sequence_name
-        select_statement = sql.select([self.sys_sequences.c.seqname], whereclause)
+        select_statement = sql.select(
+            [self.sys_sequences.c.seqname], whereclause)
         results = connection.execute(select_statement)
         return results.first() is not None
 
@@ -637,19 +624,19 @@ class AS400Reflector(BaseReflector):
         table_name = self.denormalize_name(table_name)
         syscols = self.sys_columns
 
-        query = sql.select([syscols.c.colname,
-                            syscols.c.typename,
-                            syscols.c.defaultval, syscols.c.nullable,
-                            syscols.c.length, syscols.c.scale,
-                            syscols.c.isid, syscols.c.idgenerate],
-                           sql.and_(syscols.c.tabschema == current_schema,
-                                    syscols.c.tabname == table_name),
-                           order_by=[syscols.c.colno])
+        query = sql.select(
+            [syscols.c.colname, syscols.c.typename, syscols.c.defaultval,
+             syscols.c.nullable, syscols.c.length, syscols.c.scale,
+             syscols.c.isid, syscols.c.idgenerate],
+            sql.and_(syscols.c.tabschema == current_schema,
+                     syscols.c.tabname == table_name),
+            order_by=[syscols.c.colno])
         sa_columns = []
         for row in connection.execute(query):
             coltype = row[1].upper()
             if coltype in ['DECIMAL', 'NUMERIC']:
-                coltype = self.ischema_names.get(coltype)(int(row[4]), int(row[5]))
+                coltype = self.ischema_names.get(
+                    coltype)(int(row[4]), int(row[5]))
             elif coltype in ['CHARACTER', 'CHAR', 'VARCHAR', 'GRAPHIC',
                              'VARGRAPHIC']:
                 coltype = self.ischema_names.get(coltype)(int(row[4]))
@@ -659,7 +646,7 @@ class AS400Reflector(BaseReflector):
                 except KeyError:
                     util.warn("Did not recognize type '%s' of column '%s'" %
                               (coltype, row[0]))
-                    coltype = coltype = sa_types.NULLTYPE
+                    coltype = sa_types.NULLTYPE
 
             sa_columns.append({
                 'name': self.normalize_name(row[0]),
@@ -697,14 +684,13 @@ class AS400Reflector(BaseReflector):
         default_schema = self.normalize_name(default_schema)
         table_name = self.denormalize_name(table_name)
         sysfkeys = self.sys_foreignkeys
-        query = sql.select([sysfkeys.c.fkname, sysfkeys.c.fktabschema,
-                            sysfkeys.c.fktabname, sysfkeys.c.fkcolname,
-                            sysfkeys.c.pkname, sysfkeys.c.pktabschema,
-                            sysfkeys.c.pktabname, sysfkeys.c.pkcolname],
-                           sql.and_(
-                               sysfkeys.c.fktabschema == current_schema,
-                               sysfkeys.c.fktabname == table_name),
-                           order_by=[sysfkeys.c.colno])
+        query = sql.select(
+            [sysfkeys.c.fkname, sysfkeys.c.fktabschema, sysfkeys.c.fktabname,
+             sysfkeys.c.fkcolname, sysfkeys.c.pkname, sysfkeys.c.pktabschema,
+             sysfkeys.c.pktabname, sysfkeys.c.pkcolname],
+            sql.and_(sysfkeys.c.fktabschema == current_schema,
+                     sysfkeys.c.fktabname == table_name),
+            order_by=[sysfkeys.c.colno])
         fschema = {}
         for row in connection.execute(query):
             if row[0] not in fschema:
@@ -716,14 +702,13 @@ class AS400Reflector(BaseReflector):
                         referred_schema == default_schema:
                     referred_schema = None
 
-                fschema[row[0]] = {'name': self.normalize_name(row[0]),
-                                   'constrained_columns':
-                                       [self.normalize_name(row[3])],
-                                   'referred_schema': referred_schema,
-                                   'referred_table':
-                                       self.normalize_name(row[6]),
-                                   'referred_columns':
-                                       [self.normalize_name(row[7])]}
+                fschema[row[0]] = {
+                    'name': self.normalize_name(row[0]),
+                    'constrained_columns': [self.normalize_name(row[3])],
+                    'referred_schema': referred_schema,
+                    'referred_table': self.normalize_name(row[6]),
+                    'referred_columns': [self.normalize_name(row[7])]
+                }
             else:
                 fschema[row[0]]['constrained_columns'].append(
                     self.normalize_name(row[3]))
@@ -743,16 +728,18 @@ class AS400Reflector(BaseReflector):
         query = sql.select([sysidx.c.indname,
                             sysidx.c.uniquerule,
                             syskey.c.colname],
-                           sql.and_(syskey.c.indschema == sysidx.c.indschema,
-                                    syskey.c.indname == sysidx.c.indname,
-                                    sysidx.c.tabschema == current_schema,
-                                    sysidx.c.tabname == table_name),
+                           sql.and_(
+                               syskey.c.indschema == sysidx.c.indschema,
+                               syskey.c.indname == sysidx.c.indname,
+                               sysidx.c.tabschema == current_schema,
+                               sysidx.c.tabname == table_name),
                            order_by=[syskey.c.indname, syskey.c.colno])
         indexes = {}
         for row in connection.execute(query):
             key = row[0].upper()
             if key in indexes:
-                indexes[key]['column_names'].append(self.normalize_name(row[2]))
+                indexes[key]['column_names'].append(
+                    self.normalize_name(row[2]))
             else:
                 indexes[key] = {
                     'name': self.normalize_name(row[0]),

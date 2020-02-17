@@ -638,15 +638,12 @@ class DB2DDLCompiler(compiler.DDLCompiler):
                                                                       **kw)
         return result
 
-    def visit_create_index(
-            self,
+    def visit_create_index(self, create, include_schema=True,
+                           include_table_schema=True):
+        sql = super(DB2DDLCompiler, self).visit_create_index(
             create,
-            include_schema=True,
-            include_table_schema=True):
-        sql = super(
-            DB2DDLCompiler,
-            self).visit_create_index(create, include_schema,
-                                     include_table_schema)
+            include_schema,
+            include_table_schema)
         if getattr(create.element, 'uConstraint_as_index', None):
             sql += ' EXCLUDE NULL KEYS'
         return sql
@@ -876,13 +873,12 @@ class DB2Dialect(default.DefaultDialect):
             connection, table_name, schema=schema, **kw)
 
     def get_unique_constraints(
-            self,
+            self, connection, table_name, schema=None, **kw):
+        return self._reflector.get_unique_constraints(
             connection,
             table_name,
-            schema=None,
-            **kw):
-        return self._reflector.get_unique_constraints(
-            connection, table_name, schema=schema, **kw)
+            schema=schema,
+            **kw)
 
 
 # legacy naming

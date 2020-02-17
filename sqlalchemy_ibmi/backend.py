@@ -170,17 +170,14 @@ class AS400DialectPyodbc(PyODBCConnector, DB2Dialect):
                 connectors = ['dsn=%s' % (keys.pop('host', '') or
                                           keys.pop('dsn', ''))]
             else:
-                connectors = [
-                    "DRIVER={%s}" %
-                    keys.pop(
-                        'driver',
-                        self.pyodbc_driver_name),
-                    'System=%s' %
-                    keys.pop(
-                        'host',
-                        ''),
-                    'DBQ=QGPL']
-                connectors.append("PKG=QGPL/DEFAULT(IBM),2,0,1,0,512")
+                connectors = ["DRIVER={%s}" %
+                              keys.pop(
+                                  'driver',
+                                  self.pyodbc_driver_name), 'System=%s' %
+                              keys.pop(
+                                  'host',
+                                  ''), 'DBQ=QGPL',
+                              "PKG=QGPL/DEFAULT(IBM),2,0,1,0,512"]
                 db_name = keys.pop('database', '')
                 if db_name:
                     connectors.append("DATABASE=%s" % db_name)
