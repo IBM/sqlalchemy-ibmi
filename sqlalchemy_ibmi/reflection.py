@@ -28,6 +28,9 @@ from sqlalchemy.engine import reflection
 class CoerceUnicode(sa_types.TypeDecorator):
     """Coerce unicode to string"""
 
+    # TODO These methods are overridden from the default dialect and should be
+    #  implemented
+
     def process_literal_param(self, value, dialect):
         pass
 

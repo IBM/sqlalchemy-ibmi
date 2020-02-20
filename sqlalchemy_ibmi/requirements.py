@@ -15,6 +15,9 @@ class Requirements(SuiteRequirements):
     """sqlalchemy requirements for tests. This class provides the mechanism to
     set available functionality in the dialect"""
 
+    # TODO These methods are overridden from the default dialect and should be
+    #  implemented
+
     def get_order_by_collation(self, config):
         pass
 

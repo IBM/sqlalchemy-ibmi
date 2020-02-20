@@ -16,7 +16,7 @@
 # | Authors: Alex Pitigoi, Abhigyan Agrawal, Rahul Priyadarshi               |
 # | Contributors: Jaimy Azle, Mike Bayer                                     |
 # +--------------------------------------------------------------------------+
-"""Support for IBM DB2 database
+"""Support for IBM Db2 database
 
 """
 import datetime
@@ -31,111 +31,14 @@ from sqlalchemy.types import BLOB, CHAR, CLOB, DATE, DATETIME, INTEGER, \
     SMALLINT, BIGINT, DECIMAL, NUMERIC, REAL, TIME, TIMESTAMP, \
     VARCHAR, FLOAT
 from . import reflection as ibm_reflection
+from .constants import RESERVED_WORDS
 
 # as documented from:
 # http://publib.boulder.ibm.com/infocenter/db2luw/v9/index.jsp?topic=/com.ibm.db2.udb.doc/admin/r0001095.htm
-RESERVED_WORDS = {'activate', 'disallow', 'locale', 'result', 'add',
-                  'disconnect', 'localtime', 'result_set_locator', 'after',
-                  'distinct', 'localtimestamp', 'return', 'alias', 'do',
-                  'locator', 'returns', 'all', 'double', 'locators', 'revoke',
-                  'allocate', 'drop', 'lock', 'right', 'allow', 'dssize',
-                  'lockmax', 'rollback', 'alter', 'dynamic', 'locksize',
-                  'routine', 'and', 'each', 'long', 'row', 'any', 'editproc',
-                  'loop', 'row_number', 'as', 'else', 'maintained',
-                  'rownumber', 'asensitive', 'elseif', 'materialized', 'rows',
-                  'associate', 'enable', 'maxvalue', 'rowset', 'asutime',
-                  'encoding', 'microsecond', 'rrn', 'at', 'encryption',
-                  'microseconds', 'run', 'attributes', 'end', 'minute',
-                  'savepoint', 'audit', 'end-exec', 'minutes', 'schema',
-                  'authorization', 'ending', 'minvalue', 'scratchpad', 'aux',
-                  'erase', 'mode', 'scroll', 'auxiliary', 'escape', 'modifies',
-                  'search', 'before', 'every', 'month', 'second', 'begin',
-                  'except', 'months', 'seconds', 'between', 'exception',
-                  'new', 'secqty', 'binary', 'excluding', 'new_table',
-                  'security', 'bufferpool', 'exclusive', 'nextval', 'select',
-                  'by', 'execute', 'no', 'sensitive', 'cache', 'exists',
-                  'nocache', 'sequence', 'call', 'exit', 'nocycle', 'session',
-                  'called', 'explain', 'nodename', 'session_user', 'capture',
-                  'external', 'nodenumber', 'set', 'cardinality', 'extract',
-                  'nomaxvalue', 'signal', 'cascaded', 'fenced', 'nominvalue',
-                  'simple', 'case', 'fetch', 'none', 'some', 'cast',
-                  'fieldproc', 'noorder', 'source', 'ccsid', 'file',
-                  'normalized', 'specific', 'char', 'final', 'not', 'sql',
-                  'character', 'for', 'null', 'sqlid', 'check', 'foreign',
-                  'nulls', 'stacked', 'close', 'free', 'numparts', 'standard',
-                  'cluster', 'from', 'obid', 'start', 'collection', 'full',
-                  'of', 'starting', 'collid', 'function', 'old', 'statement',
-                  'column', 'general', 'old_table', 'static', 'comment',
-                  'generated', 'on', 'stay', 'commit', 'get', 'open',
-                  'stogroup', 'concat', 'global', 'optimization', 'stores',
-                  'condition', 'go', 'optimize', 'style', 'connect', 'goto',
-                  'option', 'substring', 'connection', 'grant', 'or',
-                  'summary', 'constraint', 'graphic', 'order', 'synonym',
-                  'contains', 'group', 'out', 'sysfun', 'continue', 'handler',
-                  'outer', 'sysibm', 'count', 'hash', 'over', 'sysproc',
-                  'count_big', 'hashed_value', 'overriding', 'system',
-                  'create', 'having', 'package', 'system_user', 'cross',
-                  'hint', 'padded', 'table', 'current', 'hold', 'pagesize',
-                  'tablespace', 'current_date', 'hour', 'parameter', 'then',
-                  'current_lc_ctype', 'hours', 'part', 'time',
-                  'current_path', 'identity', 'partition', 'timestamp',
-                  'current_schema', 'if', 'partitioned', 'to',
-                  'current_server', 'immediate', 'partitioning', 'transaction',
-                  'current_time', 'in', 'partitions', 'trigger',
-                  'current_timestamp', 'including', 'password', 'trim',
-                  'current_timezone', 'inclusive', 'path', 'type',
-                  'current_user', 'increment', 'piecesize', 'undo',
-                  'cursor', 'index', 'plan', 'union', 'cycle', 'indicator',
-                  'position', 'unique', 'data', 'inherit', 'precision',
-                  'until', 'database', 'inner', 'prepare', 'update',
-                  'datapartitionname', 'inout', 'prevval', 'usage',
-                  'datapartitionnum', 'insensitive', 'primary', 'user',
-                  'date', 'insert', 'priqty', 'using', 'day', 'integrity',
-                  'privileges', 'validproc', 'days', 'intersect',
-                  'procedure', 'value', 'db2general', 'into', 'program',
-                  'values', 'db2genrl', 'is', 'psid', 'variable', 'db2sql',
-                  'isobid', 'query', 'variant', 'dbinfo', 'isolation',
-                  'queryno', 'vcat', 'dbpartitionname', 'iterate', 'range',
-                  'version', 'dbpartitionnum', 'jar', 'rank', 'view',
-                  'deallocate', 'java', 'read', 'volatile', 'declare', 'join',
-                  'reads', 'volumes', 'default', 'key', 'recovery', 'when',
-                  'defaults', 'label', 'references', 'whenever', 'definition',
-                  'language', 'referencing', 'where', 'delete', 'lateral',
-                  'refresh', 'while', 'dense_rank', 'lc_ctype', 'release',
-                  'with', 'denserank', 'leave', 'rename', 'without',
-                  'describe', 'left', 'repeat', 'wlm', 'descriptor', 'like',
-                  'reset', 'write', 'deterministic', 'linktype', 'resignal',
-                  'xmlelement', 'diagnostics', 'local', 'restart', 'year',
-                  'disable', 'localdate', 'restrict', 'years', '', 'abs',
-                  'grouping', 'regr_intercept', 'are', 'int', 'regr_r2',
-                  'array', 'integer', 'regr_slope', 'asymmetric',
-                  'intersection', 'regr_sxx', 'atomic', 'interval', 'regr_sxy',
-                  'avg', 'large', 'regr_syy', 'bigint', 'leading', 'rollup',
-                  'blob', 'ln', 'scope', 'boolean', 'lower', 'similar', 'both',
-                  'match', 'smallint', 'ceil', 'max', 'specifictype',
-                  'ceiling', 'member', 'sqlexception', 'char_length', 'merge',
-                  'sqlstate', 'character_length', 'method', 'sqlwarning',
-                  'clob', 'min', 'sqrt', 'coalesce', 'mod', 'stddev_pop',
-                  'collate', 'module', 'stddev_samp', 'collect', 'multiset',
-                  'submultiset', 'convert', 'national', 'sum', 'corr',
-                  'natural', 'symmetric', 'corresponding', 'nchar',
-                  'tablesample', 'covar_pop', 'nclob', 'timezone_hour',
-                  'covar_samp', 'normalize', 'timezone_minute', 'cube',
-                  'nullif', 'trailing', 'cume_dist', 'numeric', 'translate',
-                  'current_default_transform_group', 'octet_length',
-                  'translation', 'current_role', 'only', 'treat',
-                  'current_transform_group_for_type', 'overlaps', 'true',
-                  'dec', 'overlay', 'uescape', 'decimal', 'percent_rank',
-                  'unknown', 'deref', 'percentile_cont', 'unnest', 'element',
-                  'percentile_disc', 'upper', 'exec', 'power', 'var_pop',
-                  'exp', 'real', 'var_samp', 'false', 'recursive', 'varchar',
-                  'filter', 'ref', 'varying', 'float', 'regr_avgx',
-                  'width_bucket', 'floor', 'regr_avgy', 'window', 'fusion',
-                  'regr_count', 'within', 'asc'}
 
 
 class IBMBoolean(sa_types.Boolean):
-    """IBM i DB2 Boolean class"""
+    """Represents a Db2 Boolean Column"""
     def result_processor(self, _, coltype):
         def process(value):
             if value is None:
@@ -148,15 +51,13 @@ class IBMBoolean(sa_types.Boolean):
         def process(value):
             if value is None:
                 return None
-            if bool(value):
-                return '1'
-            return '0'
+            return '1' if value else '0'
 
         return process
 
 
 class IBMDate(sa_types.Date):
-    """IBM i DB2 Date class"""
+    """Represents a Db2 Date Column"""
     def result_processor(self, _, coltype):
         def process(value):
             if value is None:
@@ -179,37 +80,37 @@ class IBMDate(sa_types.Date):
 
 
 class DOUBLE(sa_types.Numeric):
-    """IBM i DB2 Double class"""
+    """Represents a Db2 Double Column"""
     __visit_name__ = 'DOUBLE'
 
 
 class LONGVARCHAR(sa_types.VARCHAR):
-    """IBM i DB2 LONGVARCHAR class"""
+    """Represents a Db2 Longvarchar Column"""
     __visit_name_ = 'LONGVARCHAR'
 
 
 class DBCLOB(sa_types.CLOB):
-    """IBM i DB2 DBCLOB class"""
+    """Represents a Db2 Dbclob Column"""
     __visit_name__ = "DBCLOB"
 
 
 class GRAPHIC(sa_types.CHAR):
-    """IBM i DB2 GRAPHIC class"""
+    """Represents a Db2 Graphic Column"""
     __visit_name__ = "GRAPHIC"
 
 
 class VARGRAPHIC(sa_types.Unicode):
-    """IBM i DB2 VARGRAPHIC class"""
+    """Represents a Db2 Vargraphic Column"""
     __visit_name__ = "VARGRAPHIC"
 
 
 class LONGVARGRAPHIC(sa_types.UnicodeText):
-    """IBM i DB2 LONGVARGRAPHIC class"""
+    """Represents a Db2 longvargraphic Column"""
     __visit_name__ = "LONGVARGRAPHIC"
 
 
 class XML(sa_types.Text):
-    """IBM i DB2 XML class"""
+    """Represents a Db2 XML Column"""
     __visit_name__ = "XML"
 
 
@@ -246,7 +147,7 @@ ISCHEMA_NAMES = {
 
 
 class DB2TypeCompiler(compiler.GenericTypeCompiler):
-    """IBM i DB2 Type Compiler"""
+    """IBM i Db2 Type Compiler"""
 
     def visit_TIMESTAMP(self, type_, **kw):
         return "TIMESTAMP"
@@ -356,7 +257,10 @@ class DB2TypeCompiler(compiler.GenericTypeCompiler):
 
 
 class DB2Compiler(compiler.SQLCompiler):
-    """IBM i DB2 compiler class"""
+    """IBM i Db2 compiler class"""
+
+    # TODO These methods are overridden from the default dialect and should be
+    #  implemented
 
     def visit_empty_set_expr(self, element_types):
         pass
@@ -376,10 +280,10 @@ class DB2Compiler(compiler.SQLCompiler):
         return "CURRENT_TIMESTAMP"
 
     def for_update_clause(self, select, **kw):
-        if select.for_update:
-            return ' WITH RS USE AND KEEP UPDATE LOCKS'
         if select.for_update == 'read':
             return ' WITH RS USE AND KEEP SHARE LOCKS'
+        if select.for_update:
+            return ' WITH RS USE AND KEEP UPDATE LOCKS'
         return ''
 
     def visit_mod_binary(self, binary, operator, **kw):
@@ -455,7 +359,7 @@ class DB2Compiler(compiler.SQLCompiler):
         return "NEXT VALUE FOR %s" % sequence.name
 
     def default_from(self):
-        # DB2 uses SYSIBM.SYSDUMMY1 table for row count
+        # Db2 uses SYSIBM.SYSDUMMY1 table for row count
         return " FROM SYSIBM.SYSDUMMY1"
 
     def visit_function(self, func, result_map=None, **kwargs):
@@ -466,7 +370,7 @@ class DB2Compiler(compiler.SQLCompiler):
                 self.function_argspec(func, **kwargs), 'OCTETS')
         return compiler.SQLCompiler.visit_function(self, func, **kwargs)
 
-    # TODO: this is wrong but need to know what DB2 is expecting here
+    # TODO: this is wrong but need to know what Db2 is expecting here
     #    if func.name.upper() == "LENGTH":
     #        return "LENGTH('%s')" % func.compile().params[func.name + '_1']
     #    else:
@@ -524,9 +428,9 @@ class DB2Compiler(compiler.SQLCompiler):
 
 
 class DB2DDLCompiler(compiler.DDLCompiler):
-    """DDL Compiler for IBM i DB2"""
+    """DDL Compiler for IBM i Db2"""
     def get_server_version_info(self, dialect):
-        """Returns the DB2 server major and minor version as a list of ints."""
+        """Returns the Db2 server major and minor version as a list of ints."""
         if hasattr(dialect, 'dbms_ver'):
             return [int(ver_token)
                     for ver_token in dialect.dbms_ver.split('.')[0:2]]
@@ -534,14 +438,14 @@ class DB2DDLCompiler(compiler.DDLCompiler):
             return []
 
     def _is_nullable_unique_constraint_supported(self, dialect):
-        """Checks to see if the DB2 version is at least 10.5.
+        """Checks to see if the Db2 version is at least 10.5.
         This is needed for checking if unique constraints with null columns
         are supported.
         """
 
         dbms_name = getattr(dialect, 'dbms_name', None)
         if hasattr(dialect, 'dbms_name'):
-            if dbms_name is not None and (dbms_name.find('DB2/') != -1):
+            if dbms_name is not None and (dbms_name.find('Db2/') != -1):
                 return self.get_server_version_info(dialect) >= [10, 5]
         else:
             return False
@@ -578,7 +482,7 @@ class DB2DDLCompiler(compiler.DDLCompiler):
 
         if constraint.onupdate is not None:
             util.warn(
-                "DB2 does not support UPDATE CASCADE for foreign keys.")
+                "Db2 does not support UPDATE CASCADE for foreign keys.")
 
         return text
 
@@ -674,13 +578,13 @@ class DB2DDLCompiler(compiler.DDLCompiler):
 
 
 class DB2IdentifierPreparer(compiler.IdentifierPreparer):
-    """IBM i DB2 specific identifier preparer"""
+    """IBM i Db2 specific identifier preparer"""
     reserved_words = RESERVED_WORDS
     illegal_initial_characters = set(range(0, 10)).union(["_", "$"])
 
 
 class _SelectLastRowIDMixin(object):
-    """parent class of DB2 execution context"""
+    """parent class of Db2 execution context"""
     _select_lastrowid = False
     _lastrowid = None
 
@@ -712,7 +616,11 @@ class _SelectLastRowIDMixin(object):
 
 class DB2ExecutionContext(_SelectLastRowIDMixin,
                           default.DefaultExecutionContext):
-    """IBM i DB2 Execution Context class"""
+    """IBM i Db2 Execution Context class"""
+
+    # TODO These methods are overridden from the default dialect and should be
+    #  implemented
+
     def create_server_side_cursor(self):
         pass
 
@@ -773,12 +681,15 @@ class DB2Dialect(default.DefaultDialect):
 
         self._reflector = self._reflector_cls(self)
 
-    # reflection: these all defer to an BaseDB2Reflector
-    # object which selects between DB2 and AS/400 schemas
+    # reflection: these all defer to an BaseDb2Reflector
+    # object which selects between Db2 and AS/400 schemas
     def initialize(self, connection):
         super(DB2Dialect, self).initialize(connection)
         self.dbms_ver = getattr(connection.connection, 'dbms_ver', None)
         self.dbms_name = getattr(connection.connection, 'dbms_name', None)
+
+    # TODO These methods are overridden from the default dialect and should be
+    #  implemented
 
     def get_temp_table_names(self, connection, schema=None, **kw):
         pass

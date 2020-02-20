@@ -1,4 +1,4 @@
-""" IBMi specific dialect """
+""" IBM i specific dialect """
 # +--------------------------------------------------------------------------+
 # |  Licensed Materials - Property of IBM                                    |
 # |                                                                          |
@@ -25,16 +25,8 @@ from . import reflection as ibm_reflection
 
 
 class DB2ExecutionContextPyodbc(DB2ExecutionContext):
-    """pyodbc DB2 Execution context"""
-
-    def create_server_side_cursor(self):
-        pass
-
-    def result(self):
-        pass
-
-    def get_rowcount(self):
-        pass
+    """pyodbc Db2 Execution context"""
+    pass
 
 
 class DB2Dialect_pyodbc(PyODBCConnector, DB2Dialect):
@@ -107,43 +99,12 @@ class DB2Dialect_pyodbc(PyODBCConnector, DB2Dialect):
 
 
 class AS400DialectPyodbc(PyODBCConnector, DB2Dialect):
-    """ IBMi pyodbc sqlalchemy dialect """
-
-    def get_temp_table_names(self, connection, schema=None, **kw):
-        pass
-
-    def get_temp_view_names(self, connection, schema=None, **kw):
-        pass
-
-    def get_check_constraints(self, connection, table_name, schema=None, **kw):
-        pass
-
-    def get_table_comment(self, connection, table_name, schema=None, **kw):
-        pass
-
-    def do_begin_twophase(self, connection, xid):
-        pass
-
-    def do_prepare_twophase(self, connection, xid):
-        pass
-
-    def do_rollback_twophase(self, connection, xid, is_prepared=True,
-                             recover=False):
-        pass
-
-    def do_commit_twophase(self, connection, xid, is_prepared=True,
-                           recover=False):
-        pass
-
-    def do_recover_twophase(self, connection):
-        pass
-
-    def get_isolation_level(self, dbapi_conn):
-        pass
+    """ IBM i pyodbc sqlalchemy dialect """
 
     supports_unicode_statements = True
     supports_sane_rowcount = False
     supports_sane_multi_rowcount = False
+    # TODO Investigate if supports_native_decimal needs to be True or False
     supports_native_decimal = False
     supports_char_length = True
     pyodbc_driver_name = "iSeries Access ODBC Driver"
@@ -170,14 +131,13 @@ class AS400DialectPyodbc(PyODBCConnector, DB2Dialect):
                 connectors = ['dsn=%s' % (keys.pop('host', '') or
                                           keys.pop('dsn', ''))]
             else:
-                connectors = ["DRIVER={%s}" %
-                              keys.pop(
-                                  'driver',
-                                  self.pyodbc_driver_name), 'System=%s' %
-                              keys.pop(
-                                  'host',
-                                  ''), 'DBQ=QGPL',
-                              "PKG=QGPL/DEFAULT(IBM),2,0,1,0,512"]
+                connectors = [
+                    "DRIVER={%s}" %
+                    keys.pop('driver', self.pyodbc_driver_name),
+                    'System=%s' % keys.pop('host', ''),
+                    'DBQ=QGPL',
+                    "PKG=QGPL/DEFAULT(IBM),2,0,1,0,512"
+                ]
                 db_name = keys.pop('database', '')
                 if db_name:
                     connectors.append("DATABASE=%s" % db_name)
@@ -202,4 +162,4 @@ class AS400DialectPyodbc(PyODBCConnector, DB2Dialect):
         return [[";".join(connectors)], connect_args]
 
 
-dialect = AS400DialectPyodbc
+dialect = DB2Dialect_pyodbc

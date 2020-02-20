@@ -4,6 +4,7 @@ from setuptools import setup
 import os
 import re
 
+# TODO replace code below to configure bumpversion to set the version
 v = open(
     os.path.join(
         os.path.dirname(__file__),
