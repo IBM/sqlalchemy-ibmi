@@ -9,7 +9,17 @@ from sqlalchemy.testing.requirements import SuiteRequirements
 
 from sqlalchemy.testing import exclusions
 
+
 class Requirements(SuiteRequirements):
+
+    """sqlalchemy requirements for tests. This class provides the mechanism to
+    set available functionality in the dialect"""
+
+    # TODO These methods are overridden from the default dialect and should be
+    #  implemented
+
+    def get_order_by_collation(self, config):
+        pass
 
     @property
     def on_update_cascade(self):
@@ -38,8 +48,8 @@ class Requirements(SuiteRequirements):
 
         return exclusions.closed()
 
-    #@property
-    #def offset(self):
+    # @property
+    # def offset(self):
     #    return exclusions.closed()
 
     @property
@@ -65,9 +75,9 @@ class Requirements(SuiteRequirements):
         such as 319438950232418390.273596, 87673.594069654243
 
         """
-        return exclusions.fails_if(lambda: True,
-                    "Throws error SQL0604N, regarding Decimal(38, 12)"
-            )
+        return exclusions.fails_if(
+            lambda: True,
+            "Throws error SQL0604N, regarding Decimal(38, 12)")
 
     @property
     def precision_numerics_retains_significant_digits(self):

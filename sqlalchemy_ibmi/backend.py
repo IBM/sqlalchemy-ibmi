@@ -1,3 +1,4 @@
+""" IBM i specific dialect """
 # +--------------------------------------------------------------------------+
 # |  Licensed Materials - Property of IBM                                    |
 # |                                                                          |
@@ -16,14 +17,15 @@
 # | Authors: Jaimy Azle, Rahul Priyadarshi                                   |
 # | Contributors: Mike Bayer                                                 |
 # +--------------------------------------------------------------------------+
-from sqlalchemy import util
 import urllib
+from sqlalchemy import util
 from sqlalchemy.connectors.pyodbc import PyODBCConnector
-from .base import _SelectLastRowIDMixin, DB2ExecutionContext, DB2Dialect
+from .base import DB2ExecutionContext, DB2Dialect
 from . import reflection as ibm_reflection
 
 
-class DB2ExecutionContext_pyodbc(DB2ExecutionContext):
+class DB2ExecutionContextPyodbc(DB2ExecutionContext):
+    """pyodbc Db2 Execution context"""
     pass
 
 
@@ -32,7 +34,7 @@ class DB2Dialect_pyodbc(PyODBCConnector, DB2Dialect):
     supports_char_length = True
     supports_native_decimal = False
 
-    execution_ctx_cls = DB2ExecutionContext_pyodbc
+    execution_ctx_cls = DB2ExecutionContextPyodbc
 
     pyodbc_driver_name = "IBM DB2 ODBC DRIVER"
 
@@ -54,19 +56,27 @@ class DB2Dialect_pyodbc(PyODBCConnector, DB2Dialect):
             dsn_connection = 'dsn' in keys or \
                              ('host' in keys and 'database' not in keys)
             if dsn_connection:
-                connectors = ['dsn=%s' % (keys.pop('host', '') or \
+                connectors = ['dsn=%s' % (keys.pop('host', '') or
                                           keys.pop('dsn', ''))]
             else:
                 port = ''
-                if 'port' in keys and not 'port' in query:
+                if 'port' in keys and 'port' not in query:
                     port = '%d' % int(keys.pop('port'))
 
                 database = keys.pop('database', '')
 
-                connectors = ["DRIVER={%s}" %
-                              keys.pop('driver', self.pyodbc_driver_name),
-                              'hostname=%s;port=%s' % (keys.pop('host', ''), port),
-                              'database=%s' % database]
+                connectors = [
+                    "DRIVER={%s}" %
+                    keys.pop(
+                        'driver',
+                        self.pyodbc_driver_name),
+                    'hostname=%s;port=%s' %
+                    (keys.pop(
+                        'host',
+                        ''),
+                     port),
+                    'database=%s' %
+                    database]
 
             user = keys.pop("user", None)
             if user:
@@ -88,14 +98,15 @@ class DB2Dialect_pyodbc(PyODBCConnector, DB2Dialect):
         return [[";".join(connectors)], connect_args]
 
 
-class AS400Dialect_pyodbc(PyODBCConnector, DB2Dialect):
+class AS400DialectPyodbc(PyODBCConnector, DB2Dialect):
+    """ IBM i pyodbc sqlalchemy dialect """
+
     supports_unicode_statements = True
     supports_sane_rowcount = False
     supports_sane_multi_rowcount = False
-    supports_native_decimal = True
-    supports_char_length = True
+    # TODO Investigate if supports_native_decimal needs to be True or False
     supports_native_decimal = False
-
+    supports_char_length = True
     pyodbc_driver_name = "iSeries Access ODBC Driver"
 
     _reflector_cls = ibm_reflection.AS400Reflector
@@ -105,7 +116,6 @@ class AS400Dialect_pyodbc(PyODBCConnector, DB2Dialect):
         opts.update(url.query)
 
         keys = opts
-        query = url.query
 
         connect_args = {}
         for param in ('ansi', 'unicode_results', 'autocommit'):
@@ -113,18 +123,21 @@ class AS400Dialect_pyodbc(PyODBCConnector, DB2Dialect):
                 connect_args[param] = util.asbool(keys.pop(param))
 
         if 'odbc_connect' in keys:
-            connectors = [urllib.unquote_plus(keys.pop('odbc_connect'))]
+            connectors = [urllib.parse.unquote_plus(keys.pop('odbc_connect'))]
         else:
             dsn_connection = 'dsn' in keys or \
                              ('host' in keys and 'database' not in keys)
             if dsn_connection:
-                connectors = ['dsn=%s' % (keys.pop('host', '') or \
+                connectors = ['dsn=%s' % (keys.pop('host', '') or
                                           keys.pop('dsn', ''))]
             else:
-                connectors = ["DRIVER={%s}" % keys.pop('driver', self.pyodbc_driver_name),
-                              'System=%s' % keys.pop('host', ''),
-                              'DBQ=QGPL']
-                connectors.append("PKG=QGPL/DEFAULT(IBM),2,0,1,0,512")
+                connectors = [
+                    "DRIVER={%s}" %
+                    keys.pop('driver', self.pyodbc_driver_name),
+                    'System=%s' % keys.pop('host', ''),
+                    'DBQ=QGPL',
+                    "PKG=QGPL/DEFAULT(IBM),2,0,1,0,512"
+                ]
                 db_name = keys.pop('database', '')
                 if db_name:
                     connectors.append("DATABASE=%s" % db_name)
@@ -138,10 +151,12 @@ class AS400Dialect_pyodbc(PyODBCConnector, DB2Dialect):
 
             # if set to 'Yes', the ODBC layer will try to automagically convert
             # textual data from your database encoding to your client encoding
-            # This should obviously be set to 'No' if you query a cp1253 encoded
-            # database from a latin1 client...
+            # This should obviously be set to 'No' if you query a cp1253
+            # encoded database from a latin1 client...
             if 'odbc_autotranslate' in keys:
-                connectors.append("AutoTranslate=%s" % keys.pop("odbc_autotranslate"))
+                connectors.append(
+                    "AutoTranslate=%s" %
+                    keys.pop("odbc_autotranslate"))
 
             connectors.extend(['%s=%s' % (k, v) for k, v in keys.items()])
         return [[";".join(connectors)], connect_args]

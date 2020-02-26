@@ -4,7 +4,12 @@ from setuptools import setup
 import os
 import re
 
-v = open(os.path.join(os.path.dirname(__file__), 'sqlalchemy_ibmi', '__init__.py'))
+# TODO replace code below to configure bumpversion to set the version
+v = open(
+    os.path.join(
+        os.path.dirname(__file__),
+        'sqlalchemy_ibmi',
+        '__init__.py'))
 VERSION = re.compile(r".*__version__ = '(.*?)'", re.S).match(v.read()).group(1)
 v.close()
 
