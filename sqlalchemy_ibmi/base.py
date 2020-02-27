@@ -32,6 +32,9 @@ from sqlalchemy.types import BLOB, CHAR, CLOB, DATE, DATETIME, INTEGER, \
     VARCHAR, FLOAT
 from . import reflection as ibm_reflection
 from .constants import RESERVED_WORDS
+import urllib
+from sqlalchemy import util
+from sqlalchemy.connectors.pyodbc import PyODBCConnector
 
 # as documented from:
 # http://publib.boulder.ibm.com/infocenter/db2luw/v9/index.jsp?topic=/com.ibm.db2.udb.doc/admin/r0001095.htm
@@ -638,7 +641,7 @@ class DB2ExecutionContext(_SelectLastRowIDMixin,
             type_)
 
 
-class DB2Dialect(default.DefaultDialect):
+class IBMiDb2Dialect(default.DefaultDialect, PyODBCConnector):
 
     name = 'sqlalchemy_ibmi'
     max_identifier_length = 128
@@ -646,25 +649,25 @@ class DB2Dialect(default.DefaultDialect):
     default_paramstyle = 'qmark'
     COLSPECS = COLSPECS
     ISCHEMA_NAMES = ISCHEMA_NAMES
-    supports_char_length = False
-    supports_unicode_statements = False
     supports_unicode_binds = False
     returns_unicode_strings = False
     postfetch_lastrowid = True
-    supports_sane_rowcount = True
-    supports_sane_multi_rowcount = True
-    supports_native_decimal = False
     supports_native_boolean = False
     preexecute_sequences = False
     supports_alter = True
     supports_sequences = True
     sequences_optional = True
-
+    supports_unicode_statements = True
+    supports_sane_rowcount = False
+    supports_sane_multi_rowcount = False
+    # TODO Investigate if supports_native_decimal needs to be True or False
+    supports_native_decimal = False
+    supports_char_length = True
+    pyodbc_driver_name = "iSeries Access ODBC Driver"
+    _reflector_cls = ibm_reflection.AS400Reflector
     requires_name_normalize = True
-
     supports_default_values = False
     supports_empty_insert = False
-
     two_phase_transactions = False
     savepoints = True
 
@@ -674,17 +677,15 @@ class DB2Dialect(default.DefaultDialect):
     preparer = DB2IdentifierPreparer
     execution_ctx_cls = DB2ExecutionContext
 
-    _reflector_cls = ibm_reflection.DB2Reflector
-
     def __init__(self, **kw):
-        super(DB2Dialect, self).__init__(**kw)
+        super(IBMiDb2Dialect, self).__init__(**kw)
 
         self._reflector = self._reflector_cls(self)
 
     # reflection: these all defer to an BaseDb2Reflector
     # object which selects between Db2 and AS/400 schemas
     def initialize(self, connection):
-        super(DB2Dialect, self).initialize(connection)
+        super(IBMiDb2Dialect, self).initialize(connection)
         self.dbms_ver = getattr(connection.connection, 'dbms_ver', None)
         self.dbms_name = getattr(connection.connection, 'dbms_name', None)
 
@@ -791,12 +792,62 @@ class DB2Dialect(default.DefaultDialect):
             schema=schema,
             **kw)
 
+    def create_connect_args(self, url):
+        opts = url.translate_connect_args(username='user')
+        opts.update(url.query)
+
+        keys = opts
+
+        connect_args = {}
+        for param in ('ansi', 'unicode_results', 'autocommit'):
+            if param in keys:
+                connect_args[param] = util.asbool(keys.pop(param))
+
+        if 'odbc_connect' in keys:
+            connectors = [urllib.parse.unquote_plus(keys.pop('odbc_connect'))]
+        else:
+            dsn_connection = 'dsn' in keys or \
+                             ('host' in keys and 'database' not in keys)
+            if dsn_connection:
+                connectors = ['dsn=%s' % (keys.pop('host', '') or
+                                          keys.pop('dsn', ''))]
+            else:
+                connectors = [
+                    "DRIVER={%s}" %
+                    keys.pop('driver', self.pyodbc_driver_name),
+                    'System=%s' % keys.pop('host', ''),
+                    'DBQ=QGPL',
+                    "PKG=QGPL/DEFAULT(IBM),2,0,1,0,512"
+                ]
+                db_name = keys.pop('database', '')
+                if db_name:
+                    connectors.append("DATABASE=%s" % db_name)
+
+            user = keys.pop("user", None)
+            if user:
+                connectors.append("UID=%s" % user)
+                connectors.append("PWD=%s" % keys.pop('password', ''))
+            else:
+                connectors.append("trusted_connection=yes")
+
+            # if set to 'Yes', the ODBC layer will try to automagically convert
+            # textual data from your database encoding to your client encoding
+            # This should obviously be set to 'No' if you query a cp1253
+            # encoded database from a latin1 client...
+            if 'odbc_autotranslate' in keys:
+                connectors.append(
+                    "AutoTranslate=%s" %
+                    keys.pop("odbc_autotranslate"))
+
+            connectors.extend(['%s=%s' % (k, v) for k, v in keys.items()])
+        return [[";".join(connectors)], connect_args]
+
 
 # legacy naming
 IBM_DBCompiler = DB2Compiler
 IBM_DBDDLCompiler = DB2DDLCompiler
 IBM_DBIdentifierPreparer = DB2IdentifierPreparer
 IBM_DBExecutionContext = DB2ExecutionContext
-IBM_DBDialect = DB2Dialect
+IBM_DBDialect = IBMiDb2Dialect
 
-dialect = DB2Dialect
+dialect = IBMiDb2Dialect

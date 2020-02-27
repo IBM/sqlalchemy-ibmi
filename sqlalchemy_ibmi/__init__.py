@@ -21,7 +21,7 @@
 
 __version__ = '0.1.0-dev'
 
-from . import backend, base
+from . import base
 
 # default dialect
-base.dialect = backend.dialect
+base.dialect = base.dialect
