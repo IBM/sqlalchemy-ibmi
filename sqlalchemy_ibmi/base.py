@@ -792,11 +792,4 @@ class DB2Dialect(default.DefaultDialect):
             **kw)
 
 
-# legacy naming
-IBM_DBCompiler = DB2Compiler
-IBM_DBDDLCompiler = DB2DDLCompiler
-IBM_DBIdentifierPreparer = DB2IdentifierPreparer
-IBM_DBExecutionContext = DB2ExecutionContext
-IBM_DBDialect = DB2Dialect
-
 dialect = DB2Dialect
