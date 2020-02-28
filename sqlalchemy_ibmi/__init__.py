@@ -23,5 +23,3 @@ __version__ = '0.1.0-dev'
 
 from . import base
 
-# default dialect
-base.dialect = base.dialect

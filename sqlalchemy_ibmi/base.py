@@ -678,14 +678,14 @@ class IBMiDb2Dialect(default.DefaultDialect, PyODBCConnector):
     execution_ctx_cls = DB2ExecutionContext
 
     def __init__(self, **kw):
-        super(IBMiDb2Dialect, self).__init__(**kw)
+        super().__init__(**kw)
 
         self._reflector = self._reflector_cls(self)
 
     # reflection: these all defer to an BaseDb2Reflector
     # object which selects between Db2 and AS/400 schemas
     def initialize(self, connection):
-        super(IBMiDb2Dialect, self).initialize(connection)
+        super().initialize(connection)
         self.dbms_ver = getattr(connection.connection, 'dbms_ver', None)
         self.dbms_name = getattr(connection.connection, 'dbms_name', None)
 
@@ -841,13 +841,3 @@ class IBMiDb2Dialect(default.DefaultDialect, PyODBCConnector):
 
             connectors.extend(['%s=%s' % (k, v) for k, v in keys.items()])
         return [[";".join(connectors)], connect_args]
-
-
-# legacy naming
-IBM_DBCompiler = DB2Compiler
-IBM_DBDDLCompiler = DB2DDLCompiler
-IBM_DBIdentifierPreparer = DB2IdentifierPreparer
-IBM_DBExecutionContext = DB2ExecutionContext
-IBM_DBDialect = IBMiDb2Dialect
-
-dialect = IBMiDb2Dialect
