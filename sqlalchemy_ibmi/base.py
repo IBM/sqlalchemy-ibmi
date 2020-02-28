@@ -663,7 +663,7 @@ class IBMiDb2Dialect(default.DefaultDialect, PyODBCConnector):
     # TODO Investigate if supports_native_decimal needs to be True or False
     supports_native_decimal = False
     supports_char_length = True
-    pyodbc_driver_name = "iSeries Access ODBC Driver"
+    pyodbc_driver_name = "IBM i Access ODBC Driver"
     _reflector_cls = ibm_reflection.AS400Reflector
     requires_name_normalize = True
     supports_default_values = False
