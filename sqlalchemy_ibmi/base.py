@@ -795,7 +795,6 @@ class IBMiDb2Dialect(default.DefaultDialect, PyODBCConnector):
     def create_connect_args(self, url):
         opts = url.translate_connect_args(username='user')
         opts.update(url.query)
-
         keys = opts
 
         connect_args = {}
