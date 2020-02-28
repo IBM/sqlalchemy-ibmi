@@ -2,22 +2,11 @@
 
 from setuptools import setup
 import os
-import re
-
-# TODO replace code below to configure bumpversion to set the version
-v = open(
-    os.path.join(
-        os.path.dirname(__file__),
-        'sqlalchemy_ibmi',
-        '__init__.py'))
-VERSION = re.compile(r".*__version__ = '(.*?)'", re.S).match(v.read()).group(1)
-v.close()
 
 readme = os.path.join(os.path.dirname(__file__), 'README.md')
 
 setup(
     name='sqlalchemy-ibmi',
-    version=VERSION,
     license='Apache License 2.0',
     description='SQLAlchemy support for Db2 on IBM i',
     author='IBM',
