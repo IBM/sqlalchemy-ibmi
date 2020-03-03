@@ -35,6 +35,7 @@ from .constants import RESERVED_WORDS
 import urllib
 from sqlalchemy import util
 from sqlalchemy.connectors.pyodbc import PyODBCConnector
+import pyodbc as database
 
 # as documented from:
 # http://publib.boulder.ibm.com/infocenter/db2luw/v9/index.jsp?topic=/com.ibm.db2.udb.doc/admin/r0001095.htm
@@ -441,15 +442,16 @@ class DB2DDLCompiler(compiler.DDLCompiler):
             return []
 
     def _is_nullable_unique_constraint_supported(self, dialect):
-        """Checks to see if the Db2 version is at least 10.5.
+        """Checks to see if the Db2 version is at least 7.0.
         This is needed for checking if unique constraints with null columns
         are supported.
         """
+        # TODO figure out implementation of this function in DB2DDLCompiler
 
         dbms_name = getattr(dialect, 'dbms_name', None)
         if hasattr(dialect, 'dbms_name'):
-            if dbms_name is not None and (dbms_name.find('Db2/') != -1):
-                return self.get_server_version_info(dialect) >= [10, 5]
+            if dbms_name is not None and (dbms_name.find('DB2/') != -1):
+                return self.get_server_version_info(dialect) >= [7, 0]
         else:
             return False
 
@@ -686,8 +688,8 @@ class IBMiDb2Dialect(default.DefaultDialect, PyODBCConnector):
     # object which selects between Db2 and AS/400 schemas
     def initialize(self, connection):
         super().initialize(connection)
-        self.dbms_ver = getattr(connection.connection, 'dbms_ver', None)
-        self.dbms_name = getattr(connection.connection, 'dbms_name', None)
+        self.dbms_ver = connection.connection.getinfo(database.SQL_DBMS_VER)
+        self.dbms_name = connection.connection.getinfo(database.SQL_DBMS_NAME)
 
     # TODO These methods are overridden from the default dialect and should be
     #  implemented
