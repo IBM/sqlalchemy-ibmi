@@ -647,7 +647,7 @@ class IBMiDb2Dialect(default.DefaultDialect, PyODBCConnector):
     max_identifier_length = 128
     encoding = 'utf-8'
     default_paramstyle = 'qmark'
-    COLSPECS = COLSPECS
+    colspecs = COLSPECS
     ISCHEMA_NAMES = ISCHEMA_NAMES
     supports_unicode_binds = False
     returns_unicode_strings = False
