@@ -637,7 +637,7 @@ class DB2ExecutionContext(_SelectLastRowIDMixin,
     def fire_sequence(self, seq, type_):
         return self._execute_scalar(
             "SELECT NEXTVAL FOR " +
-            self.connection.dialect.identifier_preparer.format_sequence(seq) +
+            self.connection.dialect.preparer.format_sequence(seq) +
             " FROM SYSIBM.SYSDUMMY1",
             type_)
 
@@ -671,7 +671,7 @@ class IBMiDb2Dialect(default.DefaultDialect, PyODBCConnector):
     encoding = 'utf-8'
     default_paramstyle = 'qmark'
     COLSPECS = COLSPECS
-    ISCHEMA_NAMES = ISCHEMA_NAMES
+    ischema_names = ISCHEMA_NAMES
     supports_unicode_binds = False
     returns_unicode_strings = False
     postfetch_lastrowid = True
@@ -699,15 +699,6 @@ class IBMiDb2Dialect(default.DefaultDialect, PyODBCConnector):
     preparer = DB2IdentifierPreparer
     execution_ctx_cls = DB2ExecutionContext
 
-    """ methods in Db2 on i """
-    def __init__(self, dialect, **kwargs):
-        super().__init__(**kwargs)
-        self.dialect = dialect
-        self.ischema_names = dialect.ischema_names
-        self.identifier_preparer = dialect.identifier_preparer
-
-    # reflection: these all defer to an BaseDb2Reflector
-    # object which selects between Db2 and AS/400 schemas
     def initialize(self, connection):
         super().initialize(connection)
         self.dbms_ver = getattr(connection.connection, 'dbms_ver', None)
@@ -813,7 +804,7 @@ class IBMiDb2Dialect(default.DefaultDialect, PyODBCConnector):
 
     @property
     def default_schema_name(self):
-        return self.dialect.default_schema_name
+        return self._get_default_schema_name()
 
     ischema = MetaData()
 
