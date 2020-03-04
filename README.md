@@ -8,16 +8,19 @@ The IBM i SQLAlchemy adapter provides a [SQLAlchemy](https://www.sqlalchemy.org/
 **Please note that this project is still in active development and is not ready for use.** :rotating_light: 
 
 ```python
-from sqlalchemy import create_engine, db
+import sqlalchemy as sa
 
+engine = sa.create_engine("ibmi://user:pass@host[:port]/database")
+cnxn = engine.connect()
+metadata = sa.MetaData()
+table = sa.Table('table_name', metadata, autoload=True, autoload_with=engine)
 
-e = create_engine("db2+ibm_db://user:pass@host[:port]/database")
-cnxn = e.connect()
-metadata = db.Metadata()
-table = db.Table('table_name', metadata, autoload=True, autoload_with=e)
-query = db.select([table])
+query = sa.select([table])
+
 result = cnxn.execute(query)
 result = result.fetchall()
+
+# print first entry
 print(result[0])
 
 ```
