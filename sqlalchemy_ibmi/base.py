@@ -34,7 +34,6 @@ from . import reflection as ibm_reflection
 from .constants import RESERVED_WORDS
 import urllib
 from sqlalchemy import util
-from sqlalchemy.connectors.pyodbc import PyODBCConnector
 
 # as documented from:
 # http://publib.boulder.ibm.com/infocenter/db2luw/v9/index.jsp?topic=/com.ibm.db2.udb.doc/admin/r0001095.htm
@@ -641,7 +640,7 @@ class DB2ExecutionContext(_SelectLastRowIDMixin,
             type_)
 
 
-class IBMiDb2Dialect(default.DefaultDialect, PyODBCConnector):
+class IBMiDb2Dialect(default.DefaultDialect):
 
     name = 'sqlalchemy_ibmi'
     max_identifier_length = 128
@@ -796,6 +795,9 @@ class IBMiDb2Dialect(default.DefaultDialect, PyODBCConnector):
         opts = url.translate_connect_args(username='user')
         opts.update(url.query)
         keys = opts
+        connect_args = {}
+        if 'autocommit' in keys:
+            connect_args['autocommit'] = util.asbool(keys.pop('autocommit'))
 
         connectors = ['DSN=%s' % (keys.pop('host', '') or
                                   keys.pop('dsn', ''))]
@@ -804,8 +806,6 @@ class IBMiDb2Dialect(default.DefaultDialect, PyODBCConnector):
         if user:
             connectors.append("UID=%s" % user)
             connectors.append("PWD=%s" % keys.pop('password', ''))
-        else:
-            connectors.append("trusted_connection=yes")
 
         connectors.extend(['%s=%s' % (k, v) for k, v in keys.items()])
-        return [[";".join(connectors)]]
+        return [[";".join(connectors)], connect_args]
