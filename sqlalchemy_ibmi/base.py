@@ -637,7 +637,7 @@ class DB2ExecutionContext(_SelectLastRowIDMixin,
     def fire_sequence(self, seq, type_):
         return self._execute_scalar(
             "SELECT NEXTVAL FOR " +
-            self.connection.dialect.preparer.format_sequence(seq) +
+            self.connection.dialect.identifier_preparer.format_sequence(seq) +
             " FROM SYSIBM.SYSDUMMY1",
             type_)
 
@@ -801,10 +801,6 @@ class IBMiDb2Dialect(default.DefaultDialect, PyODBCConnector):
         if isinstance(default_schema_name, str):
             default_schema_name = default_schema_name.strip()
         return self.normalize_name(default_schema_name)
-
-    @property
-    def default_schema_name(self):
-        return self._get_default_schema_name()
 
     ischema = MetaData()
 
