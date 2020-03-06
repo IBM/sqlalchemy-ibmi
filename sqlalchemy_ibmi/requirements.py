@@ -1,11 +1,19 @@
 from sqlalchemy.testing.requirements import SuiteRequirements
-
 from sqlalchemy.testing import exclusions
-
 from sqlalchemy.testing.exclusions import SpecPredicate
 
 
 class Requirements(SuiteRequirements):
+
+    """sqlalchemy requirements for tests. This class provides the mechanism to
+    set available functionality in the dialect"""
+
+    # TODO These methods are overridden from the default dialect and should be
+    #  implemented
+
+    def get_order_by_collation(self, config):
+        pass
+
     @property
     def on_update_cascade(self):
         """"target database must support ON UPDATE..CASCADE behavior in
@@ -55,9 +63,9 @@ class Requirements(SuiteRequirements):
         """target backend supports values with many digits on both sides,
         such as 319438950232418390.273596, 87673.594069654243
         """
-        return exclusions.fails_if(lambda: True,
-                                   "Throws error SQL0604N, regarding Decimal(38, 12)"
-                                   )
+        return exclusions.fails_if(
+            lambda: True,
+            "Throws error SQL0604N, regarding Decimal(38, 12)")
 
     @property
     def precision_numerics_retains_significant_digits(self):
@@ -87,14 +95,17 @@ class Requirements(SuiteRequirements):
     def temp_table_reflection(self):
         return exclusions.closed()
 
-    # adding implicitly_named_constraints which is not included in the requirements.py in testing suite
+    # adding implicitly_named_constraints which is not included in the
+    # requirements.py in testing suite
     @property
     def implicitly_named_constraints(self):
         """target database must apply names to unnamed constraints."""
 
-        return exclusions.skip_if([SpecPredicate("sqlite", "not supported by database")])
+        return exclusions.skip_if(
+            [SpecPredicate("sqlite", "not supported by database")])
 
-    # closed due to sqlalchemy.exc.CompileError: This SELECT structure does not use a simple integer value for limit
+    # closed due to sqlalchemy.exc.CompileError: This SELECT structure does
+    # not use a simple integer value for limit
     @property
     def bound_limit_offset(self):
         return exclusions.closed()

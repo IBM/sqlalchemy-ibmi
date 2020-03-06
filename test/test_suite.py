@@ -1,15 +1,20 @@
-from sqlalchemy import Numeric, literal
+import decimal
+from sqlalchemy import Numeric
 from sqlalchemy.testing.suite import *
 import sqlalchemy as sa
 import operator
-from sqlalchemy.testing.suite import ComponentReflectionTest as _ComponentReflectionTest
-from sqlalchemy.testing.suite import ExpandingBoundInTest as _ExpandingBoundInTest
-from sqlalchemy.testing.suite import NumericTest as _NumericTest
-import decimal
-from sqlalchemy.testing.suite import InsertBehaviorTest as _InsertBehaviorTest
+from sqlalchemy.testing.suite \
+    import ComponentReflectionTest as _ComponentReflectionTest
+from sqlalchemy.testing.suite \
+    import ExpandingBoundInTest as _ExpandingBoundInTest
+from sqlalchemy.testing.suite \
+    import NumericTest as _NumericTest
+from sqlalchemy.testing.suite \
+    import InsertBehaviorTest as _InsertBehaviorTest
 
 
-# removed constraint that used same columns with different name as it caused a duplicate constraint error
+# removed constraint that used same columns with different name as it caused
+# a duplicate constraint error
 class ComponentReflectionTest(_ComponentReflectionTest):
     def _test_get_unique_constraints(self, schema=None):
         # SQLite dialect needs to parse the names of the constraints
@@ -118,7 +123,8 @@ class NumericTest(_NumericTest):
     def test_decimal_coerce_round_trip_w_cast(self):
         expr = decimal.Decimal("15.7563")
 
-        val = testing.db.scalar(select([sa.cast(expr, sa.types.DECIMAL(10, 4))]))
+        val = testing.db.scalar(
+            select([sa.cast(expr, sa.types.DECIMAL(10, 4))]))
         eq_(val, expr)
 
     # casting the value to avoid untyped parameter markers
@@ -127,30 +133,39 @@ class NumericTest(_NumericTest):
     def test_decimal_coerce_round_trip(self):
         expr = decimal.Decimal("15.7563")
 
-        val = testing.db.scalar(select([sa.cast(sa.literal(expr), sa.types.DECIMAL(10, 4))]))
+        val = testing.db.scalar(
+            select([sa.cast(sa.literal(expr), sa.types.DECIMAL(10, 4))]))
         eq_(val, expr)
 
     # casting the value to avoid untyped parameter markers
     def test_float_coerce_round_trip(self):
         expr = 15.7563
 
-        val = testing.db.scalar(select([sa.cast(sa.literal(expr), sa.types.DECIMAL(10, 4, asdecimal=False))]))
+        val = testing.db.scalar(
+            select(
+                [
+                    sa.cast(sa.literal(expr),
+                            sa.types.DECIMAL(10, 4, asdecimal=False))
+                ]))
         eq_(val, expr)
 
-    # changed Numeric precision to 31 from 38 as DB2 for i supports a max precision of 31 digits
+    # changed Numeric precision to 31 from 38 as DB2 for i supports a max
+    # precision of 31 digits
     @testing.requires.precision_numerics_many_significant_digits
     def test_many_significant_digits(self):
-        numbers = {decimal.Decimal("31943874831932418390.01"), decimal.Decimal("319438950232418390.273596"),
+        numbers = {decimal.Decimal("31943874831932418390.01"),
+                   decimal.Decimal("319438950232418390.273596"),
                    decimal.Decimal("87673.594069654243")}
         self._do_test(Numeric(precision=31, scale=12), numbers, numbers)
 
 
 class InsertBehaviorTest(_InsertBehaviorTest):
 
-    # Skipping test due to incompatible sql query with Db2.
-    # Using parameter markers in a arithmetic expression is not supported.
-    # To force this to work, one can cast the parameter marker to int or float before performing the operation.
-    # However, this will not work here due to SQLAlchemy code
+    # Skipping test due to incompatible sql query with Db2. Using parameter
+    # markers in a arithmetic expression is not supported. To force this to
+    # work, one can cast the parameter marker to int or float before
+    # performing the operation. However, this will not work here due to
+    # SQLAlchemy code
     @requirements.insert_from_select
     def test_insert_from_select_with_defaults(self):
         return
