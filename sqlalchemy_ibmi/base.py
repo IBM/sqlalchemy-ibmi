@@ -21,7 +21,6 @@
 """
 import datetime
 import re
-from sqlalchemy import types as sa_types
 from sqlalchemy import schema as sa_schema
 from sqlalchemy.sql import compiler
 from sqlalchemy.sql import operators
@@ -642,28 +641,6 @@ class DB2ExecutionContext(_SelectLastRowIDMixin,
             type_)
 
 
-class CoerceUnicode(sa_types.TypeDecorator):
-    """Coerce unicode to string"""
-
-    # TODO These methods are overridden from the default dialect and should be
-    #  implemented
-
-    def process_literal_param(self, value, dialect):
-        pass
-
-    def process_result_value(self, value, dialect):
-        pass
-
-    @property
-    def python_type(self):
-        pass
-
-    impl = sa_types.Unicode
-
-    def process_bind_param(self, value, dialect):
-        return value
-
-
 class IBMiDb2Dialect(default.DefaultDialect, PyODBCConnector):
 
     name = 'sqlalchemy_ibmi'
@@ -806,94 +783,94 @@ class IBMiDb2Dialect(default.DefaultDialect, PyODBCConnector):
 
     sys_schemas = Table(
         "SQLSCHEMAS", ischema,
-        Column("TABLE_SCHEM", CoerceUnicode, key="schemaname"),
+        Column("TABLE_SCHEM", sa_types.Unicode, key="schemaname"),
         schema="SYSIBM")
 
     sys_tables = Table(
         "SYSTABLES", ischema,
-        Column("TABLE_SCHEMA", CoerceUnicode, key="tabschema"),
-        Column("TABLE_NAME", CoerceUnicode, key="tabname"),
-        Column("TABLE_TYPE", CoerceUnicode, key="tabtype"),
+        Column("TABLE_SCHEMA", sa_types.Unicode, key="tabschema"),
+        Column("TABLE_NAME", sa_types.Unicode, key="tabname"),
+        Column("TABLE_TYPE", sa_types.Unicode, key="tabtype"),
         schema="QSYS2")
 
     sys_table_constraints = Table(
         "SYSCST", ischema,
-        Column("CONSTRAINT_SCHEMA", CoerceUnicode, key="conschema"),
-        Column("CONSTRAINT_NAME", CoerceUnicode, key="conname"),
-        Column("CONSTRAINT_TYPE", CoerceUnicode, key="contype"),
-        Column("TABLE_SCHEMA", CoerceUnicode, key="tabschema"),
-        Column("TABLE_NAME", CoerceUnicode, key="tabname"),
-        Column("TABLE_TYPE", CoerceUnicode, key="tabtype"),
+        Column("CONSTRAINT_SCHEMA", sa_types.Unicode, key="conschema"),
+        Column("CONSTRAINT_NAME", sa_types.Unicode, key="conname"),
+        Column("CONSTRAINT_TYPE", sa_types.Unicode, key="contype"),
+        Column("TABLE_SCHEMA", sa_types.Unicode, key="tabschema"),
+        Column("TABLE_NAME", sa_types.Unicode, key="tabname"),
+        Column("TABLE_TYPE", sa_types.Unicode, key="tabtype"),
         schema="QSYS2")
 
     sys_key_constraints = Table(
         "SYSKEYCST", ischema,
-        Column("CONSTRAINT_SCHEMA", CoerceUnicode, key="conschema"),
-        Column("CONSTRAINT_NAME", CoerceUnicode, key="conname"),
-        Column("TABLE_SCHEMA", CoerceUnicode, key="tabschema"),
-        Column("TABLE_NAME", CoerceUnicode, key="tabname"),
-        Column("COLUMN_NAME", CoerceUnicode, key="colname"),
+        Column("CONSTRAINT_SCHEMA", sa_types.Unicode, key="conschema"),
+        Column("CONSTRAINT_NAME", sa_types.Unicode, key="conname"),
+        Column("TABLE_SCHEMA", sa_types.Unicode, key="tabschema"),
+        Column("TABLE_NAME", sa_types.Unicode, key="tabname"),
+        Column("COLUMN_NAME", sa_types.Unicode, key="colname"),
         Column("ORDINAL_POSITION", sa_types.Integer, key="colno"),
         schema="QSYS2")
 
     sys_columns = Table(
         "SYSCOLUMNS", ischema,
-        Column("TABLE_SCHEMA", CoerceUnicode, key="tabschema"),
-        Column("TABLE_NAME", CoerceUnicode, key="tabname"),
-        Column("COLUMN_NAME", CoerceUnicode, key="colname"),
+        Column("TABLE_SCHEMA", sa_types.Unicode, key="tabschema"),
+        Column("TABLE_NAME", sa_types.Unicode, key="tabname"),
+        Column("COLUMN_NAME", sa_types.Unicode, key="colname"),
         Column("ORDINAL_POSITION", sa_types.Integer, key="colno"),
-        Column("DATA_TYPE", CoerceUnicode, key="typename"),
+        Column("DATA_TYPE", sa_types.Unicode, key="typename"),
         Column("LENGTH", sa_types.Integer, key="length"),
         Column("NUMERIC_SCALE", sa_types.Integer, key="scale"),
         Column("IS_NULLABLE", sa_types.Integer, key="nullable"),
-        Column("COLUMN_DEFAULT", CoerceUnicode, key="defaultval"),
-        Column("HAS_DEFAULT", CoerceUnicode, key="hasdef"),
-        Column("IS_IDENTITY", CoerceUnicode, key="isid"),
-        Column("IDENTITY_GENERATION", CoerceUnicode, key="idgenerate"),
+        Column("COLUMN_DEFAULT", sa_types.Unicode, key="defaultval"),
+        Column("HAS_DEFAULT", sa_types.Unicode, key="hasdef"),
+        Column("IS_IDENTITY", sa_types.Unicode, key="isid"),
+        Column("IDENTITY_GENERATION", sa_types.Unicode, key="idgenerate"),
         schema="QSYS2")
 
     sys_indexes = Table(
         "SYSINDEXES", ischema,
-        Column("TABLE_SCHEMA", CoerceUnicode, key="tabschema"),
-        Column("TABLE_NAME", CoerceUnicode, key="tabname"),
-        Column("INDEX_SCHEMA", CoerceUnicode, key="indschema"),
-        Column("INDEX_NAME", CoerceUnicode, key="indname"),
-        Column("IS_UNIQUE", CoerceUnicode, key="uniquerule"),
+        Column("TABLE_SCHEMA", sa_types.Unicode, key="tabschema"),
+        Column("TABLE_NAME", sa_types.Unicode, key="tabname"),
+        Column("INDEX_SCHEMA", sa_types.Unicode, key="indschema"),
+        Column("INDEX_NAME", sa_types.Unicode, key="indname"),
+        Column("IS_UNIQUE", sa_types.Unicode, key="uniquerule"),
         schema="QSYS2")
 
     sys_keys = Table(
         "SYSKEYS", ischema,
-        Column("INDEX_SCHEMA", CoerceUnicode, key="indschema"),
-        Column("INDEX_NAME", CoerceUnicode, key="indname"),
-        Column("COLUMN_NAME", CoerceUnicode, key="colname"),
+        Column("INDEX_SCHEMA", sa_types.Unicode, key="indschema"),
+        Column("INDEX_NAME", sa_types.Unicode, key="indname"),
+        Column("COLUMN_NAME", sa_types.Unicode, key="colname"),
         Column("ORDINAL_POSITION", sa_types.Integer, key="colno"),
-        Column("ORDERING", CoerceUnicode, key="ordering"),
+        Column("ORDERING", sa_types.Unicode, key="ordering"),
         schema="QSYS2")
 
     sys_foreignkeys = Table(
         "SQLFOREIGNKEYS", ischema,
-        Column("FK_NAME", CoerceUnicode, key="fkname"),
-        Column("FKTABLE_SCHEM", CoerceUnicode, key="fktabschema"),
-        Column("FKTABLE_NAME", CoerceUnicode, key="fktabname"),
-        Column("FKCOLUMN_NAME", CoerceUnicode, key="fkcolname"),
-        Column("PK_NAME", CoerceUnicode, key="pkname"),
-        Column("PKTABLE_SCHEM", CoerceUnicode, key="pktabschema"),
-        Column("PKTABLE_NAME", CoerceUnicode, key="pktabname"),
-        Column("PKCOLUMN_NAME", CoerceUnicode, key="pkcolname"),
+        Column("FK_NAME", sa_types.Unicode, key="fkname"),
+        Column("FKTABLE_SCHEM", sa_types.Unicode, key="fktabschema"),
+        Column("FKTABLE_NAME", sa_types.Unicode, key="fktabname"),
+        Column("FKCOLUMN_NAME", sa_types.Unicode, key="fkcolname"),
+        Column("PK_NAME", sa_types.Unicode, key="pkname"),
+        Column("PKTABLE_SCHEM", sa_types.Unicode, key="pktabschema"),
+        Column("PKTABLE_NAME", sa_types.Unicode, key="pktabname"),
+        Column("PKCOLUMN_NAME", sa_types.Unicode, key="pkcolname"),
         Column("KEY_SEQ", sa_types.Integer, key="colno"),
         schema="SYSIBM")
 
     sys_views = Table(
         "SYSVIEWS", ischema,
-        Column("TABLE_SCHEMA", CoerceUnicode, key="viewschema"),
-        Column("TABLE_NAME", CoerceUnicode, key="viewname"),
-        Column("VIEW_DEFINITION", CoerceUnicode, key="text"),
+        Column("TABLE_SCHEMA", sa_types.Unicode, key="viewschema"),
+        Column("TABLE_NAME", sa_types.Unicode, key="viewname"),
+        Column("VIEW_DEFINITION", sa_types.Unicode, key="text"),
         schema="QSYS2")
 
     sys_sequences = Table(
         "SYSSEQUENCES", ischema,
-        Column("SEQUENCE_SCHEMA", CoerceUnicode, key="seqschema"),
-        Column("SEQUENCE_NAME", CoerceUnicode, key="seqname"),
+        Column("SEQUENCE_SCHEMA", sa_types.Unicode, key="seqschema"),
+        Column("SEQUENCE_NAME", sa_types.Unicode, key="seqname"),
         schema="QSYS2")
 
     def has_table(self, connection, table_name, schema=None):
