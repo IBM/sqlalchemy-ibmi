@@ -749,20 +749,10 @@ class IBMiDb2Dialect(default.DefaultDialect, PyODBCConnector):
         opts = url.translate_connect_args(username='user')
         opts.update(url.query)
         keys = opts
-        connect_args = {}
-        if 'autocommit' in keys:
-            connect_args['autocommit'] = util.asbool(keys.pop('autocommit'))
-
-        connectors = ['DSN=%s' % (keys.pop('host', '') or
-                                  keys.pop('dsn', ''))]
-
-        user = keys.pop("user", None)
-        if user:
-            connectors.append("UID=%s" % user)
-            connectors.append("PWD=%s" % keys.pop('password', ''))
-
-        connectors.extend(['%s=%s' % (k, v) for k, v in keys.items()])
-        return [[";".join(connectors)], connect_args]
+        args = ['host', 'user', 'password', 'ansi', 'attrs_before',
+                'autocommit', 'encoding', 'readonly', 'timeout']
+        keys = {key: keys[key] for key in keys if key in args}
+        return [["Driver={%s}" % self.pyodbc_driver_name], keys]
 
     def _get_default_schema_name(self, connection):
         """Return: current setting of the schema attribute"""
