@@ -641,7 +641,7 @@ class DB2ExecutionContext(_SelectLastRowIDMixin,
             " FROM SYSIBM.SYSDUMMY1",
             type_)
 
-      
+
 class CoerceUnicode(sa_types.TypeDecorator):
     """Coerce unicode to string"""
 
@@ -748,11 +748,13 @@ class IBMiDb2Dialect(default.DefaultDialect, PyODBCConnector):
     def create_connect_args(self, url):
         opts = url.translate_connect_args(username='user')
         opts.update(url.query)
-        keys = opts
-        args = ['host', 'user', 'password', 'ansi', 'attrs_before',
-                'autocommit', 'encoding', 'readonly', 'timeout']
-        keys = {key: keys[key] for key in keys if key in args}
-        return [["Driver={%s}" % self.pyodbc_driver_name], keys]
+        allowed_opts = {'host', 'user', 'password',
+                        'autocommit', 'readonly', 'timeout'}
+        if allowed_opts < opts.keys():
+            raise ValueError("Option entered not valid for "
+                             "IBM i Access ODBC Driver")
+        else:
+            return [["Driver={%s}" % self.pyodbc_driver_name], opts]
 
     def _get_default_schema_name(self, connection):
         """Return: current setting of the schema attribute"""
