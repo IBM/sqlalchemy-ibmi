@@ -21,20 +21,20 @@
 """
 import datetime
 import re
-from sqlalchemy import types as sa_types
 from sqlalchemy import schema as sa_schema
-from sqlalchemy import util
 from sqlalchemy.sql import compiler
 from sqlalchemy.sql import operators
 from sqlalchemy.engine import default
 from sqlalchemy.types import BLOB, CHAR, CLOB, DATE, DATETIME, INTEGER, \
     SMALLINT, BIGINT, DECIMAL, NUMERIC, REAL, TIME, TIMESTAMP, \
     VARCHAR, FLOAT
-from . import reflection as ibm_reflection
 from .constants import RESERVED_WORDS
 import urllib
-from sqlalchemy import util
 from sqlalchemy.connectors.pyodbc import PyODBCConnector
+from sqlalchemy import sql, util
+from sqlalchemy import Table, MetaData, Column
+from sqlalchemy.engine import reflection
+from sqlalchemy import types as sa_types
 
 # as documented from:
 # http://publib.boulder.ibm.com/infocenter/db2luw/v9/index.jsp?topic=/com.ibm.db2.udb.doc/admin/r0001095.htm
@@ -647,8 +647,8 @@ class IBMiDb2Dialect(default.DefaultDialect, PyODBCConnector):
     max_identifier_length = 128
     encoding = 'utf-8'
     default_paramstyle = 'qmark'
-    COLSPECS = COLSPECS
-    ISCHEMA_NAMES = ISCHEMA_NAMES
+    colspecs = COLSPECS
+    ischema_names = ISCHEMA_NAMES
     supports_unicode_binds = False
     returns_unicode_strings = False
     postfetch_lastrowid = True
@@ -664,7 +664,6 @@ class IBMiDb2Dialect(default.DefaultDialect, PyODBCConnector):
     supports_native_decimal = False
     supports_char_length = True
     pyodbc_driver_name = "IBM i Access ODBC Driver"
-    _reflector_cls = ibm_reflection.AS400Reflector
     requires_name_normalize = True
     supports_default_values = False
     supports_empty_insert = False
@@ -677,13 +676,6 @@ class IBMiDb2Dialect(default.DefaultDialect, PyODBCConnector):
     preparer = DB2IdentifierPreparer
     execution_ctx_cls = DB2ExecutionContext
 
-    def __init__(self, **kw):
-        super().__init__(**kw)
-
-        self._reflector = self._reflector_cls(self)
-
-    # reflection: these all defer to an BaseDb2Reflector
-    # object which selects between Db2 and AS/400 schemas
     def initialize(self, connection):
         super().initialize(connection)
         self.dbms_ver = getattr(connection.connection, 'dbms_ver', None)
@@ -729,68 +721,6 @@ class IBMiDb2Dialect(default.DefaultDialect, PyODBCConnector):
 
     def get_isolation_level(self, dbapi_conn):
         pass
-
-    def normalize_name(self, name):
-        return self._reflector.normalize_name(name)
-
-    def denormalize_name(self, name):
-        return self._reflector.denormalize_name(name)
-
-    def _get_default_schema_name(self, connection):
-        return self._reflector._get_default_schema_name(connection)
-
-    def has_table(self, connection, table_name, schema=None):
-        return self._reflector.has_table(connection, table_name, schema=schema)
-
-    def has_sequence(self, connection, sequence_name, schema=None):
-        return self._reflector.has_sequence(connection, sequence_name,
-                                            schema=schema)
-
-    def get_schema_names(self, connection, **kw):
-        return self._reflector.get_schema_names(connection, **kw)
-
-    def get_table_names(self, connection, schema=None, **kw):
-        return self._reflector.get_table_names(connection, schema=schema, **kw)
-
-    def get_view_names(self, connection, schema=None, **kw):
-        return self._reflector.get_view_names(connection, schema=schema, **kw)
-
-    def get_view_definition(self, connection, viewname, schema=None, **kw):
-        return self._reflector.get_view_definition(
-            connection, viewname, schema=schema, **kw)
-
-    def get_columns(self, connection, table_name, schema=None, **kw):
-        return self._reflector.get_columns(
-            connection, table_name, schema=schema, **kw)
-
-    def get_primary_keys(self, connection, table_name, schema=None, **kw):
-        return self._reflector.get_primary_keys(
-            connection, table_name, schema=schema, **kw)
-
-    def get_foreign_keys(self, connection, table_name, schema=None, **kw):
-        return self._reflector.get_foreign_keys(
-            connection, table_name, schema=schema, **kw)
-
-    def get_incoming_foreign_keys(
-            self,
-            connection,
-            table_name,
-            schema=None,
-            **kw):
-        return self._reflector.get_incoming_foreign_keys(
-            connection, table_name, schema=schema, **kw)
-
-    def get_indexes(self, connection, table_name, schema=None, **kw):
-        return self._reflector.get_indexes(
-            connection, table_name, schema=schema, **kw)
-
-    def get_unique_constraints(
-            self, connection, table_name, schema=None, **kw):
-        return self._reflector.get_unique_constraints(
-            connection,
-            table_name,
-            schema=schema,
-            **kw)
 
     def create_connect_args(self, url):
         opts = url.translate_connect_args(username='user')
@@ -840,3 +770,317 @@ class IBMiDb2Dialect(default.DefaultDialect, PyODBCConnector):
 
             connectors.extend(['%s=%s' % (k, v) for k, v in keys.items()])
         return [[";".join(connectors)], connect_args]
+
+    def _get_default_schema_name(self, connection):
+        """Return: current setting of the schema attribute"""
+        default_schema_name = connection.execute(
+            u'SELECT CURRENT_SCHEMA FROM SYSIBM.SYSDUMMY1').scalar()
+        if isinstance(default_schema_name, str):
+            default_schema_name = default_schema_name.strip()
+        return self.normalize_name(default_schema_name)
+
+    ischema = MetaData()
+
+    sys_schemas = Table(
+        "SQLSCHEMAS", ischema,
+        Column("TABLE_SCHEM", sa_types.Unicode, key="schemaname"),
+        schema="SYSIBM")
+
+    sys_tables = Table(
+        "SYSTABLES", ischema,
+        Column("TABLE_SCHEMA", sa_types.Unicode, key="tabschema"),
+        Column("TABLE_NAME", sa_types.Unicode, key="tabname"),
+        Column("TABLE_TYPE", sa_types.Unicode, key="tabtype"),
+        schema="QSYS2")
+
+    sys_table_constraints = Table(
+        "SYSCST", ischema,
+        Column("CONSTRAINT_SCHEMA", sa_types.Unicode, key="conschema"),
+        Column("CONSTRAINT_NAME", sa_types.Unicode, key="conname"),
+        Column("CONSTRAINT_TYPE", sa_types.Unicode, key="contype"),
+        Column("TABLE_SCHEMA", sa_types.Unicode, key="tabschema"),
+        Column("TABLE_NAME", sa_types.Unicode, key="tabname"),
+        Column("TABLE_TYPE", sa_types.Unicode, key="tabtype"),
+        schema="QSYS2")
+
+    sys_key_constraints = Table(
+        "SYSKEYCST", ischema,
+        Column("CONSTRAINT_SCHEMA", sa_types.Unicode, key="conschema"),
+        Column("CONSTRAINT_NAME", sa_types.Unicode, key="conname"),
+        Column("TABLE_SCHEMA", sa_types.Unicode, key="tabschema"),
+        Column("TABLE_NAME", sa_types.Unicode, key="tabname"),
+        Column("COLUMN_NAME", sa_types.Unicode, key="colname"),
+        Column("ORDINAL_POSITION", sa_types.Integer, key="colno"),
+        schema="QSYS2")
+
+    sys_columns = Table(
+        "SYSCOLUMNS", ischema,
+        Column("TABLE_SCHEMA", sa_types.Unicode, key="tabschema"),
+        Column("TABLE_NAME", sa_types.Unicode, key="tabname"),
+        Column("COLUMN_NAME", sa_types.Unicode, key="colname"),
+        Column("ORDINAL_POSITION", sa_types.Integer, key="colno"),
+        Column("DATA_TYPE", sa_types.Unicode, key="typename"),
+        Column("LENGTH", sa_types.Integer, key="length"),
+        Column("NUMERIC_SCALE", sa_types.Integer, key="scale"),
+        Column("IS_NULLABLE", sa_types.Integer, key="nullable"),
+        Column("COLUMN_DEFAULT", sa_types.Unicode, key="defaultval"),
+        Column("HAS_DEFAULT", sa_types.Unicode, key="hasdef"),
+        Column("IS_IDENTITY", sa_types.Unicode, key="isid"),
+        Column("IDENTITY_GENERATION", sa_types.Unicode, key="idgenerate"),
+        schema="QSYS2")
+
+    sys_indexes = Table(
+        "SYSINDEXES", ischema,
+        Column("TABLE_SCHEMA", sa_types.Unicode, key="tabschema"),
+        Column("TABLE_NAME", sa_types.Unicode, key="tabname"),
+        Column("INDEX_SCHEMA", sa_types.Unicode, key="indschema"),
+        Column("INDEX_NAME", sa_types.Unicode, key="indname"),
+        Column("IS_UNIQUE", sa_types.Unicode, key="uniquerule"),
+        schema="QSYS2")
+
+    sys_keys = Table(
+        "SYSKEYS", ischema,
+        Column("INDEX_SCHEMA", sa_types.Unicode, key="indschema"),
+        Column("INDEX_NAME", sa_types.Unicode, key="indname"),
+        Column("COLUMN_NAME", sa_types.Unicode, key="colname"),
+        Column("ORDINAL_POSITION", sa_types.Integer, key="colno"),
+        Column("ORDERING", sa_types.Unicode, key="ordering"),
+        schema="QSYS2")
+
+    sys_foreignkeys = Table(
+        "SQLFOREIGNKEYS", ischema,
+        Column("FK_NAME", sa_types.Unicode, key="fkname"),
+        Column("FKTABLE_SCHEM", sa_types.Unicode, key="fktabschema"),
+        Column("FKTABLE_NAME", sa_types.Unicode, key="fktabname"),
+        Column("FKCOLUMN_NAME", sa_types.Unicode, key="fkcolname"),
+        Column("PK_NAME", sa_types.Unicode, key="pkname"),
+        Column("PKTABLE_SCHEM", sa_types.Unicode, key="pktabschema"),
+        Column("PKTABLE_NAME", sa_types.Unicode, key="pktabname"),
+        Column("PKCOLUMN_NAME", sa_types.Unicode, key="pkcolname"),
+        Column("KEY_SEQ", sa_types.Integer, key="colno"),
+        schema="SYSIBM")
+
+    sys_views = Table(
+        "SYSVIEWS", ischema,
+        Column("TABLE_SCHEMA", sa_types.Unicode, key="viewschema"),
+        Column("TABLE_NAME", sa_types.Unicode, key="viewname"),
+        Column("VIEW_DEFINITION", sa_types.Unicode, key="text"),
+        schema="QSYS2")
+
+    sys_sequences = Table(
+        "SYSSEQUENCES", ischema,
+        Column("SEQUENCE_SCHEMA", sa_types.Unicode, key="seqschema"),
+        Column("SEQUENCE_NAME", sa_types.Unicode, key="seqname"),
+        schema="QSYS2")
+
+    def has_table(self, connection, table_name, schema=None):
+        current_schema = self.denormalize_name(
+            schema or self.default_schema_name)
+        table_name = self.denormalize_name(table_name)
+        if current_schema:
+            whereclause = sql.and_(
+                self.sys_tables.c.tabschema == current_schema,
+                self.sys_tables.c.tabname == table_name)
+        else:
+            whereclause = self.sys_tables.c.tabname == table_name
+        select_statement = sql.select([self.sys_tables], whereclause)
+        results = connection.execute(select_statement)
+        return results.first() is not None
+
+    def has_sequence(self, connection, sequence_name, schema=None):
+        current_schema = self.denormalize_name(
+            schema or self.default_schema_name)
+        sequence_name = self.denormalize_name(sequence_name)
+        if current_schema:
+            whereclause = sql.and_(
+                self.sys_sequences.c.seqschema == current_schema,
+                self.sys_sequences.c.seqname == sequence_name)
+        else:
+            whereclause = self.sys_sequences.c.seqname == sequence_name
+        select_statement = sql.select(
+            [self.sys_sequences.c.seqname], whereclause)
+        results = connection.execute(select_statement)
+        return results.first() is not None
+
+    @reflection.cache
+    def get_schema_names(self, connection, **kw):
+        sysschema = self.sys_schemas
+        query = sql.select([sysschema.c.schemaname],
+                           sql.not_(sysschema.c.schemaname.like('SYS%')),
+                           sql.not_(sysschema.c.schemaname.like('Q%')),
+                           order_by=[sysschema.c.schemaname]
+                           )
+        return [self.normalize_name(r[0]) for r in connection.execute(query)]
+
+    # Retrieves a list of table names for a given schema
+    @reflection.cache
+    def get_table_names(self, connection, schema=None, **kw):
+        current_schema = self.denormalize_name(
+            schema or self.default_schema_name)
+        systbl = self.sys_tables
+        query = sql.select([systbl.c.tabname]).\
+            where(systbl.c.tabtype == 'T').\
+            where(systbl.c.tabschema == current_schema).\
+            order_by(systbl.c.tabname)
+        return [self.normalize_name(r[0]) for r in connection.execute(query)]
+
+    @reflection.cache
+    def get_view_names(self, connection, schema=None, **kw):
+        current_schema = self.denormalize_name(
+            schema or self.default_schema_name)
+
+        query = sql.select([self.sys_views.c.viewname],
+                           self.sys_views.c.viewschema == current_schema,
+                           order_by=[self.sys_views.c.viewname]
+                           )
+        return [self.normalize_name(r[0]) for r in connection.execute(query)]
+
+    @reflection.cache
+    def get_view_definition(self, connection, viewname, schema=None, **kw):
+        current_schema = self.denormalize_name(
+            schema or self.default_schema_name)
+        viewname = self.denormalize_name(viewname)
+
+        query = sql.select([self.sys_views.c.text],
+                           self.sys_views.c.viewschema == current_schema,
+                           self.sys_views.c.viewname == viewname
+                           )
+        return connection.execute(query).scalar()
+
+    @reflection.cache
+    def get_columns(self, connection, table_name, schema=None, **kw):
+        current_schema = self.denormalize_name(
+            schema or self.default_schema_name)
+        table_name = self.denormalize_name(table_name)
+        syscols = self.sys_columns
+
+        query = sql.select(
+            [syscols.c.colname, syscols.c.typename, syscols.c.defaultval,
+             syscols.c.nullable, syscols.c.length, syscols.c.scale,
+             syscols.c.isid, syscols.c.idgenerate],
+            sql.and_(syscols.c.tabschema == current_schema,
+                     syscols.c.tabname == table_name),
+            order_by=[syscols.c.colno])
+        sa_columns = []
+        for row in connection.execute(query):
+            coltype = row[1].upper()
+            if coltype in ['DECIMAL', 'NUMERIC']:
+                coltype = self.ischema_names.get(
+                    coltype)(int(row[4]), int(row[5]))
+            elif coltype in ['CHARACTER', 'CHAR', 'VARCHAR', 'GRAPHIC',
+                             'VARGRAPHIC']:
+                coltype = self.ischema_names.get(coltype)(int(row[4]))
+            else:
+                try:
+                    coltype = self.ischema_names[coltype]
+                except KeyError:
+                    util.warn("Did not recognize type '%s' of column '%s'" %
+                              (coltype, row[0]))
+                    coltype = sa_types.NULLTYPE
+
+            sa_columns.append({
+                'name': self.normalize_name(row[0]),
+                'type': coltype,
+                'nullable': row[3] == 'Y',
+                'default': row[2],
+                'autoincrement': (row[6] == 'YES') and (row[7] is not None),
+            })
+        return sa_columns
+
+    @reflection.cache
+    def get_primary_keys(self, connection, table_name, schema=None, **kw):
+        current_schema = self.denormalize_name(
+            schema or self.default_schema_name)
+        table_name = self.denormalize_name(table_name)
+        sysconst = self.sys_table_constraints
+        syskeyconst = self.sys_key_constraints
+
+        query = sql.select([syskeyconst.c.colname, sysconst.c.tabname],
+                           sql.and_(
+                               syskeyconst.c.conschema == sysconst.c.conschema,
+                               syskeyconst.c.conname == sysconst.c.conname,
+                               sysconst.c.tabschema == current_schema,
+                               sysconst.c.tabname == table_name,
+                               sysconst.c.contype == 'PRIMARY KEY'),
+                           order_by=[syskeyconst.c.colno])
+
+        return [self.normalize_name(key[0])
+                for key in connection.execute(query)]
+
+    @reflection.cache
+    def get_foreign_keys(self, connection, table_name, schema=None, **kw):
+        default_schema = self.default_schema_name
+        current_schema = self.denormalize_name(schema or default_schema)
+        default_schema = self.normalize_name(default_schema)
+        table_name = self.denormalize_name(table_name)
+        sysfkeys = self.sys_foreignkeys
+        query = sql.select(
+            [sysfkeys.c.fkname, sysfkeys.c.fktabschema, sysfkeys.c.fktabname,
+             sysfkeys.c.fkcolname, sysfkeys.c.pkname, sysfkeys.c.pktabschema,
+             sysfkeys.c.pktabname, sysfkeys.c.pkcolname],
+            sql.and_(sysfkeys.c.fktabschema == current_schema,
+                     sysfkeys.c.fktabname == table_name),
+            order_by=[sysfkeys.c.colno])
+        fschema = {}
+        for row in connection.execute(query):
+            if row[0] not in fschema:
+                referred_schema = self.normalize_name(row[5])
+
+                # if no schema specified and referred schema here is the
+                # default, then set to None
+                if schema is None and \
+                        referred_schema == default_schema:
+                    referred_schema = None
+
+                fschema[row[0]] = {
+                    'name': self.normalize_name(row[0]),
+                    'constrained_columns': [self.normalize_name(row[3])],
+                    'referred_schema': referred_schema,
+                    'referred_table': self.normalize_name(row[6]),
+                    'referred_columns': [self.normalize_name(row[7])]
+                }
+            else:
+                fschema[row[0]]['constrained_columns'].append(
+                    self.normalize_name(row[3]))
+                fschema[row[0]]['referred_columns'].append(
+                    self.normalize_name(row[7]))
+        return [value for key, value in fschema.items()]
+
+    # Retrieves a list of index names for a given schema
+    @reflection.cache
+    def get_indexes(self, connection, table_name, schema=None, **kw):
+        current_schema = self.denormalize_name(
+            schema or self.default_schema_name)
+        table_name = self.denormalize_name(table_name)
+        sysidx = self.sys_indexes
+        syskey = self.sys_keys
+
+        query = sql.select([sysidx.c.indname,
+                            sysidx.c.uniquerule,
+                            syskey.c.colname],
+                           sql.and_(
+                               syskey.c.indschema == sysidx.c.indschema,
+                               syskey.c.indname == sysidx.c.indname,
+                               sysidx.c.tabschema == current_schema,
+                               sysidx.c.tabname == table_name),
+                           order_by=[syskey.c.indname, syskey.c.colno])
+        indexes = {}
+        for row in connection.execute(query):
+            key = row[0].upper()
+            if key in indexes:
+                indexes[key]['column_names'].append(
+                    self.normalize_name(row[2]))
+            else:
+                indexes[key] = {
+                    'name': self.normalize_name(row[0]),
+                    'column_names': [self.normalize_name(row[2])],
+                    'unique': row[1] == 'Y'
+                }
+        return [value for key, value in indexes.items()]
+
+    @reflection.cache
+    def get_unique_constraints(self):
+        unique_consts = []
+        return unique_consts
+
+
