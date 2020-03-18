@@ -748,8 +748,10 @@ class IBMiDb2Dialect(default.DefaultDialect, PyODBCConnector):
     def create_connect_args(self, url):
         opts = url.translate_connect_args(username='user')
         opts.update(url.query)
+        if opts['port'] and opts['port'] is None:
+            opts.pop('port')
         allowed_opts = {'host', 'user', 'password',
-                        'autocommit', 'readonly', 'timeout'}
+                        'autocommit', 'readonly', 'timeout','database'}
         if allowed_opts < opts.keys():
             raise ValueError("Option entered not valid for "
                              "IBM i Access ODBC Driver")
