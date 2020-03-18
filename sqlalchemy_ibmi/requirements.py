@@ -11,9 +11,6 @@ class Requirements(SuiteRequirements):
     # TODO These methods are overridden from the default dialect and should be
     #  implemented
 
-    def get_order_by_collation(self, config):
-        pass
-
     @property
     def on_update_cascade(self):
         """"target database must support ON UPDATE..CASCADE behavior in

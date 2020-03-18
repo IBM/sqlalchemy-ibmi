@@ -193,7 +193,7 @@ class DB2TypeCompiler(compiler.GenericTypeCompiler):
             "DBCLOB(%(length)s)" % {'length': type_.length}
 
     def visit_VARCHAR(self, type_, **kw):
-        return "VARCHAR(%(length)s)" % {'length': type_.length}
+        return "VARCHAR(%(length)s) CCSID 1208" % {'length': type_.length}
 
     def visit_LONGVARCHAR(self, type_):
         return "LONG VARCHAR CCSID 1208"
@@ -648,7 +648,7 @@ class DB2ExecutionContext(_SelectLastRowIDMixin,
             type_)
 
 
-class IBMiDb2Dialect(default.DefaultDialect, PyODBCConnector):
+class BaseDialect(default.DefaultDialect):
 
     name = 'sqlalchemy_ibmi'
     max_identifier_length = 128
@@ -668,7 +668,7 @@ class IBMiDb2Dialect(default.DefaultDialect, PyODBCConnector):
     supports_sane_rowcount = False
     supports_sane_multi_rowcount = False
     # TODO Investigate if supports_native_decimal needs to be True or False
-    supports_native_decimal = False
+    supports_native_decimal = True
     supports_char_length = True
     pyodbc_driver_name = "IBM i Access ODBC Driver"
     requires_name_normalize = True
@@ -688,46 +688,10 @@ class IBMiDb2Dialect(default.DefaultDialect, PyODBCConnector):
         self.dbms_ver = getattr(connection.connection, 'dbms_ver', None)
         self.dbms_name = getattr(connection.connection, 'dbms_name', None)
 
+
+class IBMiDb2Dialect(PyODBCConnector, BaseDialect):
     # TODO These methods are overridden from the default dialect and should be
     #  implemented
-
-    def get_temp_table_names(self, connection, schema=None, **kw):
-        pass
-
-    def get_temp_view_names(self, connection, schema=None, **kw):
-        pass
-
-    def get_check_constraints(self, connection, table_name, schema=None, **kw):
-        pass
-
-    def get_table_comment(self, connection, table_name, schema=None, **kw):
-        pass
-
-    def _get_server_version_info(self, connection):
-        pass
-
-    def do_begin_twophase(self, connection, xid):
-        pass
-
-    def do_prepare_twophase(self, connection, xid):
-        pass
-
-    def do_rollback_twophase(self, connection, xid, is_prepared=True,
-                             recover=False):
-        pass
-
-    def do_commit_twophase(self, connection, xid, is_prepared=True,
-                           recover=False):
-        pass
-
-    def do_recover_twophase(self, connection):
-        pass
-
-    def set_isolation_level(self, dbapi_conn, level):
-        pass
-
-    def get_isolation_level(self, dbapi_conn):
-        pass
 
     def create_connect_args(self, url):
         opts = url.translate_connect_args(username='user')
@@ -1086,6 +1050,6 @@ class IBMiDb2Dialect(default.DefaultDialect, PyODBCConnector):
         return [value for key, value in indexes.items()]
 
     @reflection.cache
-    def get_unique_constraints(self):
+    def get_unique_constraints(self, connection, table_name, schema=None, **kw):
         unique_consts = []
         return unique_consts
