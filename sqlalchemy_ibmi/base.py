@@ -620,18 +620,9 @@ class _SelectLastRowIDMixin(object):
 class DB2ExecutionContext(_SelectLastRowIDMixin,
                           default.DefaultExecutionContext):
     """IBM i Db2 Execution Context class"""
-
-    # TODO These methods are overridden from the default dialect and should be
-    #  implemented
-
-    def create_server_side_cursor(self):
-        pass
-
-    def result(self):
-        pass
-
-    def get_rowcount(self):
-        pass
+    # create_server_side_cursor not implemented because supports_server_side is
+    # set to False in the dialect. get_rowcount is replaced with rowcount
+    # result replaced by get_result_proxy in super
 
     def fire_sequence(self, seq, type_):
         return self._execute_scalar(
@@ -683,7 +674,7 @@ class IBMiDb2Dialect(default.DefaultDialect, PyODBCConnector):
 
     # TODO These methods are overridden from the default dialect and should be
     #  implemented
-
+    # temporary table not supported
     def get_temp_table_names(self, connection, schema=None, **kw):
         pass
 
@@ -694,7 +685,19 @@ class IBMiDb2Dialect(default.DefaultDialect, PyODBCConnector):
         pass
 
     def get_table_comment(self, connection, table_name, schema=None, **kw):
-        pass
+        current_schema = self.denormalize_name(
+            schema or self.default_schema_name)
+        table_name = self.denormalize_name(table_name)
+        if current_schema:
+            whereclause = sql.and_(
+                self.sys_tables.c.tabschema == current_schema,
+                self.sys_tables.c.tabname == table_name)
+        else:
+            whereclause = self.sys_tables.c.tabname == table_name
+        select_statement = \
+            sql.select([self.sys_tables.c.tabcomment], whereclause)
+        results = connection.execute(select_statement)
+        return {"text": results.scalar()}
 
     def _get_server_version_info(self, connection):
         pass
@@ -791,6 +794,7 @@ class IBMiDb2Dialect(default.DefaultDialect, PyODBCConnector):
         Column("TABLE_SCHEMA", sa_types.Unicode, key="tabschema"),
         Column("TABLE_NAME", sa_types.Unicode, key="tabname"),
         Column("TABLE_TYPE", sa_types.Unicode, key="tabtype"),
+        Column("LONG_COMMENT", sa_types.Unicode, key="tabcomment"),
         schema="QSYS2")
 
     sys_table_constraints = Table(
