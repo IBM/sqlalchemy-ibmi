@@ -86,3 +86,8 @@ class Requirements(SuiteRequirements):
         the .000 maintained."""
 
         return exclusions.open()
+
+    @property
+    def check_constraint_reflection(self):
+        """target dialect supports reflection of check constraints"""
+        return exclusions.open()

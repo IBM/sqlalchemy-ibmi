@@ -682,7 +682,26 @@ class IBMiDb2Dialect(default.DefaultDialect, PyODBCConnector):
         pass
 
     def get_check_constraints(self, connection, table_name, schema=None, **kw):
-        pass
+        current_schema = self.denormalize_name(
+            schema or self.default_schema_name)
+        table_name = self.denormalize_name(table_name)
+        sysconst = self.sys_table_constraints
+        syschkconst = self.sys_check_constraints
+
+        query = sql.select([syschkconst.c.conname, syschkconst.c.chkclause],
+                           sql.and_(
+                               syschkconst.c.conschema == sysconst.c.conschema,
+                               syschkconst.c.conname == sysconst.c.conname,
+                               sysconst.c.tabschema == current_schema,
+                               sysconst.c.tabname == table_name))
+
+        check_consts = []
+        print(query)
+        for res in connection.execute(query):
+            check_consts.append(
+                {'name': self.normalize_name(res[0]), 'sqltext': res[1]})
+
+        return check_consts
 
     def get_table_comment(self, connection, table_name, schema=None, **kw):
         current_schema = self.denormalize_name(
@@ -815,6 +834,17 @@ class IBMiDb2Dialect(default.DefaultDialect, PyODBCConnector):
         Column("TABLE_NAME", sa_types.Unicode, key="tabname"),
         Column("COLUMN_NAME", sa_types.Unicode, key="colname"),
         Column("ORDINAL_POSITION", sa_types.Integer, key="colno"),
+        schema="QSYS2")
+
+    sys_check_constraints = Table(
+        "SYSCHKCST", ischema,
+        Column("CONSTRAINT_SCHEMA", sa_types.Unicode, key="conschema"),
+        Column("CONSTRAINT_NAME", sa_types.Unicode, key="conname"),
+        Column("CHECK_CLAUSE", sa_types.Unicode, key="chkclause"),
+        Column("ROUNDING_MODE", sa_types.Unicode, key="rndmode"),
+        Column("SYSTEM_CONSTRAINT_SCHEMA", sa_types.Unicode, key="syscstchema"),
+        Column("INSERT_ACTION", sa_types.Unicode, key="insact"),
+        Column("UPDATE_ACTION", sa_types.Unicode, key="updact"),
         schema="QSYS2")
 
     sys_columns = Table(
