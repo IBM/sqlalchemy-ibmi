@@ -8,6 +8,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       max-parallel: 4
+      fail-fast: false
       matrix:
         python-version: [3.5, 3.6, 3.7]
 
@@ -19,6 +20,22 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Install unixodbc on Linux
       run: sudo apt-get install unixodbc unixodbc-dev
+    - name: Load Driver from Cache
+      id: load-driver-cache
+      uses: actions/cache@v1
+      with:
+        path: installer
+        key: ibm-iaccess-1.1.0.13
+    - name: Download Driver to Cache
+      if: steps.load-driver-cache.outputs.cache-hit != 'true'
+      run: |
+        mkdir installer
+        wget --no-verbose https://public.dhe.ibm.com/software/ibmi/products/odbc/ibm-iaccess-1.1.0.13-1.0.amd64.deb.gpg -O installer/ibm-iaccess-1.1.0.13-1.0.amd64.deb.gpg
+        gpg --quiet --batch --yes --decrypt --passphrase="$PASSWORD" --output installer/ibm-iaccess-1.1.0.13-1.0.amd64.deb installer/ibm-iaccess-1.1.0.13-1.0.amd64.deb.gpg
+      env:
+        PASSWORD: ${{ secrets.GPG_PASSWORD }}
+    - name: Install driver
+      run: sudo dpkg -i installer/ibm-iaccess-1.1.0.13-1.0.amd64.deb
     - name: Install dependencies
       run: |
         pip install poetry
@@ -31,8 +48,11 @@ jobs:
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-#    - name: Test with pytest
-#      run: |
-#        pip install pytest
-#        pytest
-      
+    - name: Test with pytest
+      run: |
+        pip install 'pytest<5.4'
+        .github/scripts/runtests.py
+      env:
+        IBMI_HOSTNAME: ${{ secrets.IBMI_HOSTNAME }}
+        IBMI_USERNAME: ${{ secrets.IBMI_USERNAME }}
+        IBMI_PASSWORD: ${{ secrets.IBMI_PASSWORD }}
