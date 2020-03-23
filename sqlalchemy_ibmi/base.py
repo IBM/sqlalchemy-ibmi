@@ -648,34 +648,7 @@ class DB2ExecutionContext(_SelectLastRowIDMixin,
             type_)
 
 
-class BaseDialect(default.DefaultDialect):
-
-    name = 'sqlalchemy_ibmi'
-    max_identifier_length = 128
-    encoding = 'utf-8'
-    default_paramstyle = 'qmark'
-    colspecs = COLSPECS
-    ischema_names = ISCHEMA_NAMES
-    supports_unicode_binds = False
-    returns_unicode_strings = False
-    postfetch_lastrowid = True
-    supports_native_boolean = False
-    preexecute_sequences = False
-    supports_alter = True
-    supports_sequences = True
-    sequences_optional = True
-    supports_unicode_statements = True
-    supports_sane_rowcount = False
-    supports_sane_multi_rowcount = False
-    # TODO Investigate if supports_native_decimal needs to be True or False
-    supports_native_decimal = True
-    supports_char_length = True
-    pyodbc_driver_name = "IBM i Access ODBC Driver"
-    requires_name_normalize = True
-    supports_default_values = False
-    supports_empty_insert = False
-    two_phase_transactions = False
-    savepoints = True
+class IBMiDb2Dialect(default.DefaultDialect):
 
     statement_compiler = DB2Compiler
     ddl_compiler = DB2DDLCompiler
@@ -688,10 +661,46 @@ class BaseDialect(default.DefaultDialect):
         self.dbms_ver = getattr(connection.connection, 'dbms_ver', None)
         self.dbms_name = getattr(connection.connection, 'dbms_name', None)
 
-
-class IBMiDb2Dialect(PyODBCConnector, BaseDialect):
     # TODO These methods are overridden from the default dialect and should be
     #  implemented
+
+    driver = "pyodbc"
+    name = 'sqlalchemy_ibmi'
+    max_identifier_length = 128
+    encoding = 'utf-8'
+    colspecs = COLSPECS
+    ischema_names = ISCHEMA_NAMES
+    returns_unicode_strings = False
+    postfetch_lastrowid = True
+    supports_native_boolean = False
+    preexecute_sequences = False
+    supports_alter = True
+    supports_sequences = True
+    sequences_optional = True
+    supports_sane_rowcount = False
+    # TODO Investigate if supports_native_decimal needs to be True or False
+    supports_char_length = True
+    requires_name_normalize = True
+    supports_default_values = False
+    supports_empty_insert = False
+    two_phase_transactions = False
+    savepoints = True
+    supports_sane_rowcount_returning = False
+    supports_sane_multi_rowcount = False
+
+    supports_unicode_statements = True
+    supports_unicode_binds = True
+
+    supports_native_decimal = True
+    default_paramstyle = "named"
+
+    # for non-DSN connections, this *may* be used to
+    # hold the desired driver name
+    pyodbc_driver_name = None
+
+    @classmethod
+    def dbapi(cls):
+        return __import__("pyodbc")
 
     def create_connect_args(self, url):
         opts = url.translate_connect_args(username='user')
@@ -742,6 +751,39 @@ class IBMiDb2Dialect(PyODBCConnector, BaseDialect):
             connectors.extend(['%s=%s' % (k, v) for k, v in keys.items()])
         return [[";".join(connectors)], connect_args]
 
+    def is_disconnect(self, e, connection, cursor):
+        if isinstance(e, self.dbapi.ProgrammingError):
+            return "The cursor's connection has been closed." in str(
+                e
+            ) or "Attempt to use a closed connection." in str(e)
+        else:
+            return False
+
+    def _dbapi_version(self):
+        if not self.dbapi:
+            return ()
+        return self._parse_dbapi_version(self.dbapi.version)
+
+    def _parse_dbapi_version(self, vers):
+        m = re.match(r"(?:py.*-)?([\d\.]+)(?:-(\w+))?", vers)
+        if not m:
+            return ()
+        vers = tuple([int(x) for x in m.group(1).split(".")])
+        if m.group(2):
+            vers += (m.group(2),)
+        return vers
+
+    def _get_server_version_info(self, connection, allow_chars=True):
+        # NOTE: this function is not reliable, particularly when
+        # freetds is in use.   Implement database-specific server version
+        # queries.
+        dbapi_con = connection.connection
+        version = []
+        r = re.compile(r"[.\-]")
+        for n in r.split(dbapi_con.getinfo(self.dbapi.SQL_DBMS_VER)):
+            version.append(int(n))
+        return tuple(version)
+
     def _get_default_schema_name(self, connection):
         """Return: current setting of the schema attribute"""
         default_schema_name = connection.execute(
@@ -749,6 +791,18 @@ class IBMiDb2Dialect(PyODBCConnector, BaseDialect):
         if isinstance(default_schema_name, str):
             default_schema_name = default_schema_name.strip()
         return self.normalize_name(default_schema_name)
+
+    def set_isolation_level(self, connection, level):
+        # adjust for ConnectionFairy being present
+        # allows attribute set e.g. "connection.autocommit = True"
+        # to work properly
+        if hasattr(connection, "connection"):
+            connection = connection.connection
+
+        if level == "AUTOCOMMIT":
+            connection.autocommit = True
+        else:
+            connection.autocommit = False
 
     ischema = MetaData()
 
