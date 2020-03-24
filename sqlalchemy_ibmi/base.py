@@ -641,15 +641,15 @@ class DB2ExecutionContext(_SelectLastRowIDMixin,
             type_)
 
 
-class IBMiDb2Dialect(default.DefaultDialect, PyODBCConnector):
-
+class IBMiDb2Dialect(default.DefaultDialect):
+    driver = "pyodbc"
     name = 'sqlalchemy_ibmi'
     max_identifier_length = 128
     encoding = 'utf-8'
     default_paramstyle = 'qmark'
     colspecs = COLSPECS
     ischema_names = ISCHEMA_NAMES
-    supports_unicode_binds = False
+    supports_unicode_binds = True
     returns_unicode_strings = False
     postfetch_lastrowid = True
     supports_native_boolean = False
@@ -661,7 +661,7 @@ class IBMiDb2Dialect(default.DefaultDialect, PyODBCConnector):
     supports_sane_rowcount = False
     supports_sane_multi_rowcount = False
     # TODO Investigate if supports_native_decimal needs to be True or False
-    supports_native_decimal = False
+    supports_native_decimal = True
     supports_char_length = True
     pyodbc_driver_name = "IBM i Access ODBC Driver"
     requires_name_normalize = True
@@ -669,6 +669,7 @@ class IBMiDb2Dialect(default.DefaultDialect, PyODBCConnector):
     supports_empty_insert = False
     two_phase_transactions = False
     savepoints = True
+    supports_sane_rowcount_returning = False
 
     statement_compiler = DB2Compiler
     ddl_compiler = DB2DDLCompiler
@@ -716,11 +717,26 @@ class IBMiDb2Dialect(default.DefaultDialect, PyODBCConnector):
     def do_recover_twophase(self, connection):
         pass
 
-    def set_isolation_level(self, dbapi_conn, level):
-        pass
-
     def get_isolation_level(self, dbapi_conn):
-        pass
+        return dbapi_conn.autocommit
+
+    # Methods merged from PyODBCConnector
+
+    def set_isolation_level(self, connection, level):
+        # adjust for ConnectionFairy being present
+        # allows attribute set e.g. "connection.autocommit = True"
+        # to work properly
+        if hasattr(connection, "connection"):
+            connection = connection.connection
+
+        if level == "AUTOCOMMIT":
+            connection.autocommit = True
+        else:
+            connection.autocommit = False
+
+    @classmethod
+    def dbapi(cls):
+        return __import__("pyodbc")
 
     def create_connect_args(self, url):
         opts = url.translate_connect_args(username='user')
@@ -733,6 +749,39 @@ class IBMiDb2Dialect(default.DefaultDialect, PyODBCConnector):
             raise ValueError("Option entered not valid for "
                              "IBM i Access ODBC Driver")
         return [["Driver={%s}" % self.pyodbc_driver_name], opts]
+
+    def is_disconnect(self, e, connection, cursor):
+        if isinstance(e, self.dbapi.ProgrammingError):
+            return "The cursor's connection has been closed." in str(
+                e
+            ) or "Attempt to use a closed connection." in str(e)
+        else:
+            return False
+
+    def _dbapi_version(self):
+        if not self.dbapi:
+            return ()
+        return self._parse_dbapi_version(self.dbapi.version)
+
+    def _parse_dbapi_version(self, vers):
+        m = re.match(r"(?:py.*-)?([\d\.]+)(?:-(\w+))?", vers)
+        if not m:
+            return ()
+        vers = tuple([int(x) for x in m.group(1).split(".")])
+        if m.group(2):
+            vers += (m.group(2),)
+        return vers
+
+    def _get_server_version_info(self, connection, allow_chars=True):
+        # NOTE: this function is not reliable, particularly when
+        # freetds is in use.   Implement database-specific server version
+        # queries.
+        dbapi_con = connection.connection
+        version = []
+        r = re.compile(r"[.\-]")
+        for n in r.split(dbapi_con.getinfo(self.dbapi.SQL_DBMS_VER)):
+            version.append(int(n))
+        return tuple(version)
 
     def _get_default_schema_name(self, connection):
         """Return: current setting of the schema attribute"""
@@ -1042,7 +1091,6 @@ class IBMiDb2Dialect(default.DefaultDialect, PyODBCConnector):
         return [value for key, value in indexes.items()]
 
     @reflection.cache
-    def get_unique_constraints(self):
+    def get_unique_constraints(self, connection, table_name, schema=None, **kw):
         unique_consts = []
         return unique_consts
-
