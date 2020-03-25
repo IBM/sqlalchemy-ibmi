@@ -649,6 +649,34 @@ class DB2ExecutionContext(_SelectLastRowIDMixin,
 
 
 class IBMiDb2Dialect(default.DefaultDialect):
+    driver = "pyodbc"
+    name = 'sqlalchemy_ibmi'
+    max_identifier_length = 128
+    encoding = 'utf-8'
+    default_paramstyle = 'qmark'
+    colspecs = COLSPECS
+    ischema_names = ISCHEMA_NAMES
+    supports_unicode_binds = True
+    returns_unicode_strings = False
+    postfetch_lastrowid = True
+    supports_native_boolean = False
+    preexecute_sequences = False
+    supports_alter = True
+    supports_sequences = True
+    sequences_optional = True
+    supports_unicode_statements = True
+    supports_sane_rowcount = False
+    supports_sane_multi_rowcount = False
+    # TODO Investigate if supports_native_decimal needs to be True or False
+    supports_native_decimal = True
+    supports_char_length = True
+    pyodbc_driver_name = "IBM i Access ODBC Driver"
+    requires_name_normalize = True
+    supports_default_values = False
+    supports_empty_insert = False
+    two_phase_transactions = False
+    savepoints = True
+    supports_sane_rowcount_returning = False
 
     statement_compiler = DB2Compiler
     ddl_compiler = DB2DDLCompiler
@@ -664,51 +692,64 @@ class IBMiDb2Dialect(default.DefaultDialect):
     # TODO These methods are overridden from the default dialect and should be
     #  implemented
 
-    driver = "pyodbc"
-    name = 'sqlalchemy_ibmi'
-    max_identifier_length = 128
-    encoding = 'utf-8'
-    colspecs = COLSPECS
-    ischema_names = ISCHEMA_NAMES
-    returns_unicode_strings = False
-    postfetch_lastrowid = True
-    supports_native_boolean = False
-    preexecute_sequences = False
-    supports_alter = True
-    supports_sequences = True
-    sequences_optional = True
-    supports_sane_rowcount = False
-    # TODO Investigate if supports_native_decimal needs to be True or False
-    supports_char_length = True
-    requires_name_normalize = True
-    supports_default_values = False
-    supports_empty_insert = False
-    two_phase_transactions = False
-    savepoints = True
-    supports_sane_rowcount_returning = False
-    supports_sane_multi_rowcount = False
+    def get_temp_table_names(self, connection, schema=None, **kw):
+        pass
 
-    supports_unicode_statements = True
-    supports_unicode_binds = True
+    def get_temp_view_names(self, connection, schema=None, **kw):
+        pass
 
-    supports_native_decimal = True
-    default_paramstyle = "named"
+    def get_check_constraints(self, connection, table_name, schema=None, **kw):
+        pass
 
-    # for non-DSN connections, this *may* be used to
-    # hold the desired driver name
-    pyodbc_driver_name = 'IBM i Access ODBC Driver'
+    def get_table_comment(self, connection, table_name, schema=None, **kw):
+        pass
+
+    def _get_server_version_info(self, connection):
+        pass
+
+    def do_begin_twophase(self, connection, xid):
+        pass
+
+    def do_prepare_twophase(self, connection, xid):
+        pass
+
+    def do_rollback_twophase(self, connection, xid, is_prepared=True,
+                             recover=False):
+        pass
+
+    def do_commit_twophase(self, connection, xid, is_prepared=True,
+                           recover=False):
+        pass
+
+    def do_recover_twophase(self, connection):
+        pass
+
+    def get_isolation_level(self, dbapi_conn):
+        return dbapi_conn.autocommit
+
+        # Methods merged from PyODBCConnector
+
+    def set_isolation_level(self, connection, level):
+        # adjust for ConnectionFairy being present
+        # allows attribute set e.g. "connection.autocommit = True"
+        # to work properly
+        if hasattr(connection, "connection"):
+            connection = connection.connection
+
+        if level == "AUTOCOMMIT":
+            connection.autocommit = True
+        else:
+            connection.autocommit = False
 
     @classmethod
     def dbapi(cls):
         return __import__("pyodbc")
 
     def create_connect_args(self, url):
-        opts = url.translate_connect_args(username='user')
+        opts = url.translate_connect_args(username='user', host='system')
         opts.update(url.query)
-        if 'port' in opts and opts['port'] is None:
-            opts.pop('port')
-        allowed_opts = {'host', 'user', 'password',
-                        'autocommit', 'readonly', 'timeout','database'}
+        allowed_opts = {'system', 'user', 'password',
+                        'autocommit', 'readonly', 'timeout', 'database'}
         if allowed_opts < opts.keys():
             raise ValueError("Option entered not valid for "
                              "IBM i Access ODBC Driver")
