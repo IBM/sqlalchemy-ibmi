@@ -704,9 +704,6 @@ class IBMiDb2Dialect(default.DefaultDialect):
     def get_table_comment(self, connection, table_name, schema=None, **kw):
         pass
 
-    def _get_server_version_info(self, connection):
-        pass
-
     def do_begin_twophase(self, connection, xid):
         pass
 
@@ -724,10 +721,10 @@ class IBMiDb2Dialect(default.DefaultDialect):
     def do_recover_twophase(self, connection):
         pass
 
+    # Methods merged from PyODBCConnector
+
     def get_isolation_level(self, dbapi_conn):
         return dbapi_conn.autocommit
-
-        # Methods merged from PyODBCConnector
 
     def set_isolation_level(self, connection, level):
         # adjust for ConnectionFairy being present
@@ -795,18 +792,6 @@ class IBMiDb2Dialect(default.DefaultDialect):
         if isinstance(default_schema_name, str):
             default_schema_name = default_schema_name.strip()
         return self.normalize_name(default_schema_name)
-
-    def set_isolation_level(self, connection, level):
-        # adjust for ConnectionFairy being present
-        # allows attribute set e.g. "connection.autocommit = True"
-        # to work properly
-        if hasattr(connection, "connection"):
-            connection = connection.connection
-
-        if level == "AUTOCOMMIT":
-            connection.autocommit = True
-        else:
-            connection.autocommit = False
 
     ischema = MetaData()
 

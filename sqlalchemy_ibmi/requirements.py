@@ -97,9 +97,7 @@ class Requirements(SuiteRequirements):
     @property
     def implicitly_named_constraints(self):
         """target database must apply names to unnamed constraints."""
-
-        return exclusions.skip_if(
-            [SpecPredicate("sqlite", "not supported by database")])
+        return exclusions.open()
 
     # closed due to sqlalchemy.exc.CompileError: This SELECT structure does
     # not use a simple integer value for limit
