@@ -750,7 +750,7 @@ class IBMiDb2Dialect(default.DefaultDialect):
         if allowed_opts < opts.keys():
             raise ValueError("Option entered not valid for "
                              "IBM i Access ODBC Driver")
-        return [["Driver={%s}" % self.pyodbc_driver_name], opts]
+        return [["Driver={%s}; UNICODESQL=1" % self.pyodbc_driver_name], opts]
 
     def is_disconnect(self, e, connection, cursor):
         if isinstance(e, self.dbapi.ProgrammingError):
