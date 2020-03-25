@@ -728,11 +728,17 @@ class IBMiDb2Dialect(default.DefaultDialect, PyODBCConnector):
         if 'port' in opts and opts['port'] is None:
             opts.pop('port')
         allowed_opts = {'host', 'user', 'password',
-                        'autocommit', 'readonly', 'timeout','database'}
+                        'autocommit', 'readonly', 'timeout', 'database'}
+        if 'database' in opts and opts['database'] is None:
+            opts.pop('database')
+        if 'database' not in opts:
+            opts.update({'dsn': opts.pop('host')})
+            allowed_opts.add('dsn')
+            allowed_opts.difference({'host', 'database'})
         if allowed_opts < opts.keys():
             raise ValueError("Option entered not valid for "
                              "IBM i Access ODBC Driver")
-        return [["Driver={%s}" % self.pyodbc_driver_name], opts]
+        return [[], opts]
 
     def _get_default_schema_name(self, connection):
         """Return: current setting of the schema attribute"""
