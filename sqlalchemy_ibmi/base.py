@@ -47,7 +47,6 @@ class IBMBoolean(sa_types.Boolean):
             if value is None:
                 return None
             return bool(value)
-
         return process
 
     def bind_processor(self, _):
@@ -55,7 +54,6 @@ class IBMBoolean(sa_types.Boolean):
             if value is None:
                 return None
             return '1' if value else '0'
-
         return process
 
 
@@ -116,7 +114,6 @@ class XML(sa_types.Text):
     """Represents a Db2 XML Column"""
     __visit_name__ = "XML"
 
-
 COLSPECS = {
     sa_types.Boolean: IBMBoolean,
     sa_types.Date: IBMDate
@@ -151,6 +148,7 @@ ISCHEMA_NAMES = {
 
 class DB2TypeCompiler(compiler.GenericTypeCompiler):
     """IBM i Db2 Type Compiler"""
+
 
     def visit_TIMESTAMP(self, type_, **kw):
         return "TIMESTAMP"
@@ -195,10 +193,10 @@ class DB2TypeCompiler(compiler.GenericTypeCompiler):
             "DBCLOB(%(length)s)" % {'length': type_.length}
 
     def visit_VARCHAR(self, type_, **kw):
-        return "VARCHAR(%(length)s)" % {'length': type_.length}
+        return "VARCHAR(%(length)s) CCSID 1208" % {'length': type_.length}
 
     def visit_LONGVARCHAR(self, type_):
-        return "LONG VARCHAR"
+        return "LONG VARCHAR CCSID 1208"
 
     def visit_VARGRAPHIC(self, type_):
         return "VARGRAPHIC(%(length)s)" % {'length': type_.length}
@@ -219,8 +217,10 @@ class DB2TypeCompiler(compiler.GenericTypeCompiler):
             return "DECIMAL(31, 0)"
         if not type_.scale:
             return "DECIMAL(%(precision)s, 0)" % {'precision': type_.precision}
+
         return "DECIMAL(%(precision)s, %(scale)s)" % {
             'precision': type_.precision, 'scale': type_.scale}
+
 
     def visit_numeric(self, type_, **kw):
         return self.visit_DECIMAL(type_)
@@ -243,11 +243,11 @@ class DB2TypeCompiler(compiler.GenericTypeCompiler):
     def visit_float(self, type_, **kw):
         return self.visit_FLOAT(type_)
 
-    def visit_unicode(self, type_, **kw):
-        return self.visit_VARGRAPHIC(type_)
+    def visit_unicode(self, type_):
+        return self.visit_VARCHAR(type_)
 
-    def visit_unicode_text(self, type_, **kw):
-        return self.visit_LONGVARGRAPHIC(type_)
+    def visit_unicode_text(self, type_):
+        return self.visit_LONGVARCHAR(type_)
 
     def visit_string(self, type_, **kw):
         return self.visit_VARCHAR(type_)
@@ -288,6 +288,7 @@ class DB2Compiler(compiler.SQLCompiler):
         if select.for_update:
             return ' WITH RS USE AND KEEP UPDATE LOCKS'
         return ''
+
 
     def visit_mod_binary(self, binary, operator, **kw):
         return "mod(%s, %s)" % (self.process(binary.left),
@@ -368,6 +369,7 @@ class DB2Compiler(compiler.SQLCompiler):
     def visit_function(self, func, result_map=None, **kwargs):
         if func.name.upper() == "AVG":
             return "AVG(DOUBLE(%s))" % (self.function_argspec(func, **kwargs))
+
         if func.name.upper() == "CHAR_LENGTH":
             return "CHAR_LENGTH(%s, %s)" % (
                 self.function_argspec(func, **kwargs), 'OCTETS')
@@ -387,8 +389,10 @@ class DB2Compiler(compiler.SQLCompiler):
         # for example
         if isinstance(type_, (
                 sa_types.DateTime, sa_types.Date, sa_types.Time,
-                sa_types.DECIMAL, sa_types.String)):
+                sa_types.DECIMAL, sa_types.String, sa_types.FLOAT,
+                sa_types.NUMERIC, sa_types.INT)):
             return super(DB2Compiler, self).visit_cast(cast, **kw)
+
         return self.process(cast.clause)
 
     def get_select_precolumns(self, select, **kwargs):
@@ -432,6 +436,7 @@ class DB2Compiler(compiler.SQLCompiler):
 
 class DB2DDLCompiler(compiler.DDLCompiler):
     """DDL Compiler for IBM i Db2"""
+
     def get_server_version_info(self, dialect):
         """Returns the Db2 server major and minor version as a list of ints."""
         if hasattr(dialect, 'dbms_ver'):
@@ -455,6 +460,7 @@ class DB2DDLCompiler(compiler.DDLCompiler):
 
     def get_column_specification(self, column, **kw):
         col_spec = [self.preparer.format_column(column)]
+
         col_spec.append(
             self.dialect.type_compiler.process(
                 column.type,
@@ -541,6 +547,7 @@ class DB2DDLCompiler(compiler.DDLCompiler):
                             index_name, *(column for column in constraint))
                         index.unique = True
                         index.uConstraint_as_index = True
+
         result = super(DB2DDLCompiler, self).create_table_constraints(table,
                                                                       **kw)
         return result
@@ -632,15 +639,15 @@ class DB2ExecutionContext(_SelectLastRowIDMixin,
             type_)
 
 
-class IBMiDb2Dialect(default.DefaultDialect, PyODBCConnector):
-
+class IBMiDb2Dialect(default.DefaultDialect):
+    driver = "pyodbc"
     name = 'sqlalchemy_ibmi'
     max_identifier_length = 128
     encoding = 'utf-8'
     default_paramstyle = 'qmark'
     colspecs = COLSPECS
     ischema_names = ISCHEMA_NAMES
-    supports_unicode_binds = False
+    supports_unicode_binds = True
     returns_unicode_strings = False
     postfetch_lastrowid = True
     supports_native_boolean = False
@@ -652,7 +659,7 @@ class IBMiDb2Dialect(default.DefaultDialect, PyODBCConnector):
     supports_sane_rowcount = False
     supports_sane_multi_rowcount = False
     # TODO Investigate if supports_native_decimal needs to be True or False
-    supports_native_decimal = False
+    supports_native_decimal = True
     supports_char_length = True
     pyodbc_driver_name = "IBM i Access ODBC Driver"
     requires_name_normalize = True
@@ -660,6 +667,7 @@ class IBMiDb2Dialect(default.DefaultDialect, PyODBCConnector):
     supports_empty_insert = False
     two_phase_transactions = False
     savepoints = True
+    supports_sane_rowcount_returning = False
 
     statement_compiler = DB2Compiler
     ddl_compiler = DB2DDLCompiler
@@ -718,9 +726,6 @@ class IBMiDb2Dialect(default.DefaultDialect, PyODBCConnector):
         results = connection.execute(select_statement)
         return {"text": results.scalar()}
 
-    def _get_server_version_info(self, connection):
-        pass
-
     def do_begin_twophase(self, connection, xid):
         pass
 
@@ -738,60 +743,69 @@ class IBMiDb2Dialect(default.DefaultDialect, PyODBCConnector):
     def do_recover_twophase(self, connection):
         pass
 
-    def set_isolation_level(self, dbapi_conn, level):
-        pass
+    # Methods merged from PyODBCConnector
 
     def get_isolation_level(self, dbapi_conn):
-        pass
+        return dbapi_conn.autocommit
+
+    def set_isolation_level(self, connection, level):
+        # adjust for ConnectionFairy being present
+        # allows attribute set e.g. "connection.autocommit = True"
+        # to work properly
+        if hasattr(connection, "connection"):
+            connection = connection.connection
+
+        if level == "AUTOCOMMIT":
+            connection.autocommit = True
+        else:
+            connection.autocommit = False
+
+    @classmethod
+    def dbapi(cls):
+        return __import__("pyodbc")
 
     def create_connect_args(self, url):
-        opts = url.translate_connect_args(username='user')
+        opts = url.translate_connect_args(username='user', host='system')
         opts.update(url.query)
-        keys = opts
+        allowed_opts = {'system', 'user', 'password',
+                        'autocommit', 'readonly', 'timeout', 'database'}
+        if allowed_opts < opts.keys():
+            raise ValueError("Option entered not valid for "
+                             "IBM i Access ODBC Driver")
+        return [["Driver={%s}" % self.pyodbc_driver_name], opts]
 
-        connect_args = {}
-        for param in ('ansi', 'unicode_results', 'autocommit'):
-            if param in keys:
-                connect_args[param] = util.asbool(keys.pop(param))
-
-        if 'odbc_connect' in keys:
-            connectors = [urllib.parse.unquote_plus(keys.pop('odbc_connect'))]
+    def is_disconnect(self, e, connection, cursor):
+        if isinstance(e, self.dbapi.ProgrammingError):
+            return "The cursor's connection has been closed." in str(
+                e
+            ) or "Attempt to use a closed connection." in str(e)
         else:
-            dsn_connection = 'dsn' in keys or \
-                             ('host' in keys and 'database' not in keys)
-            if dsn_connection:
-                connectors = ['dsn=%s' % (keys.pop('host', '') or
-                                          keys.pop('dsn', ''))]
-            else:
-                connectors = [
-                    "DRIVER={%s}" %
-                    keys.pop('driver', self.pyodbc_driver_name),
-                    'System=%s' % keys.pop('host', ''),
-                    'DBQ=QGPL',
-                    "PKG=QGPL/DEFAULT(IBM),2,0,1,0,512"
-                ]
-                db_name = keys.pop('database', '')
-                if db_name:
-                    connectors.append("DATABASE=%s" % db_name)
+            return False
 
-            user = keys.pop("user", None)
-            if user:
-                connectors.append("UID=%s" % user)
-                connectors.append("PWD=%s" % keys.pop('password', ''))
-            else:
-                connectors.append("trusted_connection=yes")
+    def _dbapi_version(self):
+        if not self.dbapi:
+            return ()
+        return self._parse_dbapi_version(self.dbapi.version)
 
-            # if set to 'Yes', the ODBC layer will try to automagically convert
-            # textual data from your database encoding to your client encoding
-            # This should obviously be set to 'No' if you query a cp1253
-            # encoded database from a latin1 client...
-            if 'odbc_autotranslate' in keys:
-                connectors.append(
-                    "AutoTranslate=%s" %
-                    keys.pop("odbc_autotranslate"))
+    def _parse_dbapi_version(self, vers):
+        m = re.match(r"(?:py.*-)?([\d\.]+)(?:-(\w+))?", vers)
+        if not m:
+            return ()
+        vers = tuple([int(x) for x in m.group(1).split(".")])
+        if m.group(2):
+            vers += (m.group(2),)
+        return vers
 
-            connectors.extend(['%s=%s' % (k, v) for k, v in keys.items()])
-        return [[";".join(connectors)], connect_args]
+    def _get_server_version_info(self, connection, allow_chars=True):
+        # NOTE: this function is not reliable, particularly when
+        # freetds is in use.   Implement database-specific server version
+        # queries.
+        dbapi_con = connection.connection
+        version = []
+        r = re.compile(r"[.\-]")
+        for n in r.split(dbapi_con.getinfo(self.dbapi.SQL_DBMS_VER)):
+            version.append(int(n))
+        return tuple(version)
 
     def _get_default_schema_name(self, connection):
         """Return: current setting of the schema attribute"""
@@ -1113,8 +1127,6 @@ class IBMiDb2Dialect(default.DefaultDialect, PyODBCConnector):
         return [value for key, value in indexes.items()]
 
     @reflection.cache
-    def get_unique_constraints(self):
+    def get_unique_constraints(self, connection, table_name, schema=None, **kw):
         unique_consts = []
         return unique_consts
-
-
