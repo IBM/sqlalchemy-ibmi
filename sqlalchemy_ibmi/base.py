@@ -261,21 +261,6 @@ class DB2TypeCompiler(compiler.GenericTypeCompiler):
 
 class DB2Compiler(compiler.SQLCompiler):
     """IBM i Db2 compiler class"""
-
-    # TODO These methods are overridden from the default dialect and should be
-    #  implemented
-
-    def visit_empty_set_expr(self, element_types):
-        pass
-
-    def update_from_clause(self, update_stmt, from_table, extra_froms,
-                           from_hints, **kw):
-        pass
-
-    def delete_extra_from_clause(self, update_stmt, from_table, extra_froms,
-                                 from_hints, **kw):
-        pass
-
     def get_cte_preamble(self, recursive):
         return "WITH"
 
@@ -288,7 +273,6 @@ class DB2Compiler(compiler.SQLCompiler):
         if select.for_update:
             return ' WITH RS USE AND KEEP UPDATE LOCKS'
         return ''
-
 
     def visit_mod_binary(self, binary, operator, **kw):
         return "mod(%s, %s)" % (self.process(binary.left),
@@ -686,37 +670,42 @@ class IBMiDb2Dialect(default.DefaultDialect):
         self.dbms_ver = getattr(connection.connection, 'dbms_ver', None)
         self.dbms_name = getattr(connection.connection, 'dbms_name', None)
 
-    # TODO These methods are overridden from the default dialect and should be
-    #  implemented
-
-    def get_temp_table_names(self, connection, schema=None, **kw):
-        pass
-
-    def get_temp_view_names(self, connection, schema=None, **kw):
-        pass
-
     def get_check_constraints(self, connection, table_name, schema=None, **kw):
-        pass
+        current_schema = self.denormalize_name(
+            schema or self.default_schema_name)
+        table_name = self.denormalize_name(table_name)
+        sysconst = self.sys_table_constraints
+        syschkconst = self.sys_check_constraints
+
+        query = sql.select([syschkconst.c.conname, syschkconst.c.chkclause],
+                           sql.and_(
+                               syschkconst.c.conschema == sysconst.c.conschema,
+                               syschkconst.c.conname == sysconst.c.conname,
+                               sysconst.c.tabschema == current_schema,
+                               sysconst.c.tabname == table_name))
+
+        check_consts = []
+        print(query)
+        for res in connection.execute(query):
+            check_consts.append(
+                {'name': self.normalize_name(res[0]), 'sqltext': res[1]})
+
+        return check_consts
 
     def get_table_comment(self, connection, table_name, schema=None, **kw):
-        pass
-
-    def do_begin_twophase(self, connection, xid):
-        pass
-
-    def do_prepare_twophase(self, connection, xid):
-        pass
-
-    def do_rollback_twophase(self, connection, xid, is_prepared=True,
-                             recover=False):
-        pass
-
-    def do_commit_twophase(self, connection, xid, is_prepared=True,
-                           recover=False):
-        pass
-
-    def do_recover_twophase(self, connection):
-        pass
+        current_schema = self.denormalize_name(
+            schema or self.default_schema_name)
+        table_name = self.denormalize_name(table_name)
+        if current_schema:
+            whereclause = sql.and_(
+                self.sys_tables.c.tabschema == current_schema,
+                self.sys_tables.c.tabname == table_name)
+        else:
+            whereclause = self.sys_tables.c.tabname == table_name
+        select_statement = \
+            sql.select([self.sys_tables.c.tabcomment], whereclause)
+        results = connection.execute(select_statement)
+        return {"text": results.scalar()}
 
     # Methods merged from PyODBCConnector
 
@@ -802,6 +791,7 @@ class IBMiDb2Dialect(default.DefaultDialect):
         Column("TABLE_SCHEMA", sa_types.Unicode, key="tabschema"),
         Column("TABLE_NAME", sa_types.Unicode, key="tabname"),
         Column("TABLE_TYPE", sa_types.Unicode, key="tabtype"),
+        Column("LONG_COMMENT", sa_types.Unicode, key="tabcomment"),
         schema="QSYS2")
 
     sys_table_constraints = Table(
@@ -822,6 +812,17 @@ class IBMiDb2Dialect(default.DefaultDialect):
         Column("TABLE_NAME", sa_types.Unicode, key="tabname"),
         Column("COLUMN_NAME", sa_types.Unicode, key="colname"),
         Column("ORDINAL_POSITION", sa_types.Integer, key="colno"),
+        schema="QSYS2")
+
+    sys_check_constraints = Table(
+        "SYSCHKCST", ischema,
+        Column("CONSTRAINT_SCHEMA", sa_types.Unicode, key="conschema"),
+        Column("CONSTRAINT_NAME", sa_types.Unicode, key="conname"),
+        Column("CHECK_CLAUSE", sa_types.Unicode, key="chkclause"),
+        Column("ROUNDING_MODE", sa_types.Unicode, key="rndmode"),
+        Column("SYSTEM_CONSTRAINT_SCHEMA", sa_types.Unicode, key="syscstchema"),
+        Column("INSERT_ACTION", sa_types.Unicode, key="insact"),
+        Column("UPDATE_ACTION", sa_types.Unicode, key="updact"),
         schema="QSYS2")
 
     sys_columns = Table(
