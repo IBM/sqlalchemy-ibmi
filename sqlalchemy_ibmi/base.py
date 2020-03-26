@@ -586,39 +586,7 @@ class DB2IdentifierPreparer(compiler.IdentifierPreparer):
     illegal_initial_characters = set(range(0, 10)).union(["_", "$"])
 
 
-class _SelectLastRowIDMixin(object):
-    """parent class of Db2 execution context"""
-    _select_lastrowid = False
-    _lastrowid = None
-
-    def get_lastrowid(self):
-        return self._lastrowid
-
-    def pre_exec(self):
-        if self.isinsert:
-            tbl = self.compiled.statement.table
-            seq_column = tbl._autoincrement_column
-            insert_has_sequence = seq_column is not None
-
-            self._select_lastrowid = insert_has_sequence and \
-                not self.compiled.returning and \
-                not self.compiled.inline
-
-    def post_exec(self):
-        conn = self.root_connection
-        if self._select_lastrowid:
-            conn._cursor_execute(
-                self.cursor,
-                "SELECT IDENTITY_VAL_LOCAL() FROM SYSIBM.SYSDUMMY1",
-                (),
-                self)
-            row = self.cursor.fetchall()[0]
-            if row[0] is not None:
-                self._lastrowid = int(row[0])
-
-
-class DB2ExecutionContext(_SelectLastRowIDMixin,
-                          default.DefaultExecutionContext):
+class DB2ExecutionContext(default.DefaultExecutionContext):
     """IBM i Db2 Execution Context class"""
 
     # TODO These methods are overridden from the default dialect and should be
@@ -632,6 +600,35 @@ class DB2ExecutionContext(_SelectLastRowIDMixin,
 
     def get_rowcount(self):
         pass
+
+    _select_lastrowid = False
+    _lastrowid = None
+
+    def get_lastrowid(self):
+        return self._lastrowid
+
+    def pre_exec(self):
+        if self.isinsert:
+            tbl = self.compiled.statement.table
+            seq_column = tbl._autoincrement_column
+            insert_has_sequence = seq_column is not None
+
+            self._select_lastrowid = insert_has_sequence and \
+                                     not self.compiled.returning and \
+                                     not self.compiled.inline
+
+    def post_exec(self):
+        conn = self.connection()
+        cur = conn.create_cursor()
+        if self._select_lastrowid:
+            conn._cursor_execute(
+                cur,
+                "SELECT IDENTITY_VAL_LOCAL() FROM SYSIBM.SYSDUMMY1",
+                (),
+                self)
+            row = cur.fetchall()[0]
+            if row[0] is not None:
+                self._lastrowid = int(row[0])
 
     def fire_sequence(self, seq, type_):
         return self._execute_scalar(
