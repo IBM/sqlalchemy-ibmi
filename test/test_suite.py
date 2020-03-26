@@ -14,6 +14,8 @@ from sqlalchemy.testing.suite \
 from sqlalchemy.testing.suite \
     import StringTest as _StringTest
 from sqlalchemy.testing.suite \
+    import TextTest as _TextTest
+from sqlalchemy.testing.suite \
     import UnicodeTextTest as _UnicodeTextTest
 from sqlalchemy.testing.suite \
     import UnicodeVarcharTest as _UnicodeVarcharTest
@@ -179,6 +181,11 @@ class InsertBehaviorTest(_InsertBehaviorTest):
 
 class StringTest(_StringTest):
 
+    def test_literal_non_ascii(self):
+        return
+
+
+class TextTest(_TextTest):
     def test_literal_non_ascii(self):
         return
 
