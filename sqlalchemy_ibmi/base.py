@@ -611,9 +611,7 @@ class _SelectLastRowIDMixin(object):
 class DB2ExecutionContext(_SelectLastRowIDMixin,
                           default.DefaultExecutionContext):
     """IBM i Db2 Execution Context class"""
-    # create_server_side_cursor not implemented because supports_server_side is
-    # set to False in the dialect. get_rowcount is replaced with rowcount
-    # result replaced by get_result_proxy in super
+
 
     def fire_sequence(self, seq, type_):
         return self._execute_scalar(
@@ -664,10 +662,6 @@ class IBMiDb2Dialect(default.DefaultDialect):
         self.dbms_ver = getattr(connection.connection, 'dbms_ver', None)
         self.dbms_name = getattr(connection.connection, 'dbms_name', None)
 
-    # TODO These methods are overridden from the default dialect and should be
-    #  implemented
-    # temporary table not supported
-
     def get_check_constraints(self, connection, table_name, schema=None, **kw):
         current_schema = self.denormalize_name(
             schema or self.default_schema_name)
@@ -704,8 +698,6 @@ class IBMiDb2Dialect(default.DefaultDialect):
             sql.select([self.sys_tables.c.tabcomment], whereclause)
         results = connection.execute(select_statement)
         return {"text": results.scalar()}
-
-    # Two-phase commit not supported currently
 
     # Methods merged from PyODBCConnector
 
