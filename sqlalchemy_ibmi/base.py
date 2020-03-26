@@ -261,21 +261,6 @@ class DB2TypeCompiler(compiler.GenericTypeCompiler):
 
 class DB2Compiler(compiler.SQLCompiler):
     """IBM i Db2 compiler class"""
-
-    # TODO These methods are overridden from the default dialect and should be
-    #  implemented
-
-    def visit_empty_set_expr(self, element_types):
-        pass
-
-    def update_from_clause(self, update_stmt, from_table, extra_froms,
-                           from_hints, **kw):
-        pass
-
-    def delete_extra_from_clause(self, update_stmt, from_table, extra_froms,
-                                 from_hints, **kw):
-        pass
-
     def get_cte_preamble(self, recursive):
         return "WITH"
 
@@ -288,7 +273,6 @@ class DB2Compiler(compiler.SQLCompiler):
         if select.for_update:
             return ' WITH RS USE AND KEEP UPDATE LOCKS'
         return ''
-
 
     def visit_mod_binary(self, binary, operator, **kw):
         return "mod(%s, %s)" % (self.process(binary.left),
@@ -683,11 +667,6 @@ class IBMiDb2Dialect(default.DefaultDialect):
     # TODO These methods are overridden from the default dialect and should be
     #  implemented
     # temporary table not supported
-    def get_temp_table_names(self, connection, schema=None, **kw):
-        pass
-
-    def get_temp_view_names(self, connection, schema=None, **kw):
-        pass
 
     def get_check_constraints(self, connection, table_name, schema=None, **kw):
         current_schema = self.denormalize_name(
@@ -726,22 +705,7 @@ class IBMiDb2Dialect(default.DefaultDialect):
         results = connection.execute(select_statement)
         return {"text": results.scalar()}
 
-    def do_begin_twophase(self, connection, xid):
-        pass
-
-    def do_prepare_twophase(self, connection, xid):
-        pass
-
-    def do_rollback_twophase(self, connection, xid, is_prepared=True,
-                             recover=False):
-        pass
-
-    def do_commit_twophase(self, connection, xid, is_prepared=True,
-                           recover=False):
-        pass
-
-    def do_recover_twophase(self, connection):
-        pass
+    # Two-phase commit not supported currently
 
     # Methods merged from PyODBCConnector
 
