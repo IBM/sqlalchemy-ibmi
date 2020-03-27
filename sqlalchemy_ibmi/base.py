@@ -749,15 +749,10 @@ class IBMiDb2Dialect(default.DefaultDialect):
         return vers
 
     def _get_server_version_info(self, connection, allow_chars=True):
-        # NOTE: this function is not reliable, particularly when
-        # freetds is in use.   Implement database-specific server version
-        # queries.
         dbapi_con = connection.connection
-        version = []
-        r = re.compile(r"[.\-]")
-        for n in r.split(dbapi_con.getinfo(self.dbapi.SQL_DBMS_VER)):
-            version.append(int(n))
-        return tuple(version)
+        version = [int(_) for _ in
+                   dbapi_con.getinfo(self.dbapi.SQL_DBMS_VER).split('.')]
+        return tuple(version[0:2])
 
     def _get_default_schema_name(self, connection):
         """Return: current setting of the schema attribute"""
