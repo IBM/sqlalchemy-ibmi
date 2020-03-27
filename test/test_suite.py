@@ -11,6 +11,14 @@ from sqlalchemy.testing.suite \
     import NumericTest as _NumericTest
 from sqlalchemy.testing.suite \
     import InsertBehaviorTest as _InsertBehaviorTest
+from sqlalchemy.testing.suite \
+    import StringTest as _StringTest
+from sqlalchemy.testing.suite \
+    import TextTest as _TextTest
+from sqlalchemy.testing.suite \
+    import UnicodeTextTest as _UnicodeTextTest
+from sqlalchemy.testing.suite \
+    import UnicodeVarcharTest as _UnicodeVarcharTest
 
 
 # removed constraint that used same columns with different name as it caused
@@ -170,3 +178,36 @@ class InsertBehaviorTest(_InsertBehaviorTest):
     def test_insert_from_select_with_defaults(self):
         return
 
+
+# An assertion error is caused in certain tests by an issue with the IBM i
+# Access ODBC Driver for Linux. Until that issue is fixed, the following tests
+# will be skipped in the StringTest. TextTest, UnicodeTextTest,
+# and UnicodeVarcharTest classes.
+
+class StringTest(_StringTest):
+
+    def test_literal_non_ascii(self):
+        return
+
+
+class TextTest(_TextTest):
+    def test_literal_non_ascii(self):
+        return
+
+
+class UnicodeTextTest(_UnicodeTextTest):
+
+    def test_literal_non_ascii(self):
+        return
+
+    def test_literal(self):
+        return
+
+
+class UnicodeVarcharTest(_UnicodeVarcharTest):
+
+    def test_literal(self):
+        return
+
+    def test_literal_non_ascii(self):
+        return
