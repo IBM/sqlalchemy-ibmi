@@ -580,18 +580,6 @@ class DB2IdentifierPreparer(compiler.IdentifierPreparer):
 class DB2ExecutionContext(default.DefaultExecutionContext):
     """IBM i Db2 Execution Context class"""
 
-    # TODO These methods are overridden from the default dialect and should be
-    #  implemented
-
-    def create_server_side_cursor(self):
-        pass
-
-    def result(self):
-        pass
-
-    def get_rowcount(self):
-        pass
-
     _select_lastrowid = False
     _lastrowid = None
 
@@ -604,20 +592,20 @@ class DB2ExecutionContext(default.DefaultExecutionContext):
             seq_column = tbl._autoincrement_column
             insert_has_sequence = seq_column is not None
 
-            self._select_lastrowid = insert_has_sequence and \
-                                     not self.compiled.returning and \
-                                     not self.compiled.inline
+            self._select_lastrowid = \
+                insert_has_sequence and \
+                not self.compiled.returning and \
+                not self.compiled.inline
 
     def post_exec(self):
-        conn = self.connection()
-        cur = conn.create_cursor()
+        conn = self.root_connection
         if self._select_lastrowid:
             conn._cursor_execute(
-                cur,
+                self.cursor,
                 "SELECT IDENTITY_VAL_LOCAL() FROM SYSIBM.SYSDUMMY1",
                 (),
                 self)
-            row = cur.fetchall()[0]
+            row = self.cursor.fetchall()[0]
             if row[0] is not None:
                 self._lastrowid = int(row[0])
 
