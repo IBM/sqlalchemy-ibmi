@@ -755,7 +755,7 @@ class IBMiDb2Dialect(default.DefaultDialect):
     def _get_server_version_info(self, connection, allow_chars=True):
         if getattr(connection, "connection"):
             dbapi_con = connection.connection
-            version = dbapi_con.getinfo(self.dbapi.SQL_DBMS_VER).split('.')
+            version = [int(_) for _ in dbapi_con.getinfo(self.dbapi.SQL_DBMS_VER).split('.')]
             return tuple(version[0:2])
         return None
 
