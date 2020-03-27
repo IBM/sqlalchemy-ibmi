@@ -179,6 +179,11 @@ class InsertBehaviorTest(_InsertBehaviorTest):
         return
 
 
+# An assertion error is caused in certain tests by an issue with the IBM i
+# Access ODBC Driver for Linux. Until that issue is fixed, the following tests
+# will be skipped in the StringTest. TextTest, UnicodeTextTest,
+# and UnicodeVarcharTest classes.
+
 class StringTest(_StringTest):
 
     def test_literal_non_ascii(self):
