@@ -577,8 +577,9 @@ class DB2IdentifierPreparer(compiler.IdentifierPreparer):
     illegal_initial_characters = set(range(0, 10)).union(["_", "$"])
 
 
-class _SelectLastRowIDMixin(object):
-    """parent class of Db2 execution context"""
+class DB2ExecutionContext(default.DefaultExecutionContext):
+    """IBM i Db2 Execution Context class"""
+
     _select_lastrowid = False
     _lastrowid = None
 
@@ -591,7 +592,8 @@ class _SelectLastRowIDMixin(object):
             seq_column = tbl._autoincrement_column
             insert_has_sequence = seq_column is not None
 
-            self._select_lastrowid = insert_has_sequence and \
+            self._select_lastrowid = \
+                insert_has_sequence and \
                 not self.compiled.returning and \
                 not self.compiled.inline
 
@@ -606,12 +608,6 @@ class _SelectLastRowIDMixin(object):
             row = self.cursor.fetchall()[0]
             if row[0] is not None:
                 self._lastrowid = int(row[0])
-
-
-class DB2ExecutionContext(_SelectLastRowIDMixin,
-                          default.DefaultExecutionContext):
-    """IBM i Db2 Execution Context class"""
-
 
     def fire_sequence(self, seq, type_):
         return self._execute_scalar(
