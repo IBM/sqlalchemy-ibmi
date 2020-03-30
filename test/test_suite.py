@@ -19,8 +19,6 @@ from sqlalchemy.testing.suite \
     import UnicodeTextTest as _UnicodeTextTest
 from sqlalchemy.testing.suite \
     import UnicodeVarcharTest as _UnicodeVarcharTest
-from sqlalchemy.testing.suite \
-    import TimeMicrosecondsTest as _TimeMicrosecondsTest
 
 
 # removed constraint that used same columns with different name as it caused
@@ -212,11 +210,4 @@ class UnicodeVarcharTest(_UnicodeVarcharTest):
         return
 
     def test_literal_non_ascii(self):
-        return
-
-
-class TimeMicrosecondsTest(_TimeMicrosecondsTest):
-
-    # test skipped due to incompatibility with IBM i for sub-second time.
-    def test_round_trip(self):
         return
