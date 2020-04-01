@@ -772,7 +772,8 @@ class IBMiDb2Dialect(default.DefaultDialect):
         mmsp = version.pop(2)
         mm = mmsp[:2]
         sp = mmsp[2:] if mmsp[2:] else '0'
-        return [int(_) for _ in version.extend([mm, sp])]
+        version.extend([mm, sp])
+        return [int(_) for _ in version]
 
     ischema = MetaData()
 
