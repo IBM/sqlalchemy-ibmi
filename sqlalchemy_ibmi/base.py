@@ -764,15 +764,13 @@ class IBMiDb2Dialect(default.DefaultDialect):
         return self.normalize_name(default_schema_name)
 
     # Driver version for IBM i Access ODBC Driver is given as
-    # VV.RR.MMSP where VV (major), RR (release), and MM (modificaiton level)
-    # are all two digits, and the SP (service pack level) can be 0, 1, 2, or
-    # 3 digits
+    # VV.RR.SSSF where VV (major), RR (release), and SSS (service pack)
+    # will be returned and F (test fix version) will be ignored
     def get_driver_version(self, db_conn):
         version = db_conn.getinfo(self.dbapi.SQL_DRIVER_VER).split('.')
-        mmsp = version.pop(2)
-        mm = mmsp[:2]
-        sp = mmsp[2:] if mmsp[2:] else '0'
-        version.extend([mm, sp])
+        sssf = version.pop(2)
+        sss = sssf[:3]
+        version.append(sss)
         return [int(_) for _ in version]
 
     ischema = MetaData()
