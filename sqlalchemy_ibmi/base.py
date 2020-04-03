@@ -657,7 +657,7 @@ class IBMiDb2Dialect(default.DefaultDialect):
         super().initialize(connection)
         self.dbms_ver = getattr(connection.connection, 'dbms_ver', None)
         self.dbms_name = getattr(connection.connection, 'dbms_name', None)
-        self.driver_version = self.get_driver_version(connection.connection)
+        self.driver_version = self._get_driver_version(connection.connection)
 
     def get_check_constraints(self, connection, table_name, schema=None, **kw):
         current_schema = self.denormalize_name(
@@ -766,7 +766,7 @@ class IBMiDb2Dialect(default.DefaultDialect):
     # Driver version for IBM i Access ODBC Driver is given as
     # VV.RR.SSSF where VV (major), RR (release), and SSS (service pack)
     # will be returned and F (test fix version) will be ignored
-    def get_driver_version(self, db_conn):
+    def _get_driver_version(self, db_conn):
         version = db_conn.getinfo(self.dbapi.SQL_DRIVER_VER).split('.')
         sssf = version.pop(2)
         sss = sssf[:3]
