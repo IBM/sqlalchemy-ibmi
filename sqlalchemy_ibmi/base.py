@@ -31,7 +31,6 @@ from sqlalchemy.types import BLOB, CHAR, CLOB, DATE, DATETIME, INTEGER, \
 from .constants import RESERVED_WORDS
 import urllib
 from sqlalchemy.connectors.pyodbc import PyODBCConnector
-import pyodbc
 from sqlalchemy import sql, util
 from sqlalchemy import Table, MetaData, Column
 from sqlalchemy.engine import reflection
@@ -422,28 +421,6 @@ class DB2Compiler(compiler.SQLCompiler):
 class DB2DDLCompiler(compiler.DDLCompiler):
     """DDL Compiler for IBM i Db2"""
 
-    def get_server_version_info(self, dialect):
-        """Returns the Db2 server major and minor version as a list of ints."""
-        if hasattr(dialect, 'dbms_ver'):
-            return [int(ver_token)
-                    for ver_token in dialect.dbms_ver.split('.')[0:2]]
-        else:
-            return []
-
-    def _is_nullable_unique_constraint_supported(self, dialect):
-        """Checks to see if the Db2 version is at least 7.1.
-        This is needed for checking if unique constraints with null columns
-        are supported.
-        """
-        # TODO figure out implementation of this function in DB2DDLCompiler
-
-        dbms_name = getattr(dialect, 'dbms_name', None)
-        if hasattr(dialect, 'dbms_name'):
-            if dbms_name is not None and (dbms_name.find('DB2/') != -1):
-                return self.get_server_version_info(dialect) >= [7, 1]
-        else:
-            return False
-
     def get_column_specification(self, column, **kw):
         col_spec = [self.preparer.format_column(column)]
 
@@ -491,12 +468,6 @@ class DB2DDLCompiler(compiler.DDLCompiler):
             const = ""
         elif isinstance(constraint, sa_schema.UniqueConstraint):
             qual = "UNIQUE "
-            if self._is_nullable_unique_constraint_supported(self.dialect):
-                for column in constraint:
-                    if column.nullable:
-                        constraint.uConstraint_as_index = True
-                if getattr(constraint, 'uConstraint_as_index', None):
-                    qual = "INDEX "
             const = self.preparer.format_constraint(constraint)
         else:
             qual = ""
@@ -511,33 +482,6 @@ class DB2DDLCompiler(compiler.DDLCompiler):
                (self.preparer.format_table(constraint.table),
                 qual, const)
 
-    def create_table_constraints(self, table, **kw):
-        if self._is_nullable_unique_constraint_supported(self.dialect):
-            for constraint in table._sorted_constraints:
-                if isinstance(constraint, sa_schema.UniqueConstraint):
-                    for column in constraint:
-                        if column.nullable:
-                            constraint.use_alter = True
-                            constraint.uConstraint_as_index = True
-                            break
-                    if getattr(constraint, 'uConstraint_as_index', None):
-                        if not constraint.name:
-                            index_name = "%s_%s_%s" % \
-                                ('ukey', self.preparer.format_table(
-                                    constraint.table), '_'.join(
-                                        column.name for column in
-                                        constraint))
-                        else:
-                            index_name = constraint.name
-                        index = sa_schema.Index(
-                            index_name, *(column for column in constraint))
-                        index.unique = True
-                        index.uConstraint_as_index = True
-
-        result = super(DB2DDLCompiler, self).create_table_constraints(table,
-                                                                      **kw)
-        return result
-
     def visit_create_index(self, create, include_schema=True,
                            include_table_schema=True):
         sql = super(DB2DDLCompiler, self).visit_create_index(
@@ -546,30 +490,6 @@ class DB2DDLCompiler(compiler.DDLCompiler):
             include_table_schema)
         if getattr(create.element, 'uConstraint_as_index', None):
             sql += ' EXCLUDE NULL KEYS'
-        return sql
-
-    def visit_add_constraint(self, create):
-        if self._is_nullable_unique_constraint_supported(self.dialect):
-            if isinstance(create.element, sa_schema.UniqueConstraint):
-                for column in create.element:
-                    if column.nullable:
-                        create.element.uConstraint_as_index = True
-                        break
-                if getattr(create.element, 'uConstraint_as_index', None):
-                    if not create.element.name:
-                        index_name = "%s_%s_%s" % (
-                            'uk_index', self.preparer.format_table(
-                                create.element.table),
-                            '_'.join(column.name for column in create.element))
-                    else:
-                        index_name = create.element.name
-                    index = sa_schema.Index(
-                        index_name, *(column for column in create.element))
-                    index.unique = True
-                    index.uConstraint_as_index = True
-                    sql = self.visit_create_index(sa_schema.CreateIndex(index))
-                    return sql
-        sql = super(DB2DDLCompiler, self).visit_add_constraint(create)
         return sql
 
 
@@ -657,8 +577,7 @@ class IBMiDb2Dialect(default.DefaultDialect):
 
     def initialize(self, connection):
         super().initialize(connection)
-        self.dbms_ver = connection.connection.getinfo(pyodbc.SQL_DBMS_VER)
-        self.dbms_name = connection.connection.getinfo(pyodbc.SQL_DBMS_NAME)
+        self.driver_version = self._get_driver_version(connection.connection)
 
     def get_check_constraints(self, connection, table_name, schema=None, **kw):
         current_schema = self.denormalize_name(
