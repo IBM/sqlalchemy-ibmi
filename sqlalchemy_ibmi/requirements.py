@@ -1,13 +1,6 @@
-"""requirements.py
-
-
-This file is used by the SQLAlchemy 0.8 testing suite to mark various
-optional behaviors as non-supported.
-
-"""
 from sqlalchemy.testing.requirements import SuiteRequirements
-
 from sqlalchemy.testing import exclusions
+from sqlalchemy.testing.exclusions import SpecPredicate
 
 
 class Requirements(SuiteRequirements):
@@ -18,20 +11,10 @@ class Requirements(SuiteRequirements):
     # TODO These methods are overridden from the default dialect and should be
     #  implemented
 
-    def get_order_by_collation(self, config):
-        pass
-
     @property
     def on_update_cascade(self):
         """"target database must support ON UPDATE..CASCADE behavior in
         foreign keys."""
-
-        return exclusions.closed()
-
-    @property
-    def datetime_microseconds(self):
-        """target dialect supports representation of Python
-        datetime.datetime() with microsecond objects."""
 
         return exclusions.closed()
 
@@ -47,10 +30,6 @@ class Requirements(SuiteRequirements):
         """Target database must support VARCHAR with no length"""
 
         return exclusions.closed()
-
-    # @property
-    # def offset(self):
-    #    return exclusions.closed()
 
     @property
     def window_functions(self):
@@ -73,7 +52,6 @@ class Requirements(SuiteRequirements):
     def precision_numerics_many_significant_digits(self):
         """target backend supports values with many digits on both sides,
         such as 319438950232418390.273596, 87673.594069654243
-
         """
         return exclusions.fails_if(
             lambda: True,
@@ -85,4 +63,52 @@ class Requirements(SuiteRequirements):
         i.e. a value such as 10.000 will come back in Decimal form with
         the .000 maintained."""
 
+        return exclusions.open()
+
+    @property
+    def check_constraint_reflection(self):
+        """target dialect supports reflection of check constraints"""
+        return exclusions.open()
+
+    # DB2 for i does not support temporary tables
+    @property
+    def temp_table_names(self):
+        """target dialect supports listing of temporary table names"""
+        return exclusions.closed()
+
+    @property
+    def temporary_tables(self):
+        """target database supports temporary tables"""
+        return exclusions.closed()
+
+    @property
+    def temporary_views(self):
+        """target database supports temporary views"""
+        return exclusions.closed()
+
+    @property
+    def temp_table_reflection(self):
+        return exclusions.closed()
+
+    # adding implicitly_named_constraints which is not included in the
+    # requirements.py in testing suite
+    @property
+    def implicitly_named_constraints(self):
+        """target database must apply names to unnamed constraints."""
+        return exclusions.open()
+
+    # closed due to sqlalchemy.exc.CompileError: This SELECT structure does
+    # not use a simple integer value for limit
+    @property
+    def bound_limit_offset(self):
+        return exclusions.closed()
+
+    @property
+    def floats_to_four_decimals(self):
+        return exclusions.closed()
+
+    @property
+    def non_updating_cascade(self):
+        """target database must *not* support ON UPDATE..CASCADE behavior in
+        foreign keys."""
         return exclusions.open()
