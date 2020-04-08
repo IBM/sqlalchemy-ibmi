@@ -712,6 +712,12 @@ class IBMiDb2Dialect(default.DefaultDialect):
     @property
     def _isolation_lookup(self):
         return {
+            # IBM i terminology
+            "*CHG": self.dbapi.SQL_TXN_READ_UNCOMMITTED,
+            "*CS": self.dbapi.SQL_TXN_READ_COMMITTED,
+            "*ALL": self.dbapi.SQL_TXN_REPEATABLE_READ,
+            "*RR": self.dbapi.SQL_TXN_SERIALIZABLE,
+            # ODBC terminology
             "SERIALIZABLE": self.dbapi.SQL_TXN_SERIALIZABLE,
             "READ UNCOMMITTED": self.dbapi.SQL_TXN_READ_UNCOMMITTED,
             "READ COMMITTED": self.dbapi.SQL_TXN_READ_COMMITTED,
@@ -724,14 +730,11 @@ class IBMiDb2Dialect(default.DefaultDialect):
         return self.isolation_level
 
     def set_isolation_level(self, connection, level):
-        self._isolation_level = level
+        self.isolation_level = level
         level = level.replace("_", " ")
         if level in self._isolation_lookup:
-            connection.autocommit = False
             connection.set_attr(self.dbapi.SQL_ATTR_TXN_ISOLATION,
                                 self._isolation_lookup[level])
-        elif level == "AUTOCOMMIT":
-            connection.autocommit = True
         else:
             raise exc.ArgumentError(
                 "Invalid value '%s' for isolation_level. "
