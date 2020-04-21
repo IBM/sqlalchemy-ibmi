@@ -278,6 +278,17 @@ class DB2Compiler(compiler.SQLCompiler):
         return "mod(%s, %s)" % (self.process(binary.left),
                                 self.process(binary.right))
 
+    def visit_match_op_binary(self, binary, operator, **kw):
+        if self.dialect.text_server_available:
+            return "CONTAINS (%s, %s) > 0" % (
+                self.process(binary.left),
+                self.process(binary.right),
+            )
+        binary.right.value = '%'+binary.right.value+'%'
+        return "%s LIKE %s" % (
+            self.process(binary.left),
+            self.process(binary.right))
+
     def limit_clause(self, select, **kwargs):
         if (select._limit is not None) and (select._offset is None):
             return " FETCH FIRST %s ROWS ONLY" % select._limit
@@ -658,6 +669,7 @@ class IBMiDb2Dialect(default.DefaultDialect):
         self.dbms_ver = getattr(connection.connection, 'dbms_ver', None)
         self.dbms_name = getattr(connection.connection, 'dbms_name', None)
         self.driver_version = self._get_driver_version(connection.connection)
+        self.text_server_available = self._check_text_server(connection)
 
     def get_check_constraints(self, connection, table_name, schema=None, **kw):
         current_schema = self.denormalize_name(
@@ -1088,3 +1100,7 @@ class IBMiDb2Dialect(default.DefaultDialect):
     def get_unique_constraints(self, connection, table_name, schema=None, **kw):
         unique_consts = []
         return unique_consts
+
+    def _check_text_server(self, connection):
+        stmt = "SELECT COUNT(*) FROM QSYS2.SYSTEXTSERVERS"
+        return connection.execute(stmt).scalar()
