@@ -29,8 +29,6 @@ from sqlalchemy.types import BLOB, CHAR, CLOB, DATE, DATETIME, INTEGER, \
     SMALLINT, BIGINT, DECIMAL, NUMERIC, REAL, TIME, TIMESTAMP, \
     VARCHAR, FLOAT
 from .constants import RESERVED_WORDS
-import urllib
-from sqlalchemy.connectors.pyodbc import PyODBCConnector
 from sqlalchemy import sql, util
 from sqlalchemy import Table, MetaData, Column
 from sqlalchemy.engine import reflection
