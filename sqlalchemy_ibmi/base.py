@@ -21,7 +21,7 @@
 """
 import datetime
 import re
-from sqlalchemy import schema as sa_schema
+from sqlalchemy import schema as sa_schema, exc
 from sqlalchemy.sql import compiler
 from sqlalchemy.sql import operators
 from sqlalchemy.engine import default
@@ -573,6 +573,20 @@ class IBMiDb2Dialect(default.DefaultDialect):
     preparer = DB2IdentifierPreparer
     execution_ctx_cls = DB2ExecutionContext
 
+    def __init__(self, isolation_level=None, **kw):
+        super().__init__(**kw)
+        self.isolation_level = isolation_level
+
+    def on_connect(self):
+        if self.isolation_level is not None:
+
+            def connect(conn):
+                self.set_isolation_level(conn, self.isolation_level)
+
+            return connect
+        else:
+            return None
+
     def initialize(self, connection):
         super().initialize(connection)
         self.driver_version = self._get_driver_version(connection.connection)
@@ -614,22 +628,38 @@ class IBMiDb2Dialect(default.DefaultDialect):
         results = connection.execute(select_statement)
         return {"text": results.scalar()}
 
+    @property
+    def _isolation_lookup(self):
+        return {
+            # IBM i terminology
+            "*CHG": self.dbapi.SQL_TXN_READ_UNCOMMITTED,
+            "*CS": self.dbapi.SQL_TXN_READ_COMMITTED,
+            "*ALL": self.dbapi.SQL_TXN_REPEATABLE_READ,
+            "*RR": self.dbapi.SQL_TXN_SERIALIZABLE,
+            # ODBC terminology
+            "SERIALIZABLE": self.dbapi.SQL_TXN_SERIALIZABLE,
+            "READ UNCOMMITTED": self.dbapi.SQL_TXN_READ_UNCOMMITTED,
+            "READ COMMITTED": self.dbapi.SQL_TXN_READ_COMMITTED,
+            "REPEATABLE READ": self.dbapi.SQL_TXN_REPEATABLE_READ,
+        }
+
     # Methods merged from PyODBCConnector
 
     def get_isolation_level(self, dbapi_conn):
-        return dbapi_conn.autocommit
+        return self.isolation_level
 
     def set_isolation_level(self, connection, level):
-        # adjust for ConnectionFairy being present
-        # allows attribute set e.g. "connection.autocommit = True"
-        # to work properly
-        if hasattr(connection, "connection"):
-            connection = connection.connection
-
-        if level == "AUTOCOMMIT":
-            connection.autocommit = True
+        self.isolation_level = level
+        level = level.replace("_", " ")
+        if level in self._isolation_lookup:
+            connection.set_attr(self.dbapi.SQL_ATTR_TXN_ISOLATION,
+                                self._isolation_lookup[level])
         else:
-            connection.autocommit = False
+            raise exc.ArgumentError(
+                "Invalid value '%s' for isolation_level. "
+                "Valid isolation levels for %s are %s"
+                % (level, self.name, ", ".join(self._isolation_lookup.keys()))
+            )
 
     @classmethod
     def dbapi(cls):
@@ -643,7 +673,9 @@ class IBMiDb2Dialect(default.DefaultDialect):
         if allowed_opts < opts.keys():
             raise ValueError("Option entered not valid for "
                              "IBM i Access ODBC Driver")
-        return [["Driver={%s}; UNICODESQL=1" % self.pyodbc_driver_name], opts]
+ 
+        return [["Driver={%s}; UNICODESQL=1; TRUEAUTOCOMMIT=1" % (
+                 self.pyodbc_driver_name)], opts]
 
     def is_disconnect(self, e, connection, cursor):
         if isinstance(e, self.dbapi.ProgrammingError):
