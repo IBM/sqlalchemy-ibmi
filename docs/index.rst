@@ -3,17 +3,10 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to sqlalchemy-ibmi's documentation!
-===========================================
+SQLAlchemy-IBMi
+===============
 
-.. toctree::
-   :maxdepth: 1
-   :caption: Contents:
-
-   installation
-   quickstart
-   examples
-
+.. automodule:: sqlalchemy_ibmi.base
 
 Indices and tables
 ==================
