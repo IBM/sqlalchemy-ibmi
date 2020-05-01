@@ -16,7 +16,103 @@
 # | Authors: Alex Pitigoi, Abhigyan Agrawal, Rahul Priyadarshi               |
 # | Contributors: Jaimy Azle, Mike Bayer                                     |
 # +--------------------------------------------------------------------------+
-"""Support for IBM Db2 database
+"""
+DBAPI Connection
+----------------
+This dialect uses the `pyODBC <https://github.com/mkleehammer/pyodbc>`_ DBAPI
+and the `IBM i Access ODBC Driver
+<https://www.ibm.com/support/pages/ibm-i-access-client-solutions>`_.
+
+Connect to Db2 for i using the following URL::
+
+    engine = create_engine("ibmi://username:pass@host/?connect_args")
+
+Connection arguments are passed following the URL query format. Please find
+more information on how to pass the arguments `here
+<https://en.wikipedia.org/wiki/Query_string>`_
+
+Connect Arguments
+-----------------
+
+The sqlalchemy-ibmi dialect supports multiple connection arguments that are
+passed to the URL in create_engine function.
+
+* ``autocommit`` - If False, Connection.commit must be called;
+  otherwise each statement is automatically committed.
+  Defaults to ``False``.
+* ``readonly`` - defaults to ``False``.
+  If True, the connection is set to readonly
+* ``timeout`` - A timeout for the connection, in seconds.
+  This causes the connection's SQL_ATTR_LOGIN_TIMEOUT to be
+  set before the connection occurs.
+
+Transaction Isolation Level / Autocommit
+----------------------------------------
+Db2 for i supports 5 isolation levels:
+
+* ``SERIALIZABLE``: ``*RR``
+* ``READ COMMITTED``: ``*CS``
+* ``READ UNCOMMITTED``: ``*CHG``
+* ``REPEATABLE READ``: ``*ALL``
+* ``*`` ``NO COMMIT``: ``*NONE/*NC``
+
+**At this time, pyODBC and SQLAlchemy support all of these isolation levels
+except NO COMMIT.**
+
+Autocommit is supported in Db2 for i by passing the TRUEAUTOCOMMIT value in the
+connection arguments. Autocommit is supported on all available isolation levels.
+
+To set isolation globally::
+
+    engine = create_engine("ibmi://user:pass@host/",
+    isolation_level='REPEATABLE_READ')
+
+To set using per-connection execution options::
+
+    connection = engine.connect()
+    connection = connection.execution_options(
+        isolation_level="SERIALIZABLE"
+    )
+
+Table Creation String Size
+--------------------------
+When creating a table with sqlalchemy, Db2 for i requires that a string size
+is provided.
+
+Provide the length for in the CREATE TABLE as follows:
+
+.. code-block:: python
+   :emphasize-lines: 4, 8
+
+    class User(Base):
+        __tablename__ = 'users'
+        id = Column(Integer, Sequence('user_id_seq'), primary_key=True)
+        name = *Column(String(50))*
+
+    users = Table('users', metadata,
+        Column('id', Integer, Sequence('user_id_seq'), primary_key=True),
+        Column('name', String(50)),
+    )
+
+
+Query Function Strings
+----------------------
+Db2 for i doesn't support parameter markers in SELECT statments, so as a
+result the following command will not work with sqlalchemy-ibmi::
+
+    session.query(func.count("*")).select_from(User).scalar()
+
+To avoid this, please convert your column strings to literal columns::
+
+    from sqlalchemy.sql import literal_column
+    session.query(func.count(literal_column("name"))).select_from(User).scalar()
+
+Text search support
+-------------------
+The ColumnOperators.match function can be used with Db2 for i using the
+CONTAINS function. However, it requires that OmniFind Text Search Server for
+DB2® for i be installed and started to use this. If the Text Search Server is
+not installed, then a LIKE operation is completed.
 
 """
 import datetime
