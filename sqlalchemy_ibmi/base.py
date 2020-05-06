@@ -23,15 +23,11 @@ This dialect uses the `pyODBC <https://github.com/mkleehammer/pyodbc>`_ DBAPI
 and the `IBM i Access ODBC Driver
 <https://www.ibm.com/support/pages/ibm-i-access-client-solutions>`_.
 
-Connect to Db2 for i using the following URL::
+Connection string::
 
-    engine = create_engine("ibmi://username:pass@host/?connect_args")
+    engine = create_engine("ibmi://user:password@host:port/[?key=value&key=value...]")
 
-Connection arguments are passed following the URL query format. Please find
-more information on how to pass the arguments `here
-<https://en.wikipedia.org/wiki/Query_string>`_
-
-Connect Arguments
+Connection Arguments
 -----------------
 
 The sqlalchemy-ibmi dialect supports multiple connection arguments that are
@@ -102,16 +98,21 @@ result the following command will not work with sqlalchemy-ibmi::
 
     session.query(func.count("*")).select_from(User).scalar()
 
-To avoid this, please convert your column strings to literal columns::
+Instead, please use the following::
+
+    session.query(func.count()).select_from(User).scalar()
+
+Addtionally, column names cannot be passed as strings, so convert your column
+strings to literal columns as follows::
 
     from sqlalchemy.sql import literal_column
-    session.query(func.count(literal_column("name"))).select_from(User).scalar()
+    session.query(func.count(literal_column("colname"))).select_from(User).scalar()
 
 Text search support
 -------------------
 The ColumnOperators.match function can be used with Db2 for i using the
 CONTAINS function. However, it requires that OmniFind Text Search Server for
-DB2® for i be installed and started to use this. If the Text Search Server is
+Db2® for i be installed and started to use this. If the Text Search Server is
 not installed, then a LIKE operation is completed.
 
 """
