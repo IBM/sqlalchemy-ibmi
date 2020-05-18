@@ -57,4 +57,12 @@ pip install .
 
 ## Testing
 
-TODO
+To run tests, clone the repository and run poetry install to ensure you are
+ using the correct version of pytest and then run the command: 
+```
+    pytest --dburi="ibmi://<user>:<pass>@<hostname>/?<conn-opts>"
+```
+Run sub-tests or specific tests with:
+```
+pytest --dburi="ibmi://<user>:<pass>@<hostname>/?<conn-opts>"  test/example_test.py
+```
