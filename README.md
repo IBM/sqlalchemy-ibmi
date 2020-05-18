@@ -1,4 +1,6 @@
 [![GitHub Actions status | sdras/awesome-actions](https://github.com/IBM/sqlalchemy-ibmi/workflows/Python%20package/badge.svg)](https://github.com/IBM/sqlalchemy-ibmi/actions?workflow=Python+package)
+[![Documentation Status](https://readthedocs.org/projects/sqlalchemy-ibmi/badge/?version=latest)](https://sqlalchemy-ibmi.readthedocs.io/en/latest/?badge=latest)
+
 
 SQLAlchemy adapter for IBM i
 =========
@@ -51,7 +53,8 @@ TODO
 Documentation
 -------------
 
-TODO
+The documentation for the SQLAlchemy adapter for IBM i can be found at:
+https://sqlalchemy-ibmi.readthedocs.io/en/latest/
 
 
 Known Limitations 
