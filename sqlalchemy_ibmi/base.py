@@ -56,8 +56,7 @@ Autocommit is supported on all available isolation levels.
 
 To set isolation level globally::
 
-    engine = create_engine("ibmi://user:pass@host/",
-    isolation_level='REPEATABLE_READ')
+    engine = create_engine("ibmi://user:pass@host/", isolation_level='REPEATABLE_READ')
 
 To set using per-connection execution options::
 
