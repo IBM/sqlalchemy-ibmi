@@ -25,13 +25,13 @@ and the `IBM i Access ODBC Driver
 
 Connection string::
 
-    engine = create_engine("ibmi://user:password@host:port/[?key=value&key=value...]")
+    engine = create_engine("ibmi://user:password@host:port/rdbname[?key=value&key=value...]")
 
 Connection Arguments
 -----------------
 
 The sqlalchemy-ibmi dialect supports multiple connection arguments that are
-passed to the URL in create_engine function.
+passed in the URL to the `create_engine <https://docs.sqlalchemy.org/en/13/core/engines.html>`_ function.
 
 * ``autocommit`` - If False, Connection.commit must be called;
   otherwise each statement is automatically committed.
@@ -50,13 +50,12 @@ Db2 for i supports 5 isolation levels:
 * ``READ COMMITTED``: ``*CS``
 * ``READ UNCOMMITTED``: ``*CHG``
 * ``REPEATABLE READ``: ``*ALL``
-* ``*`` ``NO COMMIT``: ``*NONE/*NC``
+* ``NO COMMIT``: ``*NC``
 
-**At this time, pyODBC and SQLAlchemy support all of these isolation levels
+**At this time, psqlalchemy-ibmi supports support all of these isolation levels
 except NO COMMIT.**
 
-Autocommit is supported in Db2 for i by passing the TRUEAUTOCOMMIT value in the
-connection arguments. Autocommit is supported on all available isolation levels.
+Autocommit is supported on all available isolation levels.
 
 To set isolation globally::
 
@@ -72,10 +71,10 @@ To set using per-connection execution options::
 
 Table Creation String Size
 --------------------------
-When creating a table with sqlalchemy, Db2 for i requires that a string size
+When creating a table with SQLAlchemy, Db2 for i requires that a string size
 is provided.
 
-Provide the length for in the CREATE TABLE as follows:
+Provide the length for a string column in the CREATE TABLE as follows:
 
 .. code-block:: python
    :emphasize-lines: 4, 8
@@ -93,8 +92,8 @@ Provide the length for in the CREATE TABLE as follows:
 
 Query Function Strings
 ----------------------
-Db2 for i doesn't support parameter markers in SELECT statments, so as a
-result the following command will not work with sqlalchemy-ibmi::
+Db2 for i doesn't support parameter markers in the SELECT clause of a statement.
+As a result, the following command will not work with sqlalchemy-ibmi::
 
     session.query(func.count("*")).select_from(User).scalar()
 
@@ -110,10 +109,9 @@ strings to literal columns as follows::
 
 Text search support
 -------------------
-The ColumnOperators.match function can be used with Db2 for i using the
-CONTAINS function. However, it requires that OmniFind Text Search Server for
-Db2® for i be installed and started to use this. If the Text Search Server is
-not installed, then a LIKE operation is completed.
+The ColumnOperators.match function is implemented using a basic LIKE operation
+by default. However, when `OmniFind Text Search Server for Db2 for i <https://www.ibm.com/support/knowledgecenter/ssw_ibm_i_74/rzash/rzashkickoff.htm>`_ is
+installed, match will take advantage of the CONTAINS function that it provides.
 
 """
 import datetime
