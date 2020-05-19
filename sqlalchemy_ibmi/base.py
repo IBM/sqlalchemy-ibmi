@@ -33,14 +33,11 @@ Connection Arguments
 The sqlalchemy-ibmi dialect supports multiple connection arguments that are
 passed in the URL to the `create_engine <https://docs.sqlalchemy.org/en/13/core/engines.html>`_ function.
 
-* ``autocommit`` - If False, Connection.commit must be called;
+* ``autocommit`` - If ``False``, Connection.commit must be called;
   otherwise each statement is automatically committed.
   Defaults to ``False``.
-* ``readonly`` - defaults to ``False``.
-  If True, the connection is set to readonly
-* ``timeout`` - A timeout for the connection, in seconds.
-  This causes the connection's SQL_ATTR_LOGIN_TIMEOUT to be
-  set before the connection occurs.
+* ``readonly`` - If ``True``, the connection is set to read-only. Defaults to ``False``.
+* ``timeout`` - The login timeout for the connection, in seconds.
 
 Transaction Isolation Level / Autocommit
 ----------------------------------------
@@ -52,12 +49,12 @@ Db2 for i supports 5 isolation levels:
 * ``REPEATABLE READ``: ``*ALL``
 * ``NO COMMIT``: ``*NC``
 
-**At this time, psqlalchemy-ibmi supports support all of these isolation levels
+**At this time, sqlalchemy-ibmi supports support all of these isolation levels
 except NO COMMIT.**
 
 Autocommit is supported on all available isolation levels.
 
-To set isolation globally::
+To set isolation level globally::
 
     engine = create_engine("ibmi://user:pass@host/",
     isolation_level='REPEATABLE_READ')
@@ -71,10 +68,10 @@ To set using per-connection execution options::
 
 Table Creation String Size
 --------------------------
-When creating a table with SQLAlchemy, Db2 for i requires that a string size
-is provided.
+When creating a table with SQLAlchemy, Db2 for i requires that the size of
+a String column be provided.
 
-Provide the length for a string column in the CREATE TABLE as follows:
+Provide the length for a String column as follows:
 
 .. code-block:: python
    :emphasize-lines: 4, 8
@@ -82,7 +79,7 @@ Provide the length for a string column in the CREATE TABLE as follows:
     class User(Base):
         __tablename__ = 'users'
         id = Column(Integer, Sequence('user_id_seq'), primary_key=True)
-        name = *Column(String(50))*
+        name = Column(String(50))
 
     users = Table('users', metadata,
         Column('id', Integer, Sequence('user_id_seq'), primary_key=True),
