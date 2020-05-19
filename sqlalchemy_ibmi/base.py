@@ -49,7 +49,7 @@ Db2 for i supports 5 isolation levels:
 * ``REPEATABLE READ``: ``*ALL``
 * ``NO COMMIT``: ``*NC``
 
-**At this time, sqlalchemy-ibmi supports support all of these isolation levels
+**At this time, sqlalchemy-ibmi supports all of these isolation levels
 except NO COMMIT.**
 
 Autocommit is supported on all available isolation levels.
