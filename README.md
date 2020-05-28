@@ -7,7 +7,8 @@ SQLAlchemy adapter for IBM i
 
 The IBM i SQLAlchemy adapter provides a [SQLAlchemy](https://www.sqlalchemy.org/) interface to Db2 for [IBM i](https://en.wikipedia.org/wiki/IBM_i).
 
-**Please note that this project is still in active development and is not ready for use.** :rotating_light: 
+**Please note that this project is still under active development. Please
+ report any bugs in the issue tracker** :rotating_light: 
 
 ```python
 import sqlalchemy as sa
@@ -35,20 +36,14 @@ print(result[0])
 
 ```
 
-For more, check out the [samples](samples). (TODO)
-
 Installation
 -------------
-TODO
+pip install sqlalchemy-ibmi
  
 Feature Support
 ----------------
-TODO
-
-Version
---------
-
-TODO
+- SQLAlchemy ORM  - Python object based automatically constructed SQL
+- SQLAlchemy Core - schema-centric SQL Expression Language
 
 Documentation
 -------------
