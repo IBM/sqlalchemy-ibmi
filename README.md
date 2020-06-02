@@ -1,3 +1,5 @@
+[![Latest version released on PyPi](https://img.shields.io/pypi/v/sqlalchemy-ibmi.svg)](https://pypi.python.org/pypi/sqlalchemy-ibmi)
+[![](https://img.shields.io/pypi/pyversions/sqlalchemy-ibmi.svg)](https://pypi.org/project/itoolkit/)
 [![GitHub Actions status | sdras/awesome-actions](https://github.com/IBM/sqlalchemy-ibmi/workflows/Python%20package/badge.svg)](https://github.com/IBM/sqlalchemy-ibmi/actions?workflow=Python+package)
 [![Documentation Status](https://readthedocs.org/projects/sqlalchemy-ibmi/badge/?version=latest)](https://sqlalchemy-ibmi.readthedocs.io/en/latest/?badge=latest)
 
@@ -7,7 +9,8 @@ SQLAlchemy adapter for IBM i
 
 The IBM i SQLAlchemy adapter provides a [SQLAlchemy](https://www.sqlalchemy.org/) interface to Db2 for [IBM i](https://en.wikipedia.org/wiki/IBM_i).
 
-**Please note that this project is still in active development and is not ready for use.** :rotating_light: 
+**Please note that this project is still under active development. Please
+ report any bugs in the issue tracker** :rotating_light: 
 
 ```python
 import sqlalchemy as sa
@@ -35,20 +38,14 @@ print(result[0])
 
 ```
 
-For more, check out the [samples](samples). (TODO)
-
 Installation
 -------------
-TODO
+pip install sqlalchemy-ibmi
  
 Feature Support
 ----------------
-TODO
-
-Version
---------
-
-TODO
+- SQLAlchemy ORM  - Python object based automatically constructed SQL
+- SQLAlchemy Core - schema-centric SQL Expression Language
 
 Documentation
 -------------
