@@ -1,3 +1,5 @@
+[![Latest version released on PyPi](https://img.shields.io/pypi/v/sqlalchemy-ibmi.svg)](https://pypi.python.org/pypi/sqlalchemy-ibmi)
+[![](https://img.shields.io/pypi/pyversions/sqlalchemy-ibmi.svg)](https://pypi.org/project/itoolkit/)
 [![GitHub Actions status | sdras/awesome-actions](https://github.com/IBM/sqlalchemy-ibmi/workflows/Python%20package/badge.svg)](https://github.com/IBM/sqlalchemy-ibmi/actions?workflow=Python+package)
 [![Documentation Status](https://readthedocs.org/projects/sqlalchemy-ibmi/badge/?version=latest)](https://sqlalchemy-ibmi.readthedocs.io/en/latest/?badge=latest)
 
