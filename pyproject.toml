@@ -37,6 +37,7 @@ pyodbc = ">=4.0"
 [tool.poetry.dev-dependencies]
 pytest = "<5.4"
 flake8 = "^3.7.9"
+bumpversion = "^0.5.0"
 sphinx = ">1.0.0"
 sphinx-rtd-theme = ">0.4.0"
 
