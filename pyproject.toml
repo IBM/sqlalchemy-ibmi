@@ -31,6 +31,7 @@ include = [
 ibmi = "sqlalchemy_ibmi.base:IBMiDb2Dialect"
 
 [tool.poetry.dependencies]
+python = ">=3.5"
 sqlalchemy = ">=1.3"
 pyodbc = ">=4.0"
 
