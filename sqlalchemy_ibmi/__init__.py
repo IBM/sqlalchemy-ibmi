@@ -19,7 +19,7 @@
 # | Contributors: Jaimy Azle, Mike Bayer                                     |
 # +--------------------------------------------------------------------------+
 
-__version__ = '0.9.0-dev'
+__version__ = '0.9.0'
 
 from . import base
 
