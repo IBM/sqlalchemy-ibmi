@@ -28,16 +28,21 @@ Connection string::
     engine = create_engine("ibmi://user:password@host:port/rdbname[?key=value&key=value...]")
 
 Connection Arguments
------------------
+--------------------
 
 The sqlalchemy-ibmi dialect supports multiple connection arguments that are
 passed in the URL to the `create_engine <https://docs.sqlalchemy.org/en/13/core/engines.html>`_ function.
 
-* ``autocommit`` - If ``False``, Connection.commit must be called;
++ ``rdbname`` - Specifies the name of a Relation Database Entry (RDB) on the IBM i system. Any database that is listed when the WRKRDBDIRE command is run on the system can be listed here. The options include:
+
+    - *LOCAL/empty string - local database
+    - ASP name
+    - Remote database name - *advisable to connect to the remote system directly*
++ ``autocommit`` - If ``False``, Connection.commit must be called;
   otherwise each statement is automatically committed.
   Defaults to ``False``.
-* ``readonly`` - If ``True``, the connection is set to read-only. Defaults to ``False``.
-* ``timeout`` - The login timeout for the connection, in seconds.
++ ``readonly`` - If ``True``, the connection is set to read-only. Defaults to ``False``.
++ ``timeout`` - The login timeout for the connection, in seconds.
 
 Transaction Isolation Level / Autocommit
 ----------------------------------------
