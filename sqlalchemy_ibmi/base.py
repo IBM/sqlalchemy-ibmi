@@ -25,7 +25,7 @@ and the `IBM i Access ODBC Driver
 
 Connection string::
 
-    engine = create_engine("ibmi://user:password@host:port/rdbname[?key=value&key=value...]")
+    engine = create_engine("ibmi://user:password@host/rdbname[?key=value&key=value...]")
 
 Connection Arguments
 -----------------
