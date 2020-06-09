@@ -772,12 +772,16 @@ class IBMiDb2Dialect(default.DefaultDialect):
         opts = url.translate_connect_args(username='user', host='system')
         opts.update(url.query)
         allowed_opts = {'system', 'user', 'password',
-                        'autocommit', 'readonly', 'timeout', 'database'}
+                        'autocommit', 'readonly', 'timeout',
+                        'database', 'library_list', 'current_schema'}
         if allowed_opts < opts.keys():
             raise ValueError("Option entered not valid for "
                              "IBM i Access ODBC Driver")
- 
-        return [["Driver={%s}; UNICODESQL=1; TRUEAUTOCOMMIT=1" % (
+        if 'current_schema' in opts or 'library_list' in opts:
+            opts['DefaultLibraries'] = opts.pop('current_schema', '') + ','
+            opts['DefaultLibraries'] += ','.join(opts.pop('library_list', ''))
+
+        return [["Driver={%s}; UNICODESQL=1; TRUEAUTOCOMMIT=1;" % (
                  self.pyodbc_driver_name)], opts]
 
     def is_disconnect(self, e, connection, cursor):
