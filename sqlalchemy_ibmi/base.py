@@ -25,7 +25,7 @@ and the `IBM i Access ODBC Driver
 
 Connection string::
 
-    engine = create_engine("ibmi://user:password@host:port/rdbname[?key=value&key=value...]")
+    engine = create_engine("ibmi://user:password@host/rdbname[?key=value&key=value...]")
 
 Connection Arguments
 --------------------
@@ -37,7 +37,19 @@ passed in the URL to the `create_engine <https://docs.sqlalchemy.org/en/13/core/
 
     - *LOCAL/empty string - local database
     - ASP name
-    - Remote database name - *advisable to connect to the remote system directly*
+    - Remote database name
+
+        The ODBC Driver provides the ability to connect to a remote database through
+        a different hostname; however, connecting directly to the database's
+        system will likely result in fewer potential issues. To do this, just
+        specify the host of the database and *LOCAL or an empty string.
+        For example, instead of:
+        ::
+            engine = create_engine("ibmi://user:pass@host1/host2db")
+        use:
+        ::
+            engine = create_engine("ibmi://user:pass@host2/")
+
 + ``autocommit`` - If ``False``, Connection.commit must be called;
   otherwise each statement is automatically committed.
   Defaults to ``False``.
