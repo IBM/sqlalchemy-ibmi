@@ -49,7 +49,11 @@ passed in the URL to the `create_engine <https://docs.sqlalchemy.org/en/13/core/
         use:
         ::
             engine = create_engine("ibmi://user:pass@host2/")
-
+            
++ ``current_schema`` - Define the default schema to use for unqualified names.
++ ``library_list`` - Specify which IBM i libraries to add to the server job's
+library list. Can be specified in the URL as a comma separated list, or as a
+keyword argument to the create_engine function as a list of strings
 + ``autocommit`` - If ``False``, Connection.commit must be called;
   otherwise each statement is automatically committed.
   Defaults to ``False``.
@@ -789,12 +793,21 @@ class IBMiDb2Dialect(default.DefaultDialect):
         opts = url.translate_connect_args(username='user', host='system')
         opts.update(url.query)
         allowed_opts = {'system', 'user', 'password',
-                        'autocommit', 'readonly', 'timeout', 'database'}
+                        'autocommit', 'readonly', 'timeout',
+                        'database', 'library_list', 'current_schema'}
         if allowed_opts < opts.keys():
             raise ValueError("Option entered not valid for "
                              "IBM i Access ODBC Driver")
- 
-        return [["Driver={%s}; UNICODESQL=1; TRUEAUTOCOMMIT=1" % (
+
+        if 'current_schema' in opts or 'library_list' in opts:
+            opts['DefaultLibraries'] = opts.pop('current_schema', '') + ','
+            if isinstance(opts["DefaultLibraries"], str):
+                opts['DefaultLibraries'] += opts.pop('library_list', '')
+            else:
+                opts['DefaultLibraries'] += ','.join(
+                    opts.pop('library_list', ''))
+
+        return [["Driver={%s}; UNICODESQL=1; TRUEAUTOCOMMIT=1;" % (
                  self.pyodbc_driver_name)], opts]
 
     def is_disconnect(self, e, connection, cursor):
