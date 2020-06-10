@@ -34,7 +34,9 @@ The sqlalchemy-ibmi dialect supports multiple connection arguments that are
 passed in the URL to the `create_engine <https://docs.sqlalchemy.org/en/13/core/engines.html>`_ function.
 
 * ``current_schema`` - Define the default schema to use for unqualified names.
-* ``library_list`` - Specify which IBM i libraries to add to the server job's library list separated by commas.
+* ``library_list`` - Specify which IBM i libraries to add to the server job's
+library list. Can be specified in the URL as a comma separated list, or as a
+list in the create_engine function
 * ``autocommit`` - If ``False``, Connection.commit must be called;
   otherwise each statement is automatically committed.
   Defaults to ``False``.
@@ -779,9 +781,14 @@ class IBMiDb2Dialect(default.DefaultDialect):
         if allowed_opts < opts.keys():
             raise ValueError("Option entered not valid for "
                              "IBM i Access ODBC Driver")
+
         if 'current_schema' in opts or 'library_list' in opts:
             opts['DefaultLibraries'] = opts.pop('current_schema', '') + ','
-            opts['DefaultLibraries'] += ','.join(opts.pop('library_list', ''))
+            if isinstance(opts["DefaultLibraries"], str):
+                opts['DefaultLibraries'] += opts.pop('library_list', '')
+            else:
+                opts['DefaultLibraries'] += ','.join(
+                    opts.pop('library_list', ''))
 
         return [["Driver={%s}; UNICODESQL=1; TRUEAUTOCOMMIT=1;" % (
                  self.pyodbc_driver_name)], opts]
