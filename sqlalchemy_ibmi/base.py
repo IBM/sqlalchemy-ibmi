@@ -33,6 +33,8 @@ Connection Arguments
 The sqlalchemy-ibmi dialect supports multiple connection arguments that are
 passed in the URL to the `create_engine <https://docs.sqlalchemy.org/en/13/core/engines.html>`_ function.
 
+* ``current_schema`` - Define the default schema to use for unqualified names.
+* ``library_list`` - Specify which IBM i libraries to add to the server job's library list separated by commas.
 * ``autocommit`` - If ``False``, Connection.commit must be called;
   otherwise each statement is automatically committed.
   Defaults to ``False``.
