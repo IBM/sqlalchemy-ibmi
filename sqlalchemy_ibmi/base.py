@@ -36,7 +36,7 @@ passed in the URL to the `create_engine <https://docs.sqlalchemy.org/en/13/core/
 * ``current_schema`` - Define the default schema to use for unqualified names.
 * ``library_list`` - Specify which IBM i libraries to add to the server job's
 library list. Can be specified in the URL as a comma separated list, or as a
-list in the create_engine function
+keyword argument to the create_engine function as a list of strings
 * ``autocommit`` - If ``False``, Connection.commit must be called;
   otherwise each statement is automatically committed.
   Defaults to ``False``.
