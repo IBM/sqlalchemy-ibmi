@@ -40,7 +40,9 @@ print(result[0])
 
 Installation
 -------------
+```sh
 pip install sqlalchemy-ibmi
+```
  
 Feature Support
 ----------------
