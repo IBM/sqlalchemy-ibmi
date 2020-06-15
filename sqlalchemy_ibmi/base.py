@@ -25,7 +25,7 @@ and the `IBM i Access ODBC Driver
 
 Connection string::
 
-    engine = create_engine("ibmi://user:password@host:port/rdbname[?key=value&key=value...]")
+    engine = create_engine("ibmi://user:password@host/rdbname[?key=value&key=value...]")
 
 Connection Arguments
 -----------------
@@ -33,6 +33,10 @@ Connection Arguments
 The sqlalchemy-ibmi dialect supports multiple connection arguments that are
 passed in the URL to the `create_engine <https://docs.sqlalchemy.org/en/13/core/engines.html>`_ function.
 
+* ``current_schema`` - Define the default schema to use for unqualified names.
+* ``library_list`` - Specify which IBM i libraries to add to the server job's
+library list. Can be specified in the URL as a comma separated list, or as a
+keyword argument to the create_engine function as a list of strings
 * ``autocommit`` - If ``False``, Connection.commit must be called;
   otherwise each statement is automatically committed.
   Defaults to ``False``.
@@ -771,16 +775,26 @@ class IBMiDb2Dialect(default.DefaultDialect):
     def create_connect_args(self, url):
         opts = url.translate_connect_args(username='user', host='system')
         opts.update(url.query)
-        allowed_opts = {'system', 'user', 'password',
-                        'autocommit', 'readonly', 'timeout', 'database',
-                        'use_system_naming',
+        allowed_opts = {'system', 'user', 'password', 'autocommit', 'readonly',
+                        'timeout', 'database', 'use_system_naming',
+                        'library_list', 'current_schema'
                         }
-        name_setting = '1' if opts.get('use_system_naming', 'True') == 'True' else '0'
-        opts['Naming'] = name_setting
+
         if allowed_opts < opts.keys():
             raise ValueError("Option entered not valid for "
                              "IBM i Access ODBC Driver")
- 
+
+        name_setting = '1' if opts.get('use_system_naming', 'True') == 'True' else '0'
+        opts['Naming'] = name_setting
+
+        if 'current_schema' in opts or 'library_list' in opts:
+            opts['DefaultLibraries'] = opts.pop('current_schema', '') + ','
+            if isinstance(opts["DefaultLibraries"], str):
+                opts['DefaultLibraries'] += opts.pop('library_list', '')
+            else:
+                opts['DefaultLibraries'] += ','.join(
+                    opts.pop('library_list', ''))
+
         return [["Driver={%s}; UNICODESQL=1; TRUEAUTOCOMMIT=1;" % (
                  self.pyodbc_driver_name)], opts]
 
