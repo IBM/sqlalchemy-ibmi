@@ -42,6 +42,9 @@ keyword argument to the create_engine function as a list of strings
   Defaults to ``False``.
 * ``readonly`` - If ``True``, the connection is set to read-only. Defaults to ``False``.
 * ``timeout`` - The login timeout for the connection, in seconds.
+* ``use_system_naming`` - If ``False``, the connection is set to use the SQL
+   naming convention, otherwise it will use the System naming convention.
+   Defaults to ``True``.
 
 Transaction Isolation Level / Autocommit
 ----------------------------------------
@@ -116,6 +119,7 @@ installed, match will take advantage of the CONTAINS function that it provides.
 """
 import datetime
 import re
+from distutils import util
 from sqlalchemy import schema as sa_schema, exc
 from sqlalchemy.sql import compiler
 from sqlalchemy.sql import operators
@@ -784,7 +788,14 @@ class IBMiDb2Dialect(default.DefaultDialect):
             raise ValueError("Option entered not valid for "
                              "IBM i Access ODBC Driver")
 
-        name_setting = '1' if opts.get('use_system_naming', 'True') == 'True' else '0'
+        try:
+            name_setting = '0' if not util.strtobool(
+                opts['use_system_naming']) else '1'
+        except ValueError:
+            name_setting = '0'
+        except KeyError:
+            name_setting = '1'
+
         opts['Naming'] = name_setting
 
         if 'current_schema' in opts or 'library_list' in opts:
