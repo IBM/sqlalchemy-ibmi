@@ -789,14 +789,10 @@ class IBMiDb2Dialect(default.DefaultDialect):
                              "IBM i Access ODBC Driver")
 
         try:
-            name_setting = '0' if not util.strtobool(
+            opts['Naming'] = '0' if not util.strtobool(
                 opts['use_system_naming']) else '1'
-        except ValueError:
-            name_setting = '0'
-        except KeyError:
-            name_setting = '1'
-
-        opts['Naming'] = name_setting
+        except (ValueError, KeyError):
+            opts['Naming'] = '0'
 
         if 'current_schema' in opts or 'library_list' in opts:
             opts['DefaultLibraries'] = opts.pop('current_schema', '') + ','
