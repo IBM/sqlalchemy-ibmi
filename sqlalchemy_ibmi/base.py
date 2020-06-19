@@ -789,8 +789,7 @@ class IBMiDb2Dialect(default.DefaultDialect):
                              "IBM i Access ODBC Driver")
 
         try:
-            opts['Naming'] = '0' if not util.strtobool(
-                opts['use_system_naming']) else '1'
+            opts['Naming'] = str(util.strtobool(opts['use_system_naming']))
         except (ValueError, KeyError):
             opts['Naming'] = '0'
 
