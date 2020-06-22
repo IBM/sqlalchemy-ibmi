@@ -42,9 +42,9 @@ keyword argument to the create_engine function as a list of strings
   Defaults to ``False``.
 * ``readonly`` - If ``True``, the connection is set to read-only. Defaults to ``False``.
 * ``timeout`` - The login timeout for the connection, in seconds.
-* ``use_system_naming`` - If ``False``, the connection is set to use the SQL
-   naming convention, otherwise it will use the System naming convention.
-   Defaults to ``True``.
+* ``use_system_naming`` - If ``True``, the connection is set to use the System
+   naming convention, otherwise it will use the SQL naming convention.
+   Defaults to ``False``.
 
 Transaction Isolation Level / Autocommit
 ----------------------------------------
