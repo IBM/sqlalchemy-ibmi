@@ -33,6 +33,8 @@ Connection Arguments
 The sqlalchemy-ibmi dialect supports multiple connection arguments that are
 passed in the URL to the `create_engine <https://docs.sqlalchemy.org/en/13/core/engines.html>`_ function.
 
+Connection string keywords:
+
 * ``current_schema`` - Define the default schema to use for unqualified names.
 * ``library_list`` - Specify which IBM i libraries to add to the server job's
 library list. Can be specified in the URL as a comma separated list, or as a
@@ -42,6 +44,11 @@ keyword argument to the create_engine function as a list of strings
   Defaults to ``False``.
 * ``readonly`` - If ``True``, the connection is set to read-only. Defaults to ``False``.
 * ``timeout`` - The login timeout for the connection, in seconds.
+
+create-engine arguments:
+
+* ``fast_executemany`` - Specify the pyodbc `fast_executemany <https://github.com/mkleehammer/pyodbc/wiki/Cursor#executemanysql-params-with-fast_executemanytrue>`_ option.
+Defaults to ``False``. Inserting a Decimal object into a Float column is not supported with this functionality.
 
 Transaction Isolation Level / Autocommit
 ----------------------------------------
@@ -679,9 +686,10 @@ class IBMiDb2Dialect(default.DefaultDialect):
     preparer = DB2IdentifierPreparer
     execution_ctx_cls = DB2ExecutionContext
 
-    def __init__(self, isolation_level=None, **kw):
+    def __init__(self, isolation_level=None, fast_executemany=False, **kw):
         super().__init__(**kw)
         self.isolation_level = isolation_level
+        self.fast_executemany = fast_executemany
 
     def on_connect(self):
         if self.isolation_level is not None:
@@ -1158,3 +1166,7 @@ class IBMiDb2Dialect(default.DefaultDialect):
     def _check_text_server(self, connection):
         stmt = "SELECT COUNT(*) FROM QSYS2.SYSTEXTSERVERS"
         return connection.execute(stmt).scalar()
+
+    def do_executemany(self, cursor, statement, parameters, context=None):
+        cursor.fast_executemany = self.fast_executemany
+        cursor.executemany(statement, parameters)
