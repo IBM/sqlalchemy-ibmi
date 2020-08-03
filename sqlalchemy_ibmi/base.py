@@ -47,8 +47,10 @@ keyword argument to the create_engine function as a list of strings
 
 create-engine arguments:
 
-* ``fast_executemany`` - Specify the pyodbc `fast_executemany <https://github.com/mkleehammer/pyodbc/wiki/Cursor#executemanysql-params-with-fast_executemanytrue>`_ option.
-Defaults to ``False``. Inserting a Decimal object into a Float column is not supported with this functionality.
+* ``fast_executemany`` - Enables PyODBC's `fast_executemany <https://github.com/mkleehammer/pyodbc/wiki/Cursor#executemanysql-params-with-fast_executemanytrue>`_ option.
+Conversion between input and target types is mostly unsupported when this
+feature is enabled. eg. Inserting a Decimal object into a Float column will
+produce the error "Converting decimal loses precision". Defaults to ``False``.
 
 Transaction Isolation Level / Autocommit
 ----------------------------------------
