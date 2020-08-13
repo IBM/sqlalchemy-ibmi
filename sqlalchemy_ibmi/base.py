@@ -33,6 +33,8 @@ Connection Arguments
 The sqlalchemy-ibmi dialect supports multiple connection arguments that are
 passed in the URL to the `create_engine <https://docs.sqlalchemy.org/en/13/core/engines.html>`_ function.
 
+Connection string keywords:
+
 * ``current_schema`` - Define the default schema to use for unqualified names.
 * ``library_list`` - Specify which IBM i libraries to add to the server job's
 library list. Can be specified in the URL as a comma separated list, or as a
@@ -45,6 +47,13 @@ keyword argument to the create_engine function as a list of strings
 * ``use_system_naming`` - If ``True``, the connection is set to use the System
    naming convention, otherwise it will use the SQL naming convention.
    Defaults to ``False``.
+
+create-engine arguments:
+
+* ``fast_executemany`` - Enables PyODBC's `fast_executemany <https://github.com/mkleehammer/pyodbc/wiki/Cursor#executemanysql-params-with-fast_executemanytrue>`_ option.
+Conversion between input and target types is mostly unsupported when this
+feature is enabled. eg. Inserting a Decimal object into a Float column will
+produce the error "Converting decimal loses precision". Defaults to ``False``.
 
 Transaction Isolation Level / Autocommit
 ----------------------------------------
@@ -683,9 +692,10 @@ class IBMiDb2Dialect(default.DefaultDialect):
     preparer = DB2IdentifierPreparer
     execution_ctx_cls = DB2ExecutionContext
 
-    def __init__(self, isolation_level=None, **kw):
+    def __init__(self, isolation_level=None, fast_executemany=False, **kw):
         super().__init__(**kw)
         self.isolation_level = isolation_level
+        self.fast_executemany = fast_executemany
 
     def on_connect(self):
         if self.isolation_level is not None:
@@ -1169,3 +1179,7 @@ class IBMiDb2Dialect(default.DefaultDialect):
     def _check_text_server(self, connection):
         stmt = "SELECT COUNT(*) FROM QSYS2.SYSTEXTSERVERS"
         return connection.execute(stmt).scalar()
+
+    def do_executemany(self, cursor, statement, parameters, context=None):
+        cursor.fast_executemany = self.fast_executemany
+        cursor.executemany(statement, parameters)
