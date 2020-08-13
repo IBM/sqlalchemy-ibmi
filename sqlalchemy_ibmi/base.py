@@ -784,7 +784,7 @@ class IBMiDb2Dialect(default.DefaultDialect):
                         'library_list', 'current_schema'
                         }
 
-        if allowed_opts < opts.keys():
+        if not allowed_opts.issuperset(opts.keys()):
             raise ValueError("Option entered not valid for "
                              "IBM i Access ODBC Driver")
 
