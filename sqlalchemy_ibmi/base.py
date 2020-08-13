@@ -42,6 +42,9 @@ keyword argument to the create_engine function as a list of strings
   Defaults to ``False``.
 * ``readonly`` - If ``True``, the connection is set to read-only. Defaults to ``False``.
 * ``timeout`` - The login timeout for the connection, in seconds.
+* ``use_system_naming`` - If ``True``, the connection is set to use the System
+   naming convention, otherwise it will use the SQL naming convention.
+   Defaults to ``False``.
 
 Transaction Isolation Level / Autocommit
 ----------------------------------------
@@ -116,6 +119,7 @@ installed, match will take advantage of the CONTAINS function that it provides.
 """
 import datetime
 import re
+from distutils import util
 from sqlalchemy import schema as sa_schema, exc
 from sqlalchemy.sql import compiler
 from sqlalchemy.sql import operators
@@ -775,12 +779,19 @@ class IBMiDb2Dialect(default.DefaultDialect):
     def create_connect_args(self, url):
         opts = url.translate_connect_args(username='user', host='system')
         opts.update(url.query)
-        allowed_opts = {'system', 'user', 'password',
-                        'autocommit', 'readonly', 'timeout',
-                        'database', 'library_list', 'current_schema'}
+        allowed_opts = {'system', 'user', 'password', 'autocommit', 'readonly',
+                        'timeout', 'database', 'use_system_naming',
+                        'library_list', 'current_schema'
+                        }
+
         if allowed_opts < opts.keys():
             raise ValueError("Option entered not valid for "
                              "IBM i Access ODBC Driver")
+
+        try:
+            opts['Naming'] = str(util.strtobool(opts['use_system_naming']))
+        except (ValueError, KeyError):
+            opts['Naming'] = '0'
 
         if 'current_schema' in opts or 'library_list' in opts:
             opts['DefaultLibraries'] = opts.pop('current_schema', '') + ','
