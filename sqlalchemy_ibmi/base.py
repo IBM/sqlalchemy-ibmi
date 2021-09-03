@@ -788,9 +788,9 @@ class IBMiDb2Dialect(default.DefaultDialect):
         return __import__("pyodbc")
 
     def create_connect_args(self, url):
-        opts = url.translate_connect_args(username='user', host='system')
+        opts = url.translate_connect_args(username='user', host='System')
         opts.update(url.query)
-        allowed_opts = {'system', 'user', 'password', 'autocommit', 'readonly',
+        allowed_opts = {'System', 'user', 'password', 'autocommit', 'readonly',
                         'timeout', 'database', 'use_system_naming',
                         'library_list', 'current_schema', 'TrimCharFields'
                         }
