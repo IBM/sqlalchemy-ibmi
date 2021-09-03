@@ -47,6 +47,7 @@ keyword argument to the create_engine function as a list of strings
 * ``use_system_naming`` - If ``True``, the connection is set to use the System
    naming convention, otherwise it will use the SQL naming convention.
    Defaults to ``False``.
+* ``TrimCharFields`` - If ``1``, all character fields will be returned with trailing spaces truncated.
 
 create-engine arguments:
 
@@ -791,7 +792,7 @@ class IBMiDb2Dialect(default.DefaultDialect):
         opts.update(url.query)
         allowed_opts = {'system', 'user', 'password', 'autocommit', 'readonly',
                         'timeout', 'database', 'use_system_naming',
-                        'library_list', 'current_schema'
+                        'library_list', 'current_schema', 'TrimCharFields'
                         }
 
         if not allowed_opts.issuperset(opts.keys()):
