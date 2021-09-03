@@ -803,6 +803,8 @@ class IBMiDb2Dialect(default.DefaultDialect):
         except (ValueError, KeyError):
             opts['Naming'] = '0'
 
+        opts['System'] = opts.pop('system', '')
+
         if 'current_schema' in opts or 'library_list' in opts:
             opts['DefaultLibraries'] = opts.pop('current_schema', '') + ','
             if isinstance(opts["DefaultLibraries"], str):
