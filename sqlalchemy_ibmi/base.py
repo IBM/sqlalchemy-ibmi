@@ -47,6 +47,7 @@ keyword argument to the create_engine function as a list of strings
 * ``use_system_naming`` - If ``True``, the connection is set to use the System
    naming convention, otherwise it will use the SQL naming convention.
    Defaults to ``False``.
+* ``trim_char_fields`` - If ``True``, all character fields will be returned with trailing spaces truncated.
 
 create-engine arguments:
 
@@ -791,7 +792,7 @@ class IBMiDb2Dialect(default.DefaultDialect):
         opts.update(url.query)
         allowed_opts = {'system', 'user', 'password', 'autocommit', 'readonly',
                         'timeout', 'database', 'use_system_naming',
-                        'library_list', 'current_schema'
+                        'library_list', 'current_schema', 'trim_char_fields'
                         }
 
         if not allowed_opts.issuperset(opts.keys()):
@@ -810,6 +811,13 @@ class IBMiDb2Dialect(default.DefaultDialect):
             else:
                 opts['DefaultLibraries'] += ','.join(
                     opts.pop('library_list', ''))
+
+        if 'trim_char_fields' in opts:
+            try:
+                opts['TrimCharFields'] = str(util.strtobool(opts['trim_char_fields']))
+                opts.pop('trim_char_fields', '')
+            except (ValueError, KeyError):
+                opts.pop('trim_char_fields', '')
 
         return [["Driver={%s}; UNICODESQL=1; TRUEAUTOCOMMIT=1;" % (
                  self.pyodbc_driver_name)], opts]
