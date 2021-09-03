@@ -129,7 +129,7 @@ installed, match will take advantage of the CONTAINS function that it provides.
 """
 import datetime
 import re
-from distutils import util
+from distutils import util as du_util
 from sqlalchemy import schema as sa_schema, exc
 from sqlalchemy.sql import compiler
 from sqlalchemy.sql import operators
@@ -800,7 +800,7 @@ class IBMiDb2Dialect(default.DefaultDialect):
                              "IBM i Access ODBC Driver")
 
         try:
-            opts['Naming'] = str(util.strtobool(opts['use_system_naming']))
+            opts['Naming'] = str(du_util.strtobool(opts['use_system_naming']))
         except (ValueError, KeyError):
             opts['Naming'] = '0'
 
