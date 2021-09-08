@@ -643,7 +643,7 @@ class DB2ExecutionContext(default.DefaultExecutionContext):
         if self._select_lastrowid:
             conn._cursor_execute(
                 self.cursor,
-                "SELECT IDENTITY_VAL_LOCAL() FROM SYSIBM.SYSDUMMY1",
+                "VALUES IDENTITY_VAL_LOCAL()",
                 (),
                 self)
             row = self.cursor.fetchall()[0]
@@ -652,9 +652,8 @@ class DB2ExecutionContext(default.DefaultExecutionContext):
 
     def fire_sequence(self, seq, type_):
         return self._execute_scalar(
-            "SELECT NEXTVAL FOR " +
-            self.connection.dialect.identifier_preparer.format_sequence(seq) +
-            " FROM SYSIBM.SYSDUMMY1",
+            "VALUES NEXTVAL FOR " +
+            self.connection.dialect.identifier_preparer.format_sequence(seq),
             type_)
 
 
@@ -862,7 +861,7 @@ class IBMiDb2Dialect(default.DefaultDialect):
     def _get_default_schema_name(self, connection):
         """Return: current setting of the schema attribute"""
         default_schema_name = connection.execute(
-            u'SELECT CURRENT_SCHEMA FROM SYSIBM.SYSDUMMY1').scalar()
+            u'VALUES CURRENT_SCHEMA').scalar()
         if isinstance(default_schema_name, str):
             default_schema_name = default_schema_name.strip()
         return self.normalize_name(default_schema_name)
