@@ -47,7 +47,8 @@ keyword argument to the create_engine function as a list of strings
 * ``use_system_naming`` - If ``True``, the connection is set to use the System
    naming convention, otherwise it will use the SQL naming convention.
    Defaults to ``False``.
-* ``trim_char_fields`` - If ``True``, all character fields will be returned with trailing spaces truncated. Defaults to ``False``.
+* ``trim_char_fields`` - If ``True``, all character fields will be returned
+   with trailing spaces truncated. Defaults to ``False``.
 
 create-engine arguments:
 
