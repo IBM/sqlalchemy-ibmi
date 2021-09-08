@@ -801,9 +801,19 @@ class IBMiDb2Dialect(default.DefaultDialect):
 
         try:
             opts['Naming'] = str(util.strtobool(opts['use_system_naming']))
-        except (ValueError, KeyError):
+        except (KeyError):
             opts['Naming'] = '0'
+        except (ValueError)
+            raise ValueError("Invalid value specified for use_system_naming")
 
+        try:
+            trim_char_fields = opts.pop('trim_char_fields')
+            opts['TrimCharFields'] = str(util.strtobool(trim_char_fields))
+        except (KeyError):
+            pass
+        except (ValueError):
+            raise ValueError("Invalid value specified for trim_char_fields")
+            
         if 'current_schema' in opts or 'library_list' in opts:
             opts['DefaultLibraries'] = opts.pop('current_schema', '') + ','
             if isinstance(opts["DefaultLibraries"], str):
@@ -811,13 +821,6 @@ class IBMiDb2Dialect(default.DefaultDialect):
             else:
                 opts['DefaultLibraries'] += ','.join(
                     opts.pop('library_list', ''))
-
-        if 'trim_char_fields' in opts:
-            try:
-                opts['TrimCharFields'] = str(util.strtobool(opts['trim_char_fields']))
-                opts.pop('trim_char_fields', '')
-            except (ValueError, KeyError):
-                opts.pop('trim_char_fields', '')
 
         return [["Driver={%s}; UNICODESQL=1; TRUEAUTOCOMMIT=1;" % (
                  self.pyodbc_driver_name)], opts]
