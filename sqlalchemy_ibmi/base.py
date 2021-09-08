@@ -803,7 +803,7 @@ class IBMiDb2Dialect(default.DefaultDialect):
             opts['Naming'] = str(util.strtobool(opts['use_system_naming']))
         except (KeyError):
             opts['Naming'] = '0'
-        except (ValueError)
+        except (ValueError):
             raise ValueError("Invalid value specified for use_system_naming")
 
         try:
