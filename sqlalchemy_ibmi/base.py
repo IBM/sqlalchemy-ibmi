@@ -47,6 +47,8 @@ keyword argument to the create_engine function as a list of strings
 * ``use_system_naming`` - If ``True``, the connection is set to use the System
    naming convention, otherwise it will use the SQL naming convention.
    Defaults to ``False``.
+* ``trim_char_fields`` - If ``True``, all character fields will be returned
+   with trailing spaces truncated. Defaults to ``False``.
 
 create-engine arguments:
 
@@ -791,7 +793,7 @@ class IBMiDb2Dialect(default.DefaultDialect):
         opts.update(url.query)
         allowed_opts = {'system', 'user', 'password', 'autocommit', 'readonly',
                         'timeout', 'database', 'use_system_naming',
-                        'library_list', 'current_schema'
+                        'library_list', 'current_schema', 'trim_char_fields'
                         }
 
         if not allowed_opts.issuperset(opts.keys()):
@@ -800,9 +802,19 @@ class IBMiDb2Dialect(default.DefaultDialect):
 
         try:
             opts['Naming'] = str(util.strtobool(opts['use_system_naming']))
-        except (ValueError, KeyError):
+        except KeyError:
             opts['Naming'] = '0'
+        except ValueError:
+            raise ValueError("Invalid value specified for use_system_naming")
 
+        try:
+            trim_char_fields = opts.pop('trim_char_fields')
+            opts['TrimCharFields'] = str(util.strtobool(trim_char_fields))
+        except KeyError:
+            pass
+        except ValueError:
+            raise ValueError("Invalid value specified for trim_char_fields")
+            
         if 'current_schema' in opts or 'library_list' in opts:
             opts['DefaultLibraries'] = opts.pop('current_schema', '') + ','
             if isinstance(opts["DefaultLibraries"], str):
