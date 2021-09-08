@@ -809,9 +809,9 @@ class IBMiDb2Dialect(default.DefaultDialect):
         try:
             trim_char_fields = opts.pop('trim_char_fields')
             opts['TrimCharFields'] = str(util.strtobool(trim_char_fields))
-        except (KeyError):
+        except KeyError:
             pass
-        except (ValueError):
+        except ValueError:
             raise ValueError("Invalid value specified for trim_char_fields")
             
         if 'current_schema' in opts or 'library_list' in opts:
