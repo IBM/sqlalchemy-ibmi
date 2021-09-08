@@ -16,7 +16,7 @@ UID = input("UID: ")
 PWD = input("PWD: ")
 extra = input("Add opts: ")
 
-conn_string = "ibmi://{}:{}@{}/?{}".format(system, UID, PWD, extra)
+conn_string = "ibmi://{}:{}@{}/?{}".format(UID, PWD, system, extra)
 
 engine = sa.create_engine( conn_string, echo=True)
 
