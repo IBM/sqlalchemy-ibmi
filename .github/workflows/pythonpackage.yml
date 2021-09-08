@@ -1,11 +1,6 @@
-name: Python package
+name: Build PR
 
 on:
-  # Trigger the workflow on push or pull request,
-  # but only for the master branch
-  push:
-    branches:
-      - master
   pull_request:
     branches:
       - master
@@ -18,7 +13,12 @@ jobs:
       max-parallel: 4
       fail-fast: false
       matrix:
-        python-version: [3.5, 3.6, 3.7]
+        python-version:
+        - '3.9'
+        - '3.8'
+        - '3.7'
+        - '3.6'
+        - '3.5'
 
     steps:
     - uses: actions/checkout@v1
