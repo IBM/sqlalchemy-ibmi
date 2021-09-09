@@ -49,10 +49,11 @@ jobs:
         pip install poetry
         poetry config virtualenvs.create false
         poetry install
-    - name: Test with pytest
-      run: |
-        .github/scripts/runtests.py
-      env:
-        IBMI_HOSTNAME: ${{ secrets.IBMI_HOSTNAME }}
-        IBMI_USERNAME: ${{ secrets.IBMI_USERNAME }}
-        IBMI_PASSWORD: ${{ secrets.IBMI_PASSWORD }}
+    # Our test system is currently unavailable, so disable this for now
+    #- name: Test with pytest
+    #  run: |
+    #    .github/scripts/runtests.py
+    #  env:
+    #    IBMI_HOSTNAME: ${{ secrets.IBMI_HOSTNAME }}
+    #    IBMI_USERNAME: ${{ secrets.IBMI_USERNAME }}
+    #    IBMI_PASSWORD: ${{ secrets.IBMI_PASSWORD }}
