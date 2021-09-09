@@ -19,6 +19,6 @@
 # | Contributors: Jaimy Azle, Mike Bayer                                     |
 # +--------------------------------------------------------------------------+
 
-__version__ = '1.0.0-dev'
+__version__ = '0.9.1-dev'
 
 from . import base  # noqa: F401
