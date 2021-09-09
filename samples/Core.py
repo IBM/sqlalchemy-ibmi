@@ -9,7 +9,6 @@ from sqlalchemy import create_engine
 from sqlalchemy import Table, Column, Integer, String, MetaData, ForeignKey
 from sqlalchemy.sql import select
 from sqlalchemy.sql import and_, or_
-from sqlalchemy.sql import text
 
 system = input("System: ")
 UID = input("UID: ")

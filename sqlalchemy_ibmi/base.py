@@ -127,7 +127,7 @@ The ColumnOperators.match function is implemented using a basic LIKE operation
 by default. However, when `OmniFind Text Search Server for Db2 for i <https://www.ibm.com/support/knowledgecenter/ssw_ibm_i_74/rzash/rzashkickoff.htm>`_ is
 installed, match will take advantage of the CONTAINS function that it provides.
 
-"""
+"""  # noqa E501 
 import datetime
 import re
 from distutils.util import strtobool
@@ -222,6 +222,7 @@ class XML(sa_types.Text):
     """Represents a Db2 XML Column"""
     __visit_name__ = "XML"
 
+
 COLSPECS = {
     sa_types.Boolean: IBMBoolean,
     sa_types.Date: IBMDate
@@ -256,7 +257,6 @@ ISCHEMA_NAMES = {
 
 class DB2TypeCompiler(compiler.GenericTypeCompiler):
     """IBM i Db2 Type Compiler"""
-
 
     def visit_TIMESTAMP(self, type_, **kw):
         return "TIMESTAMP"
@@ -328,7 +328,6 @@ class DB2TypeCompiler(compiler.GenericTypeCompiler):
 
         return "DECIMAL(%(precision)s, %(scale)s)" % {
             'precision': type_.precision, 'scale': type_.scale}
-
 
     def visit_numeric(self, type_, **kw):
         return self.visit_DECIMAL(type_)

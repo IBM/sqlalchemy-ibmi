@@ -21,5 +21,4 @@
 
 __version__ = '1.0.0-dev'
 
-from . import base
-
+from . import base  # noqa: F401

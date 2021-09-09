@@ -19,7 +19,7 @@ extra = input("Add opts: ")
 
 conn_string = "ibmi://{}:{}@{}/?{}".format(UID, PWD, system, extra)
 
-engine = sa.create_engine( conn_string, echo=True)
+engine = sa.create_engine(conn_string, echo=True)
 
 Base = declarative_base()
 

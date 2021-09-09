@@ -1,6 +1,7 @@
 import decimal
 from sqlalchemy import Numeric
-from sqlalchemy.testing.suite import *
+from sqlalchemy.testing.suite import Table, Column, MetaData, eq_, testing
+from sqlalchemy.testing.suite import requirements, select
 import sqlalchemy as sa
 import operator
 from sqlalchemy.testing.suite \
