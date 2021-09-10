@@ -1,5 +1,6 @@
 import decimal
 from sqlalchemy import Numeric
+from sqlalchemy.testing.suite import *  # noqa - need * to import test suite
 from sqlalchemy.testing.suite import Table, Column, MetaData, eq_, testing
 from sqlalchemy.testing.suite import requirements, select
 import sqlalchemy as sa
