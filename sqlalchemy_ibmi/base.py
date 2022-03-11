@@ -656,6 +656,12 @@ class DB2ExecutionContext(default.DefaultExecutionContext):
             type_)
 
 
+def to_bool(obj):
+    if isinstance(obj, bool):
+        return obj
+    return strtobool(obj)
+
+
 class IBMiDb2Dialect(default.DefaultDialect):
     driver = "pyodbc"
     name = 'sqlalchemy_ibmi'
@@ -786,45 +792,74 @@ class IBMiDb2Dialect(default.DefaultDialect):
     def dbapi(cls):
         return __import__("pyodbc")
 
+    DRIVER_KEYWORD_MAP = {
+        # SQLAlchemy kwd: (ODBC keyword, type, default)
+        #
+        # NOTE: We use the upper-case driver connection string value to work
+        # around a bug in the the 07.01.025 driver which causes it to do
+        # case-sensitive lookups. This should be fixed in the 07.01.026 driver
+        # and older versions are not affected, but we don't have to check
+        # anything since they are case-insensitive and allow the all-uppercase
+        # values just fine.
+        'system': ('SYSTEM', str, None),
+        'user': ('UID', str, None),
+        'password': ('PWD', str, None),
+        'database': ('DATABASE', str, None),
+        'use_system_naming': ('NAM', to_bool, False),
+        'trim_char_fields': ('TRIMCHAR', to_bool, None),
+    }
+
+    DRIVER_KEYWORDS_SPECIAL = {'current_schema', 'library_list'}
+
+    @classmethod
+    def map_connect_opts(cls, opts):
+        # Map our keywords to what ODBC expects
+        for keyword, keyword_info in cls.DRIVER_KEYWORD_MAP.items():
+            odbc_keyword, to_keyword, default_value = keyword_info
+
+            value = opts.pop(keyword, default_value)
+            if value is None:
+                continue
+
+            try:
+                value = to_keyword(value)
+
+                # pyodbc will stringify the bool to "True" or "False" instead
+                # of "1" and "0" as the driver wants, so manually convert to
+                # integer first.
+                if isinstance(value, bool):
+                    value = int(value)
+
+                opts[odbc_keyword] = value
+            except ValueError:
+                raise ValueError("Invalid value specified for {}".format(keyword))
+
+        # For current_schema and library_list we can't use the above loop, since these
+        # must be combined in to one ODBC keyword
+        if 'current_schema' in opts or 'library_list' in opts:
+            current_schema = opts.pop('current_schema', '')
+            library_list = opts.pop('library_list', '')
+
+            if not isinstance(library_list, str):
+                library_list = ','.join(library_list)
+
+            opts['DefaultLibraries'] = f"{current_schema},{library_list}"
+
+
     def create_connect_args(self, url):
         opts = url.translate_connect_args(username='user', host='system')
         opts.update(url.query)
-        allowed_opts = {'system', 'user', 'password', 'autocommit', 'readonly',
-                        'timeout', 'database', 'use_system_naming',
-                        'library_list', 'current_schema', 'trim_char_fields'
-                        }
+
+        # Allow both our specific keywords and the SQLAlchemy base keywords
+        allowed_opts = set(self.DRIVER_KEYWORD_MAP.keys()) | \
+                       self.DRIVER_KEYWORDS_SPECIAL | \
+                       {'autocommit', 'readonly', 'timeout'}
 
         if not allowed_opts.issuperset(opts.keys()):
             raise ValueError("Option entered not valid for "
                              "IBM i Access ODBC Driver")
 
-        try:
-            opts['Naming'] = str(strtobool(opts['use_system_naming']))
-        except KeyError:
-            opts['Naming'] = '0'
-        except ValueError:
-            raise ValueError("Invalid value specified for use_system_naming")
-
-        try:
-            trim_char_fields = opts.pop('trim_char_fields')
-            opts['TrimCharFields'] = str(strtobool(trim_char_fields))
-        except KeyError:
-            pass
-        except ValueError:
-            raise ValueError("Invalid value specified for trim_char_fields")
-
-        try:
-            opts['System'] = opts.pop('system')
-        except KeyError:
-            pass
-
-        if 'current_schema' in opts or 'library_list' in opts:
-            opts['DefaultLibraries'] = opts.pop('current_schema', '') + ','
-            if isinstance(opts["DefaultLibraries"], str):
-                opts['DefaultLibraries'] += opts.pop('library_list', '')
-            else:
-                opts['DefaultLibraries'] += ','.join(
-                    opts.pop('library_list', ''))
+        self.map_connect_opts(opts)
 
         return [["Driver={%s}; UNICODESQL=1; TRUEAUTOCOMMIT=1; XDYNAMIC=0;" % (
                  self.pyodbc_driver_name)], opts]
