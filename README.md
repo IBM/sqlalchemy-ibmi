@@ -74,6 +74,27 @@ The developer sign-off should include the reference to the DCO in remarks(exampl
 DCO 1.1 Signed-off-by: Random J Developer <random@developer.org>
 ```
 
+Releasing a New Version
+-----------------------
+```sh
+# checkout and pull the latest code from master
+git checkout master
+git pull
+
+# bump to a release version (a tag and commit are made)
+bumpversion release
+
+# To skip a release candidate
+bumpversion --no-tag --no-commit release
+bumpversion --allow-dirty release
+
+# bump to the new dev version (a commit is made)
+bumpversion --no-tag patch
+
+# push the new tag and commits
+git push origin master --tags
+```
+
 License
 -------
 
