@@ -861,7 +861,7 @@ class IBMiDb2Dialect(default.DefaultDialect):
 
         self.map_connect_opts(opts)
 
-        return [["Driver={%s}; UNICODESQL=1; TRUEAUTOCOMMIT=1; XDYNAMIC=0;" % (
+        return [["Driver={%s}; UNICODESQL=1; TRUEAUTOCOMMIT=1; XDYNAMIC=0" % (
                  self.pyodbc_driver_name)], opts]
 
     def is_disconnect(self, e, connection, cursor):
