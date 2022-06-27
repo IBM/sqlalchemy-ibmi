@@ -259,7 +259,11 @@ class DB2TypeCompiler(compiler.GenericTypeCompiler):
     """IBM i Db2 Type Compiler"""
 
     def visit_TIMESTAMP(self, type_, **kw):
-        return "TIMESTAMP"
+        return "TIMESTAMP%s" % (
+            "(%d)" % type_.precision
+            if getattr(type_, "precision", None) is not None
+            else ""
+        )
 
     def visit_DATE(self, type_, **kw):
         return "DATE"
