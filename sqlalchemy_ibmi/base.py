@@ -263,7 +263,7 @@ class DB2TypeCompiler(compiler.GenericTypeCompiler):
         if precision is not None:
             return f"TIMESTAMP({precision})"
         else:
-            return "TIMESTAMP
+            return "TIMESTAMP"
 
     def visit_DATE(self, type_, **kw):
         return "DATE"
