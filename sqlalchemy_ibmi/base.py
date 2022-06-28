@@ -447,7 +447,7 @@ class DB2Compiler(compiler.SQLCompiler):
         if isinstance(type_, (
                 sa_types.DateTime, sa_types.Date, sa_types.Time,
                 sa_types.DECIMAL, sa_types.String, sa_types.FLOAT,
-                sa_types.NUMERIC, sa_types.INT)):
+                sa_types.NUMERIC, sa_types.INTEGER)):
             return super(DB2Compiler, self).visit_cast(cast, **kw)
 
         return self.process(cast.clause)
