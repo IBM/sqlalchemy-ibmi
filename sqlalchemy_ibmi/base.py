@@ -258,39 +258,15 @@ ISCHEMA_NAMES = {
 class DB2TypeCompiler(compiler.GenericTypeCompiler):
     """IBM i Db2 Type Compiler"""
 
-    def visit_TIMESTAMP(self, type_, **kw):
-        return "TIMESTAMP"
-
-    def visit_DATE(self, type_, **kw):
-        return "DATE"
-
-    def visit_TIME(self, type_, **kw):
-        return "TIME"
-
     def visit_DATETIME(self, type_, **kw):
         return self.visit_TIMESTAMP(type_)
-
-    def visit_SMALLINT(self, type_, **kw):
-        return "SMALLINT"
-
-    def visit_INT(self, type_):
-        return "INT"
-
-    def visit_BIGINT(self, type_, **kw):
-        return "BIGINT"
 
     def visit_FLOAT(self, type_, **kw):
         return "FLOAT" if type_.precision is None else \
             "FLOAT(%(precision)s)" % {'precision': type_.precision}
 
-    def visit_DOUBLE(self, type_):
-        return "DOUBLE"
-
     def visit_XML(self, type_):
         return "XML"
-
-    def visit_CLOB(self, type_, **kw):
-        return "CLOB"
 
     def visit_BLOB(self, type_, **kw):
         return "BLOB(1M)" if type_.length in (None, 0) else \
@@ -335,35 +311,14 @@ class DB2TypeCompiler(compiler.GenericTypeCompiler):
     def visit_datetime(self, type_, **kw):
         return self.visit_TIMESTAMP(type_)
 
-    def visit_date(self, type_, **kw):
-        return self.visit_DATE(type_)
-
-    def visit_time(self, type_, **kw):
-        return self.visit_TIME(type_)
-
-    def visit_integer(self, type_, **kw):
-        return self.visit_INT(type_)
-
     def visit_boolean(self, type_, **kw):
         return self.visit_SMALLINT(type_)
-
-    def visit_float(self, type_, **kw):
-        return self.visit_FLOAT(type_)
-
-    def visit_unicode(self, type_):
-        return self.visit_VARCHAR(type_)
 
     def visit_unicode_text(self, type_):
         return self.visit_LONGVARCHAR(type_)
 
-    def visit_string(self, type_, **kw):
-        return self.visit_VARCHAR(type_)
-
     def visit_TEXT(self, type_, **kw):
         return self.visit_CLOB(type_)
-
-    def visit_large_binary(self, type_, **kw):
-        return self.visit_BLOB(type_)
 
 
 class DB2Compiler(compiler.SQLCompiler):
