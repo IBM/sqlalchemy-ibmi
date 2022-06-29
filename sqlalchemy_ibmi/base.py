@@ -807,7 +807,7 @@ class IBMiDb2Dialect(default.DefaultDialect):
         'database': ('DATABASE', str, None),
         'use_system_naming': ('NAM', to_bool, False),
         'trim_char_fields': ('TRIMCHAR', to_bool, None),
-        'lob_threshold_kb': ('maxfieldlen', str, None),
+        'lob_threshold_kb': ('MAXFIELDLEN', int, None),
     }
 
     DRIVER_KEYWORDS_SPECIAL = {'current_schema', 'library_list'}
