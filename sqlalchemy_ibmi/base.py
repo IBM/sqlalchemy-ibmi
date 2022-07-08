@@ -258,6 +258,12 @@ ISCHEMA_NAMES = {
 class DB2TypeCompiler(compiler.GenericTypeCompiler):
     """IBM i Db2 Type Compiler"""
 
+    def visit_TIMESTAMP(self, type_, **kw):
+        return "TIMESTAMP"
+
+    def visit_TIME(self, type_, **kw):
+        return "TIME"
+
     def visit_DATETIME(self, type_, **kw):
         return self.visit_TIMESTAMP(type_)
 
