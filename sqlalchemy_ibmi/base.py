@@ -1053,11 +1053,10 @@ class IBMiDb2Dialect(default.DefaultDialect):
     @reflection.cache
     def get_schema_names(self, connection, **kw):
         sysschema = self.sys_schemas
-        query = sql.select([sysschema.c.schemaname],
-                           sql.not_(sysschema.c.schemaname.like('SYS%')),
-                           sql.not_(sysschema.c.schemaname.like('Q%')),
-                           order_by=[sysschema.c.schemaname]
-                           )
+        query = sql.select([sysschema.c.schemaname]).\
+                           where(sysschema.c.schemaname.notlike('SYS%')).\
+                           where(sysschema.c.schemaname.notlike('Q%')).\
+                           order_by(sysschema.c.schemaname)
         return [self.normalize_name(r[0]) for r in connection.execute(query)]
 
     # Retrieves a list of table names for a given schema
