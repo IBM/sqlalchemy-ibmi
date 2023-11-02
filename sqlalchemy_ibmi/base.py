@@ -404,12 +404,18 @@ class DB2Compiler(compiler.SQLCompiler):
     # This is to allow legacy LIMIT replacement.
     #LIMIT is acceptable since IBM i 7.1 TR11,IBM i 7.2 TR3 
     def limit_clause(self, select, **kwargs):
-        custom_option = self.dialect.use_legacy_limit
-        if custom_option:
-            pass
-        elif (select._limit is not None) and (select._offset is None):
-            return " FETCH FIRST %s ROWS ONLY" % select._limit
+        custom_legacy_limit_option = self.dialect.use_legacy_limit
+        if custom_legacy_limit_option is not None:
+            custom_legacy_limit_option = custom_legacy_limit_option.lower() == 'true'
+        
+        if (select._limit is not None) and (select._offset is None):
+            if custom_legacy_limit_option:
+                return " FETCH FIRST %s ROWS ONLY" % select._limit
+            else:
+                return " LIMIT %s" % select._limit
         return ""
+            
+        
 
     def visit_select(self, select, **kwargs):
         limit, offset = select._limit, select._offset
@@ -734,7 +740,7 @@ class IBMiDb2Dialect(default.DefaultDialect):
     
     @util.memoized_property
     def use_legacy_limit(self):
-        return self.engine.url.query.get('use_legacy_limit', None)
+        return self.use_legacy_limit
     
     def get_check_constraints(self, connection, table_name, schema=None, **kw):
         current_schema = self.denormalize_name(
@@ -867,6 +873,8 @@ class IBMiDb2Dialect(default.DefaultDialect):
     def create_connect_args(self, url):
         opts = url.translate_connect_args(username='user', host='system')
         opts.update(url.query)
+        
+        self.use_legacy_limit = opts.pop('use_legacy_limit', None)
         # Allow both our specific keywords and the SQLAlchemy base keywords
         allowed_opts = set(self.DRIVER_KEYWORD_MAP.keys()) | \
                        self.DRIVER_KEYWORDS_SPECIAL | \
