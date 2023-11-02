@@ -131,10 +131,20 @@ installed, match will take advantage of the CONTAINS function that it provides.
 import datetime
 import re
 from distutils.util import strtobool
-from sqlalchemy import schema as sa_schema, exc
-from sqlalchemy.sql import compiler
-from sqlalchemy.sql import operators
-from sqlalchemy.engine import default
+
+from sqlalchemy import (
+    select,
+    schema as sa_schema,
+    exc,
+    util,
+    Table,
+    MetaData,
+    Column,
+    __version__ as _SA_Version,
+)
+from sqlalchemy.sql import compiler, operators
+from sqlalchemy.sql.expression import and_
+from sqlalchemy.engine import default, reflection
 from sqlalchemy.types import (
     BLOB,
     CHAR,
@@ -152,14 +162,18 @@ from sqlalchemy.types import (
     VARCHAR,
     FLOAT,
 )
-from .constants import RESERVED_WORDS
-from sqlalchemy import sql, util
-from sqlalchemy import Table, MetaData, Column
-from sqlalchemy.engine import reflection
 from sqlalchemy import types as sa_types
 
-# as documented from:
-# http://publib.boulder.ibm.com/infocenter/db2luw/v9/index.jsp?topic=/com.ibm.db2.udb.doc/admin/r0001095.htm
+from .constants import RESERVED_WORDS
+
+
+def get_sa_version():
+    """Returns the SQLAlchemy version as a list of integers."""
+    version = [int(ver_token) for ver_token in _SA_Version.split(".")[0:2]]
+    return version
+
+
+SA_Version = get_sa_version()
 
 
 class IBMBoolean(sa_types.Boolean):
@@ -439,11 +453,6 @@ class DB2Compiler(compiler.SQLCompiler):
             )
         binary.right.value = "%" + binary.right.value + "%"
         return "%s LIKE %s" % (self.process(binary.left), self.process(binary.right))
-
-    def limit_clause(self, select, **kwargs):
-        if (select._limit is not None) and (select._offset is None):
-            return " FETCH FIRST %s ROWS ONLY" % select._limit
-        return ""
 
     def visit_select(self, select, **kwargs):
         limit, offset = select._limit, select._offset
@@ -740,7 +749,12 @@ class IBMiDb2Dialect(default.DefaultDialect):
     colspecs = COLSPECS
     ischema_names = ISCHEMA_NAMES
     supports_unicode_binds = True
-    returns_unicode_strings = False
+    if SA_Version < [1, 4]:
+        returns_unicode_strings = False
+    elif SA_Version < [2, 0]:
+        returns_unicode_strings = sa_types.String.RETURNS_CONDITIONAL
+    else:
+        returns_unicode_strings = True
     postfetch_lastrowid = True
     supports_native_boolean = False
     preexecute_sequences = False
@@ -760,6 +774,7 @@ class IBMiDb2Dialect(default.DefaultDialect):
     two_phase_transactions = False
     savepoints = True
     supports_sane_rowcount_returning = False
+    supports_statement_cache = False
 
     statement_compiler = DB2Compiler
     ddl_compiler = DB2DDLCompiler
@@ -793,9 +808,9 @@ class IBMiDb2Dialect(default.DefaultDialect):
         sysconst = self.sys_table_constraints
         syschkconst = self.sys_check_constraints
 
-        query = sql.select(
+        query = select(
             [syschkconst.c.conname, syschkconst.c.chkclause],
-            sql.and_(
+            and_(
                 syschkconst.c.conschema == sysconst.c.conschema,
                 syschkconst.c.conname == sysconst.c.conname,
                 sysconst.c.tabschema == current_schema,
@@ -816,13 +831,13 @@ class IBMiDb2Dialect(default.DefaultDialect):
         current_schema = self.denormalize_name(schema or self.default_schema_name)
         table_name = self.denormalize_name(table_name)
         if current_schema:
-            whereclause = sql.and_(
+            whereclause = and_(
                 self.sys_tables.c.tabschema == current_schema,
                 self.sys_tables.c.tabname == table_name,
             )
         else:
             whereclause = self.sys_tables.c.tabname == table_name
-        select_statement = sql.select([self.sys_tables.c.tabcomment], whereclause)
+        select_statement = select([self.sys_tables.c.tabcomment], whereclause)
         results = connection.execute(select_statement)
         return {"text": results.scalar()}
 
@@ -936,7 +951,6 @@ class IBMiDb2Dialect(default.DefaultDialect):
             raise ValueError("Option entered not valid for " "IBM i Access ODBC Driver")
 
         self.map_connect_opts(opts)
-
         return [
             [
                 "Driver={%s}; UNICODESQL=1; TRUEAUTOCOMMIT=1; XDYNAMIC=0"
@@ -994,10 +1008,10 @@ class IBMiDb2Dialect(default.DefaultDialect):
     ischema = MetaData()
 
     sys_schemas = Table(
-        "SQLSCHEMAS",
+        "SYSSCHEMAS",
         ischema,
-        Column("TABLE_SCHEM", sa_types.Unicode, key="schemaname"),
-        schema="SYSIBM",
+        Column("SCHEMA_NAME", sa_types.Unicode, key="schemaname"),
+        schema="QSYS2",
     )
 
     sys_tables = Table(
@@ -1057,7 +1071,7 @@ class IBMiDb2Dialect(default.DefaultDialect):
         Column("DATA_TYPE", sa_types.Unicode, key="typename"),
         Column("LENGTH", sa_types.Integer, key="length"),
         Column("NUMERIC_SCALE", sa_types.Integer, key="scale"),
-        Column("IS_NULLABLE", sa_types.Integer, key="nullable"),
+        Column("IS_NULLABLE", sa_types.Unicode, key="nullable"),
         Column("COLUMN_DEFAULT", sa_types.Unicode, key="defaultval"),
         Column("HAS_DEFAULT", sa_types.Unicode, key="hasdef"),
         Column("IS_IDENTITY", sa_types.Unicode, key="isid"),
@@ -1123,13 +1137,13 @@ class IBMiDb2Dialect(default.DefaultDialect):
         current_schema = self.denormalize_name(schema or self.default_schema_name)
         table_name = self.denormalize_name(table_name)
         if current_schema:
-            whereclause = sql.and_(
+            whereclause = and_(
                 self.sys_tables.c.tabschema == current_schema,
                 self.sys_tables.c.tabname == table_name,
             )
         else:
             whereclause = self.sys_tables.c.tabname == table_name
-        select_statement = sql.select([self.sys_tables], whereclause)
+        select_statement = select([self.sys_tables], whereclause)
         results = connection.execute(select_statement)
         return results.first() is not None
 
@@ -1137,24 +1151,24 @@ class IBMiDb2Dialect(default.DefaultDialect):
         current_schema = self.denormalize_name(schema or self.default_schema_name)
         sequence_name = self.denormalize_name(sequence_name)
         if current_schema:
-            whereclause = sql.and_(
+            whereclause = and_(
                 self.sys_sequences.c.seqschema == current_schema,
                 self.sys_sequences.c.seqname == sequence_name,
             )
         else:
             whereclause = self.sys_sequences.c.seqname == sequence_name
-        select_statement = sql.select([self.sys_sequences.c.seqname], whereclause)
+        select_statement = select([self.sys_sequences.c.seqname], whereclause)
         results = connection.execute(select_statement)
         return results.first() is not None
 
     @reflection.cache
     def get_schema_names(self, connection, **kw):
         sysschema = self.sys_schemas
-        query = sql.select(
-            [sysschema.c.schemaname],
-            sql.not_(sysschema.c.schemaname.like("SYS%")),
-            sql.not_(sysschema.c.schemaname.like("Q%")),
-            order_by=[sysschema.c.schemaname],
+        query = (
+            select([sysschema.c.schemaname])
+            .where(sysschema.c.schemaname.notlike("SYS%"))
+            .where(sysschema.c.schemaname.notlike("Q%"))
+            .order_by(sysschema.c.schemaname)
         )
         return [self.normalize_name(r[0]) for r in connection.execute(query)]
 
@@ -1164,22 +1178,22 @@ class IBMiDb2Dialect(default.DefaultDialect):
         current_schema = self.denormalize_name(schema or self.default_schema_name)
         systbl = self.sys_tables
         query = (
-            sql.select([systbl.c.tabname])
-            .where(systbl.c.tabtype == "T")
+            select([systbl.c.tabname])
+            .where(systbl.c.tabtype.in_(["T", "P"]))
             .where(systbl.c.tabschema == current_schema)
             .order_by(systbl.c.tabname)
         )
         return [self.normalize_name(r[0]) for r in connection.execute(query)]
 
-    @reflection.cache
     def get_view_names(self, connection, schema=None, **kw):
         current_schema = self.denormalize_name(schema or self.default_schema_name)
 
-        query = sql.select(
-            [self.sys_views.c.viewname],
-            self.sys_views.c.viewschema == current_schema,
-            order_by=[self.sys_views.c.viewname],
+        query = (
+            select([self.sys_views.c.viewname])
+            .where(and_(self.sys_views.c.viewschema == current_schema))
+            .order_by(self.sys_views.c.viewname)
         )
+
         return [self.normalize_name(r[0]) for r in connection.execute(query)]
 
     @reflection.cache
@@ -1187,11 +1201,13 @@ class IBMiDb2Dialect(default.DefaultDialect):
         current_schema = self.denormalize_name(schema or self.default_schema_name)
         viewname = self.denormalize_name(viewname)
 
-        query = sql.select(
-            [self.sys_views.c.text],
-            self.sys_views.c.viewschema == current_schema,
-            self.sys_views.c.viewname == viewname,
+        query = select([self.sys_views.c.text]).where(
+            and_(
+                self.sys_views.c.viewschema == current_schema,
+                self.sys_views.c.viewname == viewname,
+            )
         )
+
         return connection.execute(query).scalar()
 
     @reflection.cache
@@ -1200,7 +1216,7 @@ class IBMiDb2Dialect(default.DefaultDialect):
         table_name = self.denormalize_name(table_name)
         syscols = self.sys_columns
 
-        query = sql.select(
+        query = select(
             [
                 syscols.c.colname,
                 syscols.c.typename,
@@ -1211,7 +1227,7 @@ class IBMiDb2Dialect(default.DefaultDialect):
                 syscols.c.isid,
                 syscols.c.idgenerate,
             ],
-            sql.and_(
+            and_(
                 syscols.c.tabschema == current_schema, syscols.c.tabname == table_name
             ),
             order_by=[syscols.c.colno],
@@ -1220,9 +1236,11 @@ class IBMiDb2Dialect(default.DefaultDialect):
         for row in connection.execute(query):
             coltype = row[1].upper()
             if coltype in ["DECIMAL", "NUMERIC"]:
-                coltype = self.ischema_names.get(coltype)(int(row[4]), int(row[5]))
+                coltype = self.ischema_names.get(coltype)(
+                    precision=int(row[4]), scale=int(row[5])
+                )
             elif coltype in ["CHARACTER", "CHAR", "VARCHAR", "GRAPHIC", "VARGRAPHIC"]:
-                coltype = self.ischema_names.get(coltype)(int(row[4]))
+                coltype = self.ischema_names.get(coltype)(length=int(row[4]))
             else:
                 try:
                     coltype = self.ischema_names[coltype]
@@ -1244,22 +1262,53 @@ class IBMiDb2Dialect(default.DefaultDialect):
         return sa_columns
 
     @reflection.cache
+    def get_pk_constraint(self, connection, table_name, schema=None, **kw):
+        current_schema = self.denormalize_name(schema or self.default_schema_name)
+        table_name = self.denormalize_name(table_name)
+        sysconst = self.sys_table_constraints
+        syskeyconst = self.sys_key_constraints
+
+        query = (
+            select([syskeyconst.c.colname, sysconst.c.conname])
+            .where(
+                and_(
+                    syskeyconst.c.conschema == sysconst.c.conschema,
+                    syskeyconst.c.conname == sysconst.c.conname,
+                    sysconst.c.tabschema == current_schema,
+                    sysconst.c.tabname == table_name,
+                    sysconst.c.contype == "PRIMARY KEY",
+                )
+            )
+            .order_by(syskeyconst.c.colno)
+        )
+
+        pk_columns = []
+        pk_name = None
+        for key in connection.execute(query):
+            pk_columns.append(self.normalize_name(key[0]))
+            if not pk_name:
+                pk_name = self.normalize_name(key[1])
+        return {"constrained_columns": pk_columns, "name": pk_name}
+
+    @reflection.cache
     def get_primary_keys(self, connection, table_name, schema=None, **kw):
         current_schema = self.denormalize_name(schema or self.default_schema_name)
         table_name = self.denormalize_name(table_name)
         sysconst = self.sys_table_constraints
         syskeyconst = self.sys_key_constraints
 
-        query = sql.select(
-            [syskeyconst.c.colname, sysconst.c.tabname],
-            sql.and_(
-                syskeyconst.c.conschema == sysconst.c.conschema,
-                syskeyconst.c.conname == sysconst.c.conname,
-                sysconst.c.tabschema == current_schema,
-                sysconst.c.tabname == table_name,
-                sysconst.c.contype == "PRIMARY KEY",
-            ),
-            order_by=[syskeyconst.c.colno],
+        query = (
+            select([syskeyconst.c.colname, sysconst.c.tabname])
+            .where(
+                and_(
+                    syskeyconst.c.conschema == sysconst.c.conschema,
+                    syskeyconst.c.conname == sysconst.c.conname,
+                    sysconst.c.tabschema == current_schema,
+                    sysconst.c.tabname == table_name,
+                    sysconst.c.contype == "PRIMARY KEY",
+                )
+            )
+            .order_by(syskeyconst.c.colno)
         )
 
         return [self.normalize_name(key[0]) for key in connection.execute(query)]
@@ -1271,7 +1320,7 @@ class IBMiDb2Dialect(default.DefaultDialect):
         default_schema = self.normalize_name(default_schema)
         table_name = self.denormalize_name(table_name)
         sysfkeys = self.sys_foreignkeys
-        query = sql.select(
+        query = select(
             [
                 sysfkeys.c.fkname,
                 sysfkeys.c.fktabschema,
@@ -1282,7 +1331,7 @@ class IBMiDb2Dialect(default.DefaultDialect):
                 sysfkeys.c.pktabname,
                 sysfkeys.c.pkcolname,
             ],
-            sql.and_(
+            and_(
                 sysfkeys.c.fktabschema == current_schema,
                 sysfkeys.c.fktabname == table_name,
             ),
@@ -1320,9 +1369,9 @@ class IBMiDb2Dialect(default.DefaultDialect):
         sysidx = self.sys_indexes
         syskey = self.sys_keys
 
-        query = sql.select(
+        query = select(
             [sysidx.c.indname, sysidx.c.uniquerule, syskey.c.colname],
-            sql.and_(
+            and_(
                 syskey.c.indschema == sysidx.c.indschema,
                 syskey.c.indname == sysidx.c.indname,
                 sysidx.c.tabschema == current_schema,
