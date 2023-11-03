@@ -1,8 +1,9 @@
 import decimal
+import pytest
 from sqlalchemy import Numeric
 from sqlalchemy.testing.suite import *  # noqa - need * to import test suite
 from sqlalchemy.testing.suite import Table, Column, MetaData, eq_, testing
-from sqlalchemy.testing.suite import select
+from sqlalchemy.testing.suite import select, exists
 import sqlalchemy as sa
 import operator
 from sqlalchemy.testing.suite import ComponentReflectionTest as _ComponentReflectionTest
@@ -13,6 +14,10 @@ from sqlalchemy.testing.suite import StringTest as _StringTest
 from sqlalchemy.testing.suite import TextTest as _TextTest
 from sqlalchemy.testing.suite import UnicodeTextTest as _UnicodeTextTest
 from sqlalchemy.testing.suite import UnicodeVarcharTest as _UnicodeVarcharTest
+from sqlalchemy.testing.suite import ExistsTest as _ExistsTest
+from sqlalchemy.testing.suite import QuotedNameArgumentTest as _QuotedNameArgumentTest
+from sqlalchemy.testing.suite import LongNameBlowoutTest as _LongNameBlowoutTest
+from sqlalchemy.testing.suite import LimitOffsetTest as _LimitOffsetTest
 
 
 # removed constraint that used same columns with different name as it caused
@@ -213,3 +218,53 @@ class UnicodeVarcharTest(_UnicodeVarcharTest):
     @testing.skip("ibmi")
     def test_literal_non_ascii(self):
         pass
+
+
+class ExistsTest(_ExistsTest):
+    # casting the value to avoid untyped parameter markers
+    def test_select_exists(self, connection):
+        stuff = self.tables.stuff
+        eq_(
+            connection.execute(
+                select([sa.cast(sa.literal(1), sa.types.INTEGER)]).where(
+                    exists().where(stuff.c.data == "some data")
+                )
+            ).fetchall(),
+            [(1,)],
+        )
+
+    # casting the value to avoid untyped parameter markers
+    def test_select_exists_false(self, connection):
+        stuff = self.tables.stuff
+        eq_(
+            connection.execute(
+                select([sa.cast(sa.literal(1), sa.types.INTEGER)]).where(
+                    exists().where(stuff.c.data == "no data")
+                )
+            ).fetchall(),
+            [],
+        )
+
+
+class QuotedNameArgumentTest(_QuotedNameArgumentTest):
+    @_QuotedNameArgumentTest.quote_fixtures
+    def test_get_unique_constraints(self, name):
+        pytest.xfail("get_unique_constraints not implemented")
+
+
+class LongNameBlowoutTest(_LongNameBlowoutTest):
+    def uq(self, *args):
+        # Our get_unique_constraints implementation doesn't return anything
+        # TODO: Implement get_unique_constraints
+        pytest.xfail("get_unique_constraints not implemented")
+
+
+class LimitOffsetTest(_LimitOffsetTest):
+    def test_limit_offset_nobinds(self):
+        pytest.xfail("LIMIT / OFFSET support currently broken")
+
+    def test_simple_limit_offset(self):
+        pytest.xfail("LIMIT / OFFSET support currently broken")
+
+    def test_simple_offset(self):
+        pytest.xfail("LIMIT / OFFSET support currently broken")

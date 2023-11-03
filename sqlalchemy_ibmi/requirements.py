@@ -111,3 +111,7 @@ class Requirements(SuiteRequirements):
         """target database must *not* support ON UPDATE..CASCADE behavior in
         foreign keys."""
         return exclusions.open()
+
+    @property
+    def reflects_pk_names(self):
+        return exclusions.open()
