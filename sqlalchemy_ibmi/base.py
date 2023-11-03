@@ -130,24 +130,27 @@ installed, match will take advantage of the CONTAINS function that it provides.
 """  # noqa E501 
 import datetime
 import re
-from sqlalchemy import select, not_, text
-from sqlalchemy.sql.expression import  and_
 from distutils.util import strtobool
-from sqlalchemy import schema as sa_schema, exc
-from sqlalchemy.sql import compiler
-from sqlalchemy.sql import operators
-from sqlalchemy.engine import default
-from sqlalchemy.types import BLOB, CHAR, CLOB, DATE, DATETIME, INTEGER, \
-    SMALLINT, BIGINT, DECIMAL, NUMERIC, REAL, TIME, TIMESTAMP, \
-    VARCHAR, FLOAT
-from .constants import RESERVED_WORDS
-from sqlalchemy import sql, util
-from sqlalchemy import Table, MetaData, Column
-from sqlalchemy.engine import reflection
-from sqlalchemy import types as sa_types
-from sqlalchemy import __version__ as SA_Version
 
-SA_Version = [int(ver_token) for ver_token in SA_Version.split('.')[0:2]]
+from sqlalchemy import (select, not_, text, schema as sa_schema, exc, sql, util,
+                        Table, MetaData, Column, __version__ as SA_Version)
+from sqlalchemy.sql import compiler, operators
+from sqlalchemy.sql.expression import and_
+from sqlalchemy.engine import default, reflection
+from sqlalchemy.types import (BLOB, CHAR, CLOB, DATE, DATETIME, INTEGER,
+                              SMALLINT, BIGINT, DECIMAL, NUMERIC, REAL, TIME,
+                              TIMESTAMP, VARCHAR, FLOAT)
+from sqlalchemy import types as sa_types
+
+from .constants import RESERVED_WORDS
+
+def get_sa_version():
+    """Returns the SQLAlchemy version as a list of integers."""
+    version = [int(ver_token) for ver_token in SA_Version.split('.')[0:2]]
+    return version
+
+SA_Version = get_sa_version()
+
 
 class IBMBoolean(sa_types.Boolean):
     """Represents a Db2 Boolean Column"""
