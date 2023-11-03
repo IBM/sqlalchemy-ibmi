@@ -742,7 +742,7 @@ def to_bool(obj):
 
 class IBMiDb2Dialect(default.DefaultDialect):
     driver = "pyodbc"
-    name = "sqlalchemy_ibmi"
+    name = "ibmi"
     max_identifier_length = 128
     encoding = "utf-8"
     default_paramstyle = "qmark"

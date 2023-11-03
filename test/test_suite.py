@@ -2,7 +2,7 @@ import decimal
 from sqlalchemy import Numeric
 from sqlalchemy.testing.suite import *  # noqa - need * to import test suite
 from sqlalchemy.testing.suite import Table, Column, MetaData, eq_, testing
-from sqlalchemy.testing.suite import requirements, select
+from sqlalchemy.testing.suite import select
 import sqlalchemy as sa
 import operator
 from sqlalchemy.testing.suite import ComponentReflectionTest as _ComponentReflectionTest
@@ -98,23 +98,29 @@ class ComponentReflectionTest(_ComponentReflectionTest):
 
 # empty set tests not possible on DB2 for i
 class ExpandingBoundInTest(_ExpandingBoundInTest):
+    @testing.skip("ibmi")
     def test_multiple_empty_sets(self):
-        return
+        pass
 
+    @testing.skip("ibmi")
     def test_empty_set_against_integer(self):
-        return
+        pass
 
+    @testing.skip("ibmi")
     def test_empty_set_against_integer_negation(self):
-        return
+        pass
 
+    @testing.skip("ibmi")
     def test_empty_set_against_string(self):
-        return
+        pass
 
+    @testing.skip("ibmi")
     def test_empty_set_against_string_negation(self):
-        return
+        pass
 
+    @testing.skip("ibmi")
     def test_null_in_empty_set_is_false(self):
-        return
+        pass
 
 
 class NumericTest(_NumericTest):
@@ -166,9 +172,9 @@ class InsertBehaviorTest(_InsertBehaviorTest):
     # work, one can cast the parameter marker to int or float before
     # performing the operation. However, this will not work here due to
     # SQLAlchemy code
-    @requirements.insert_from_select
+    @testing.skip("ibmi")
     def test_insert_from_select_with_defaults(self):
-        return
+        pass
 
 
 # An assertion error is caused in certain tests by an issue with the IBM i
@@ -178,26 +184,32 @@ class InsertBehaviorTest(_InsertBehaviorTest):
 
 
 class StringTest(_StringTest):
+    @testing.skip("ibmi")
     def test_literal_non_ascii(self):
-        return
+        pass
 
 
 class TextTest(_TextTest):
+    @testing.skip("ibmi")
     def test_literal_non_ascii(self):
-        return
+        pass
 
 
 class UnicodeTextTest(_UnicodeTextTest):
+    @testing.skip("ibmi")
     def test_literal_non_ascii(self):
-        return
+        pass
 
+    @testing.skip("ibmi")
     def test_literal(self):
-        return
+        pass
 
 
 class UnicodeVarcharTest(_UnicodeVarcharTest):
+    @testing.skip("ibmi")
     def test_literal(self):
-        return
+        pass
 
+    @testing.skip("ibmi")
     def test_literal_non_ascii(self):
-        return
+        pass
