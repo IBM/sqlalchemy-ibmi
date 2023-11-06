@@ -1,5 +1,7 @@
 import decimal
 import pytest
+
+from .util import SA_Version
 from sqlalchemy import Numeric
 from sqlalchemy.testing.suite import *  # noqa - need * to import test suite
 from sqlalchemy.testing.suite import Table, Column, MetaData, eq_, testing
@@ -17,7 +19,9 @@ from sqlalchemy.testing.suite import UnicodeVarcharTest as _UnicodeVarcharTest
 from sqlalchemy.testing.suite import ExistsTest as _ExistsTest
 from sqlalchemy.testing.suite import QuotedNameArgumentTest as _QuotedNameArgumentTest
 from sqlalchemy.testing.suite import LongNameBlowoutTest as _LongNameBlowoutTest
-from sqlalchemy.testing.suite import LimitOffsetTest as _LimitOffsetTest
+
+if SA_Version < [1, 4]:
+    from sqlalchemy.testing.suite import LimitOffsetTest as _LimitOffsetTest
 
 
 # removed constraint that used same columns with different name as it caused
@@ -259,12 +263,14 @@ class LongNameBlowoutTest(_LongNameBlowoutTest):
         pytest.xfail("get_unique_constraints not implemented")
 
 
-class LimitOffsetTest(_LimitOffsetTest):
-    def test_limit_offset_nobinds(self):
-        pytest.xfail("LIMIT / OFFSET support currently broken")
+if SA_Version < [1, 4]:
 
-    def test_simple_limit_offset(self):
-        pytest.xfail("LIMIT / OFFSET support currently broken")
+    class LimitOffsetTest(_LimitOffsetTest):
+        def test_limit_offset_nobinds(self):
+            pytest.xfail("LIMIT / OFFSET support currently broken")
 
-    def test_simple_offset(self):
-        pytest.xfail("LIMIT / OFFSET support currently broken")
+        def test_simple_limit_offset(self):
+            pytest.xfail("LIMIT / OFFSET support currently broken")
+
+        def test_simple_offset(self):
+            pytest.xfail("LIMIT / OFFSET support currently broken")
