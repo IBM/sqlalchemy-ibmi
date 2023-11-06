@@ -271,7 +271,9 @@ RESERVED_WORDS = {
     "indicator",
     "position",
     "unique",
-    "data",
+    # Even though data is listed as reserved, it doesn't seem to actully need
+    # quoting and quoting it causes problems with HasTableTest
+    # "data",
     "inherit",
     "precision",
     "until",
