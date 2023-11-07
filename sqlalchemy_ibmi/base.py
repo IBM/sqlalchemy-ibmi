@@ -454,73 +454,28 @@ class DB2Compiler(compiler.SQLCompiler):
         binary.right.value = "%" + binary.right.value + "%"
         return "%s LIKE %s" % (self.process(binary.left), self.process(binary.right))
 
-    def visit_select(self, select, **kwargs):
-        limit, offset = select._limit, select._offset
-        sql_ori = compiler.SQLCompiler.visit_select(self, select, **kwargs)
-        if offset is not None:
-            __rownum = "Z.__ROWNUM"
-            sql_split = re.split(r"[\s+]FROM ", sql_ori, 1)
-            sql_sec = ""
-            sql_sec = " \nFROM %s " % (sql_split[1])
-
-            dummyVal = "Z.__db2_"
-            sql_pri = ""
-
-            sql_sel = "SELECT "
-            if select._distinct:
-                sql_sel = "SELECT DISTINCT "
-
-            sql_select_token = sql_split[0].split(",")
-            i = 0
-            while i < len(sql_select_token):
-                if sql_select_token[i].count("TIMESTAMP(DATE(SUBSTR(CHAR(") == 1:
-                    sql_sel = '%s "%s%d",' % (sql_sel, dummyVal, i + 1)
-                    sql_pri = '%s %s,%s,%s,%s AS "%s%d",' % (
-                        sql_pri,
-                        sql_select_token[i],
-                        sql_select_token[i + 1],
-                        sql_select_token[i + 2],
-                        sql_select_token[i + 3],
-                        dummyVal,
-                        i + 1,
-                    )
-                    i = i + 4
-                    continue
-
-                if sql_select_token[i].count(" AS ") == 1:
-                    temp_col_alias = sql_select_token[i].split(" AS ")
-                    sql_pri = "%s %s," % (sql_pri, sql_select_token[i])
-                    sql_sel = "%s %s," % (sql_sel, temp_col_alias[1])
-                    i = i + 1
-                    continue
-
-                sql_pri = '%s %s AS "%s%d",' % (
-                    sql_pri,
-                    sql_select_token[i],
-                    dummyVal,
-                    i + 1,
-                )
-                sql_sel = '%s "%s%d",' % (sql_sel, dummyVal, i + 1)
-                i = i + 1
-
-            sql_pri = sql_pri[: len(sql_pri) - 1]
-            sql_pri = "%s%s" % (sql_pri, sql_sec)
-            sql_sel = sql_sel[: len(sql_sel) - 1]
-            sql = '%s, ( ROW_NUMBER() OVER() ) AS "%s" FROM ( %s ) AS M' % (
-                sql_sel,
-                __rownum,
-                sql_pri,
+    def limit_clause(self, select, **kw):
+        # On Db2 for i, there is a separate OFFSET clause, but there is no separate
+        # LIMIT clause. Instead, LIMIT is treated as an alternate or "shortcut" syntax
+        # of a FETCH clause.
+        # Because of this, these work:  "LIMIT x", "LIMIT x OFFSET y"
+        # but these do not:            "OFFSET y", "LIMIT x OFFSET y ROWS"
+        #
+        # Because of this, if we want to use the LIMIT alternate form, we'd have to
+        # special case both LIMIT with OFFSET and OFFSET without LIMIT. However, if we
+        # use the traditional FETCH form we need no special cases.
+        #
+        # OFFSET is supported since IBM i 7.1 TR11 / IBM i 7.2 TR3
+        text = ""
+        if select._offset_clause is not None:
+            text += " OFFSET " + self.process(select._offset_clause, **kw) + " ROWS "
+        if select._limit_clause is not None:
+            text += (
+                " FETCH FIRST "
+                + self.process(select._limit_clause, **kw)
+                + " ROWS ONLY "
             )
-            sql = "%s FROM ( %s ) Z WHERE" % (sql_sel, sql)
-
-            if offset != 0:
-                sql = '%s "%s" > %d' % (sql, __rownum, offset)
-            if offset != 0 and limit is not None:
-                sql = "%s AND " % sql
-            if limit is not None:
-                sql = '%s "%s" <= %d' % (sql, __rownum, offset + limit)
-            return "( %s )" % (sql,)
-        return sql_ori
+        return text
 
     def visit_sequence(self, sequence, **kw):
         return "NEXT VALUE FOR %s" % sequence.name
