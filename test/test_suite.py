@@ -1,13 +1,14 @@
 import decimal
+import operator
 import pytest
+import sqlalchemy as sa
 
 from .util import SA_Version
 from sqlalchemy import Numeric
 from sqlalchemy.testing.suite import *  # noqa - need * to import test suite
 from sqlalchemy.testing.suite import Table, Column, MetaData, eq_, testing
 from sqlalchemy.testing.suite import select, exists
-import sqlalchemy as sa
-import operator
+
 from sqlalchemy.testing.suite import ComponentReflectionTest as _ComponentReflectionTest
 from sqlalchemy.testing.suite import ExpandingBoundInTest as _ExpandingBoundInTest
 from sqlalchemy.testing.suite import NumericTest as _NumericTest
@@ -22,6 +23,10 @@ from sqlalchemy.testing.suite import LongNameBlowoutTest as _LongNameBlowoutTest
 
 if SA_Version < [1, 4]:
     from sqlalchemy.testing.suite import LimitOffsetTest as _LimitOffsetTest
+
+if SA_Version >= [1, 4]:
+    from sqlalchemy.testing.suite import HasSequenceTestEmpty as _HasSequenceTestEmpty
+    from sqlalchemy.testing.suite import HasSequenceTestEmpty as _HasSequenceTest
 
 
 # removed constraint that used same columns with different name as it caused
@@ -274,3 +279,14 @@ if SA_Version < [1, 4]:
 
         def test_simple_offset(self):
             pytest.xfail("LIMIT / OFFSET support currently broken")
+
+
+if SA_Version >= [1, 4]:
+
+    class HasSequenceTestEmpty(_HasSequenceTestEmpty):
+        def test_get_sequence_names_no_sequence(self, connection):
+            pytest.xfail("get_sequence_names not implemented yet")
+
+    class HasSequenceTest(_HasSequenceTest):
+        def test_get_sequence_names_no_sequence(self, connection):
+            pytest.xfail("get_sequence_names not implemented yet")
