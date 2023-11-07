@@ -21,9 +21,6 @@ from sqlalchemy.testing.suite import ExistsTest as _ExistsTest
 from sqlalchemy.testing.suite import QuotedNameArgumentTest as _QuotedNameArgumentTest
 from sqlalchemy.testing.suite import LongNameBlowoutTest as _LongNameBlowoutTest
 
-if SA_Version < [1, 4]:
-    from sqlalchemy.testing.suite import LimitOffsetTest as _LimitOffsetTest
-
 if SA_Version >= [1, 4]:
     from sqlalchemy.testing.suite import HasSequenceTestEmpty as _HasSequenceTestEmpty
     from sqlalchemy.testing.suite import HasSequenceTestEmpty as _HasSequenceTest
@@ -266,19 +263,6 @@ class LongNameBlowoutTest(_LongNameBlowoutTest):
         # Our get_unique_constraints implementation doesn't return anything
         # TODO: Implement get_unique_constraints
         pytest.xfail("get_unique_constraints not implemented")
-
-
-if SA_Version < [1, 4]:
-
-    class LimitOffsetTest(_LimitOffsetTest):
-        def test_limit_offset_nobinds(self):
-            pytest.xfail("LIMIT / OFFSET support currently broken")
-
-        def test_simple_limit_offset(self):
-            pytest.xfail("LIMIT / OFFSET support currently broken")
-
-        def test_simple_offset(self):
-            pytest.xfail("LIMIT / OFFSET support currently broken")
 
 
 if SA_Version >= [1, 4]:

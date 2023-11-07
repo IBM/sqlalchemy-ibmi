@@ -96,11 +96,17 @@ class Requirements(SuiteRequirements):
         """target database must apply names to unnamed constraints."""
         return exclusions.open()
 
-    # closed due to sqlalchemy.exc.CompileError: This SELECT structure does
-    # not use a simple integer value for limit
     @property
-    def bound_limit_offset(self):
-        return exclusions.closed()
+    def fetch_first(self):
+        return exclusions.open()
+
+    @property
+    def fetch_expression(self):
+        return exclusions.open()
+
+    @property
+    def fetch_no_order_by(self):
+        return exclusions.open()
 
     @property
     def floats_to_four_decimals(self):
