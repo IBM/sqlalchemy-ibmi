@@ -614,6 +614,44 @@ class DB2Compiler(compiler.SQLCompiler):
         else:
             return super(DB2Compiler, self).visit_unary(unary, **kw)
 
+    def visit_empty_set_op_expr(self, type_, expand_op):
+        if expand_op is operators.not_in_op:
+            return "(%s)) OR (1 = 1" % (
+                ", ".join(
+                    "CAST(NULL AS %s)"
+                    % self.dialect.type_compiler.process(
+                        INTEGER() if element._isnull else element
+                    )
+                    for element in type_
+                )
+            )
+        elif expand_op is operators.in_op:
+            return "(%s)) OR (1 != 1" % (
+                ", ".join(
+                    "CAST(NULL AS %s)"
+                    % self.dialect.type_compiler.process(
+                        INTEGER() if element._isnull else element
+                    )
+                    for element in type_
+                )
+            )
+        else:
+            return self.visit_empty_set_expr(type_)
+
+    def visit_empty_set_expr(self, element_types):
+        return "SELECT 1 FROM SYSIBM.SYSDUMMY1 WHERE 1!=1"
+
+    def visit_null(self, expr, **kw):
+        # We can't include a bare NULL without a type in a query or we'll get
+        # SQL0206 - Column or global variable NULL not found.
+        # We can work around this by casting to a type. Here we don't have any
+        # type information, so we use INTEGER since it should be convertable to
+        # most types (BLOB, XML, and possibly others are not)
+        if kw.get("within_columns_clause", False):
+            return "CAST(NULL AS INTEGER)"
+        else:
+            return "NULL"
+
 
 class DB2DDLCompiler(compiler.DDLCompiler):
     """DDL Compiler for IBM i Db2"""
