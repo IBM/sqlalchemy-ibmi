@@ -138,8 +138,8 @@ from sqlalchemy.sql import compiler, operators
 from sqlalchemy.sql.expression import and_
 from sqlalchemy.engine import default, reflection
 from sqlalchemy.types import (BLOB, CHAR, CLOB, DATE, DATETIME, INTEGER,
-                              SMALLINT, BIGINT, DECIMAL, NUMERIC, REAL, TIME,
-                              TIMESTAMP, VARCHAR, FLOAT)
+                                SMALLINT, BIGINT, DECIMAL, NUMERIC, REAL, TIME,
+                                TIMESTAMP, VARCHAR, FLOAT)
 from sqlalchemy import types as sa_types
 
 from .constants import RESERVED_WORDS
@@ -150,7 +150,6 @@ def get_sa_version():
     return version
 
 SA_Version = get_sa_version()
-
 
 class IBMBoolean(sa_types.Boolean):
     """Represents a Db2 Boolean Column"""
@@ -167,7 +166,6 @@ class IBMBoolean(sa_types.Boolean):
                 return None
             return '1' if value else '0'
         return process
-
 
 class IBMDate(sa_types.Date):
     """Represents a Db2 Date Column"""
@@ -191,41 +189,33 @@ class IBMDate(sa_types.Date):
 
         return process
 
-
 class DOUBLE(sa_types.Numeric):
     """Represents a Db2 Double Column"""
     __visit_name__ = 'DOUBLE'
-
 
 class LONGVARCHAR(sa_types.VARCHAR):
     """Represents a Db2 Longvarchar Column"""
     __visit_name_ = 'LONGVARCHAR'
 
-
 class DBCLOB(sa_types.CLOB):
     """Represents a Db2 Dbclob Column"""
     __visit_name__ = "DBCLOB"
-
 
 class GRAPHIC(sa_types.CHAR):
     """Represents a Db2 Graphic Column"""
     __visit_name__ = "GRAPHIC"
 
-
 class VARGRAPHIC(sa_types.Unicode):
     """Represents a Db2 Vargraphic Column"""
     __visit_name__ = "VARGRAPHIC"
-
 
 class LONGVARGRAPHIC(sa_types.UnicodeText):
     """Represents a Db2 longvargraphic Column"""
     __visit_name__ = "LONGVARGRAPHIC"
 
-
 class XML(sa_types.Text):
     """Represents a Db2 XML Column"""
     __visit_name__ = "XML"
-
 
 COLSPECS = {
     sa_types.Boolean: IBMBoolean,
@@ -257,7 +247,6 @@ ISCHEMA_NAMES = {
     'LONGVARGRAPHIC': LONGVARGRAPHIC,
     'DBCLOB': DBCLOB
 }
-
 
 class DB2TypeCompiler(compiler.GenericTypeCompiler):
     """IBM i Db2 Type Compiler"""
@@ -404,22 +393,6 @@ class DB2Compiler(compiler.SQLCompiler):
             self.process(binary.left),
             self.process(binary.right))
 
-    # This is to allow legacy LIMIT replacement.
-    #LIMIT is acceptable since IBM i 7.1 TR11,IBM i 7.2 TR3 
-    def limit_clause(self, select, **kwargs):
-        custom_legacy_limit_option = self.dialect.use_legacy_limit
-        if custom_legacy_limit_option is not None:
-            custom_legacy_limit_option = custom_legacy_limit_option.lower() == 'true'
-        
-        if (select._limit is not None) and (select._offset is None):
-            if custom_legacy_limit_option:
-                return " FETCH FIRST %s ROWS ONLY" % select._limit
-            else:
-                return " LIMIT %s" % select._limit
-        return ""
-            
-        
-
     def visit_select(self, select, **kwargs):
         limit, offset = select._limit, select._offset
         sql_ori = compiler.SQLCompiler.visit_select(self, select, **kwargs)
@@ -528,9 +501,9 @@ class DB2Compiler(compiler.SQLCompiler):
         # to render INNER JOIN
         return ''.join(
             (self.process(join.left, asfrom=True, **kwargs),
-             (join.isouter and " LEFT OUTER JOIN " or " INNER JOIN "),
+                (join.isouter and " LEFT OUTER JOIN " or " INNER JOIN "),
              self.process(join.right, asfrom=True, **kwargs),
-             " ON ",
+                " ON ",
              self.process(join.onclause, **kwargs)))
 
     def visit_savepoint(self, savepoint_stmt):
@@ -553,7 +526,6 @@ class DB2Compiler(compiler.SQLCompiler):
             return usql
         else:
             return super(DB2Compiler, self).visit_unary(unary, **kw)
-
 
 class DB2DDLCompiler(compiler.DDLCompiler):
     """DDL Compiler for IBM i Db2"""
@@ -614,13 +586,13 @@ class DB2DDLCompiler(compiler.DDLCompiler):
                 constraint,
                 'uConstraint_as_index') and constraint.uConstraint_as_index:
             return "DROP %s%s" % \
-                   (qual, const)
+                    (qual, const)
         return "ALTER TABLE %s DROP %s%s" % \
-               (self.preparer.format_table(constraint.table),
+                (self.preparer.format_table(constraint.table),
                 qual, const)
 
     def visit_create_index(self, create, include_schema=True,
-                           include_table_schema=True):
+                            include_table_schema=True):
         sql = super(DB2DDLCompiler, self).visit_create_index(
             create,
             include_schema,
@@ -740,11 +712,7 @@ class IBMiDb2Dialect(default.DefaultDialect):
         super().initialize(connection)
         self.driver_version = self._get_driver_version(connection.connection)
         self.text_server_available = self._check_text_server(connection)
-    
-    @util.memoized_property
-    def use_legacy_limit(self):
-        return self.use_legacy_limit
-    
+
     def get_check_constraints(self, connection, table_name, schema=None, **kw):
         current_schema = self.denormalize_name(
             schema or self.default_schema_name)
@@ -753,11 +721,11 @@ class IBMiDb2Dialect(default.DefaultDialect):
         syschkconst = self.sys_check_constraints
 
         query = select([syschkconst.c.conname, syschkconst.c.chkclause],
-                           and_(
-                               syschkconst.c.conschema == sysconst.c.conschema,
-                               syschkconst.c.conname == sysconst.c.conname,
-                               sysconst.c.tabschema == current_schema,
-                               sysconst.c.tabname == table_name))
+                            and_(
+                                syschkconst.c.conschema == sysconst.c.conschema,
+                                syschkconst.c.conname == sysconst.c.conname,
+                                sysconst.c.tabschema == current_schema,
+                                sysconst.c.tabname == table_name))
 
         check_consts = []
         print(query)
@@ -876,19 +844,18 @@ class IBMiDb2Dialect(default.DefaultDialect):
     def create_connect_args(self, url):
         opts = url.translate_connect_args(username='user', host='system')
         opts.update(url.query)
-        
-        self.use_legacy_limit = opts.pop('use_legacy_limit', None)
+
         # Allow both our specific keywords and the SQLAlchemy base keywords
         allowed_opts = set(self.DRIVER_KEYWORD_MAP.keys()) | \
-                       self.DRIVER_KEYWORDS_SPECIAL | \
-                       {'autocommit', 'readonly', 'timeout'}
+                        self.DRIVER_KEYWORDS_SPECIAL | \
+                        {'autocommit', 'readonly', 'timeout'}
 
         if not allowed_opts.issuperset(opts.keys()):
             raise ValueError("Option entered not valid for "
-                             "IBM i Access ODBC Driver")
+                                "IBM i Access ODBC Driver")
         self.map_connect_opts(opts)
         return [["Driver={%s}; UNICODESQL=1; TRUEAUTOCOMMIT=1; XDYNAMIC=0" % (
-                 self.pyodbc_driver_name)], opts]
+                    self.pyodbc_driver_name)], opts]
 
     def is_disconnect(self, e, connection, cursor):
         if isinstance(e, self.dbapi.ProgrammingError):
@@ -915,7 +882,7 @@ class IBMiDb2Dialect(default.DefaultDialect):
     def _get_server_version_info(self, connection, allow_chars=True):
         dbapi_con = connection.connection
         version = [int(_) for _ in
-                   dbapi_con.getinfo(self.dbapi.SQL_DBMS_VER).split('.')]
+                    dbapi_con.getinfo(self.dbapi.SQL_DBMS_VER).split('.')]
         return tuple(version[0:2])
 
     def _get_default_schema_name(self, connection):
@@ -1078,9 +1045,9 @@ class IBMiDb2Dialect(default.DefaultDialect):
     def get_schema_names(self, connection, **kw):
         sysschema = self.sys_schemas
         query = select([sysschema.c.schemaname]).\
-                           where(sysschema.c.schemaname.notlike('SYS%')).\
-                           where(sysschema.c.schemaname.notlike('Q%')).\
-                           order_by(sysschema.c.schemaname)
+                            where(sysschema.c.schemaname.notlike('SYS%')).\
+                            where(sysschema.c.schemaname.notlike('Q%')).\
+                            order_by(sysschema.c.schemaname)
         return [self.normalize_name(r[0]) for r in connection.execute(query)]
 
     # Retrieves a list of table names for a given schema
@@ -1163,6 +1130,7 @@ class IBMiDb2Dialect(default.DefaultDialect):
             })
         return sa_columns
 
+    @reflection.cache
     def get_pk_constraint(self, connection, table_name, schema=None, **kw):
         current_schema = self.denormalize_name(
             schema or self.default_schema_name)
@@ -1170,7 +1138,7 @@ class IBMiDb2Dialect(default.DefaultDialect):
         sysconst = self.sys_table_constraints
         syskeyconst = self.sys_key_constraints
 
-        query = select([syskeyconst.c.colname, sysconst.c.tabname]).where(
+        query = select([syskeyconst.c.colname, sysconst.c.conname]).where(
             and_(
                 syskeyconst.c.conschema == sysconst.c.conschema,
                 syskeyconst.c.conname == sysconst.c.conname,
@@ -1180,19 +1148,13 @@ class IBMiDb2Dialect(default.DefaultDialect):
             )
         ).order_by(syskeyconst.c.colno)
 
-        result = connection.execute(query)
-        rows = result.fetchall()
-
-        if rows:
-            pk_columns = [self.normalize_name(row[0]) for row in rows]
-            pk_name = self.normalize_name(table_name + '_PK')  # Generate a default PK constraint name if needed
-
-            return {
-                "constrained_columns": pk_columns,
-                "name": pk_name
-            }
-
-        return None
+        pk_columns = []
+        pk_name = None
+        for key in connection.execute(query):
+            pk_columns.append(self.normalize_name(key[0]))
+            if not pk_name:
+                pk_name = self.normalize_name(key[1])
+        return {"constrained_columns": pk_columns, "name": pk_name}
 
     @reflection.cache
     def get_primary_keys(self, connection, table_name, schema=None, **kw):
@@ -1224,10 +1186,10 @@ class IBMiDb2Dialect(default.DefaultDialect):
         sysfkeys = self.sys_foreignkeys
         query = select(
             [sysfkeys.c.fkname, sysfkeys.c.fktabschema, sysfkeys.c.fktabname,
-             sysfkeys.c.fkcolname, sysfkeys.c.pkname, sysfkeys.c.pktabschema,
-             sysfkeys.c.pktabname, sysfkeys.c.pkcolname],
+                sysfkeys.c.fkcolname, sysfkeys.c.pkname, sysfkeys.c.pktabschema,
+                sysfkeys.c.pktabname, sysfkeys.c.pkcolname],
             and_(sysfkeys.c.fktabschema == current_schema,
-                     sysfkeys.c.fktabname == table_name),
+                        sysfkeys.c.fktabname == table_name),
             order_by=[sysfkeys.c.colno])
         fschema = {}
         for row in connection.execute(query):
@@ -1266,12 +1228,12 @@ class IBMiDb2Dialect(default.DefaultDialect):
         query = select([sysidx.c.indname,
                             sysidx.c.uniquerule,
                             syskey.c.colname],
-                           and_(
-                               syskey.c.indschema == sysidx.c.indschema,
-                               syskey.c.indname == sysidx.c.indname,
-                               sysidx.c.tabschema == current_schema,
-                               sysidx.c.tabname == table_name),
-                           order_by=[syskey.c.indname, syskey.c.colno])
+                            and_(
+                                syskey.c.indschema == sysidx.c.indschema,
+                                syskey.c.indname == sysidx.c.indname,
+                                sysidx.c.tabschema == current_schema,
+                                sysidx.c.tabname == table_name),
+                            order_by=[syskey.c.indname, syskey.c.colno])
         indexes = {}
         for row in connection.execute(query):
             key = row[0].upper()
