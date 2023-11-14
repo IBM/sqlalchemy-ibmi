@@ -505,13 +505,6 @@ class DB2Compiler(compiler.SQLCompiler):
         kw["_cast_applied"] = True
         return super().visit_cast(cast, **kw)
 
-    def get_select_precolumns(self, select, **kwargs):
-        if isinstance(select._distinct, str):
-            return select._distinct.upper() + " "
-        if select._distinct:
-            return "DISTINCT "
-        return ""
-
     def visit_join(self, join, asfrom=False, **kwargs):
         # NOTE: this is the same method as that used in mysql/base.py
         # to render INNER JOIN
