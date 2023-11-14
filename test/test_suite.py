@@ -1,4 +1,3 @@
-import decimal
 import operator
 import pytest
 import sqlalchemy as sa
@@ -6,17 +5,14 @@ import sqlalchemy as sa
 from .util import SA_Version
 from sqlalchemy.testing.suite import *  # noqa - need * to import test suite
 from sqlalchemy.testing.suite import Table, Column, MetaData, eq_, testing
-from sqlalchemy.testing.suite import select, exists
 
 from sqlalchemy.testing.suite import ComponentReflectionTest as _ComponentReflectionTest
 from sqlalchemy.testing.suite import ExpandingBoundInTest as _ExpandingBoundInTest
-from sqlalchemy.testing.suite import NumericTest as _NumericTest
 from sqlalchemy.testing.suite import InsertBehaviorTest as _InsertBehaviorTest
 from sqlalchemy.testing.suite import StringTest as _StringTest
 from sqlalchemy.testing.suite import TextTest as _TextTest
 from sqlalchemy.testing.suite import UnicodeTextTest as _UnicodeTextTest
 from sqlalchemy.testing.suite import UnicodeVarcharTest as _UnicodeVarcharTest
-from sqlalchemy.testing.suite import ExistsTest as _ExistsTest
 from sqlalchemy.testing.suite import QuotedNameArgumentTest as _QuotedNameArgumentTest
 from sqlalchemy.testing.suite import LongNameBlowoutTest as _LongNameBlowoutTest
 
@@ -133,16 +129,6 @@ class ExpandingBoundInTest(_ExpandingBoundInTest):
         pass
 
 
-class NumericTest(_NumericTest):
-    # casting the value to avoid untyped parameter markers
-    @testing.emits_warning(r".*does \*not\* support Decimal objects natively")
-    def test_decimal_coerce_round_trip_w_cast(self):
-        expr = decimal.Decimal("15.7563")
-
-        val = testing.db.scalar(select([sa.cast(expr, sa.types.DECIMAL(10, 4))]))
-        eq_(val, expr)
-
-
 class InsertBehaviorTest(_InsertBehaviorTest):
     # Skipping test due to incompatible sql query with Db2. Using parameter
     # markers in a arithmetic expression is not supported. To force this to
@@ -190,32 +176,6 @@ class UnicodeVarcharTest(_UnicodeVarcharTest):
     @testing.skip("ibmi")
     def test_literal_non_ascii(self):
         pass
-
-
-class ExistsTest(_ExistsTest):
-    # casting the value to avoid untyped parameter markers
-    def test_select_exists(self, connection):
-        stuff = self.tables.stuff
-        eq_(
-            connection.execute(
-                select([sa.cast(sa.literal(1), sa.types.INTEGER)]).where(
-                    exists().where(stuff.c.data == "some data")
-                )
-            ).fetchall(),
-            [(1,)],
-        )
-
-    # casting the value to avoid untyped parameter markers
-    def test_select_exists_false(self, connection):
-        stuff = self.tables.stuff
-        eq_(
-            connection.execute(
-                select([sa.cast(sa.literal(1), sa.types.INTEGER)]).where(
-                    exists().where(stuff.c.data == "no data")
-                )
-            ).fetchall(),
-            [],
-        )
 
 
 class QuotedNameArgumentTest(_QuotedNameArgumentTest):

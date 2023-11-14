@@ -502,25 +502,8 @@ class DB2Compiler(compiler.SQLCompiler):
     #        return compiler.SQLCompiler.visit_function(self, func, **kwargs)
 
     def visit_cast(self, cast, **kw):
-        type_ = cast.typeclause.type
-
-        # TODO: verify that CAST shouldn't be called with
-        # other types, I was able to CAST against VARCHAR
-        # for example
-        if isinstance(
-            type_,
-            (
-                sa_types.DateTime,
-                sa_types.Date,
-                sa_types.Time,
-                sa_types.Numeric,
-                sa_types.String,
-                sa_types.Integer,
-            ),
-        ):
-            return super(DB2Compiler, self).visit_cast(cast, **kw)
-
-        return self.process(cast.clause)
+        kw["_cast_applied"] = True
+        return super().visit_cast(cast, **kw)
 
     def get_select_precolumns(self, select, **kwargs):
         if isinstance(select._distinct, str):
@@ -595,15 +578,23 @@ class DB2Compiler(compiler.SQLCompiler):
         return "SELECT 1 FROM SYSIBM.SYSDUMMY1 WHERE 1!=1"
 
     def visit_null(self, expr, **kw):
-        # We can't include a bare NULL without a type in a query or we'll get
-        # SQL0206 - Column or global variable NULL not found.
-        # We can work around this by casting to a type. Here we don't have any
-        # type information, so we use INTEGER since it should be convertable to
-        # most types (BLOB, XML, and possibly others are not)
-        if kw.get("within_columns_clause", False):
-            return "CAST(NULL AS INTEGER)"
-        else:
+        if not kw.get("within_columns_clause", False):
             return "NULL"
+
+        # We can't use a NULL constant/literal in a parameter list without a type
+        # or we'll get SQL0206 - Column or global variable NULL not found.
+        # We can work around this by casting to a type, but at this point we don't
+        # know what the type was, and when using the null() function, there will
+        # not be a type anyway, so we pick an arbitrary type of INTEGER which is
+        # most compatible with other types other than BLOB, XML, and some others.
+        #
+        # As an optimization, if we detect we're already in a CAST expression, then
+        # we don't need to add another.
+        if kw.get("_cast_applied", False):
+            # We're in a cast expression, so no need to cast
+            return "NULL"
+
+        return "CAST(NULL AS INTEGER)"
 
     def visit_bindparam(
         self,
