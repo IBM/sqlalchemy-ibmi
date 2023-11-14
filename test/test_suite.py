@@ -4,7 +4,6 @@ import pytest
 import sqlalchemy as sa
 
 from .util import SA_Version
-from sqlalchemy import Numeric
 from sqlalchemy.testing.suite import *  # noqa - need * to import test suite
 from sqlalchemy.testing.suite import Table, Column, MetaData, eq_, testing
 from sqlalchemy.testing.suite import select, exists
@@ -142,39 +141,6 @@ class NumericTest(_NumericTest):
 
         val = testing.db.scalar(select([sa.cast(expr, sa.types.DECIMAL(10, 4))]))
         eq_(val, expr)
-
-    # casting the value to avoid untyped parameter markers
-    @testing.requires.implicit_decimal_binds
-    @testing.emits_warning(r".*does \*not\* support Decimal objects natively")
-    def test_decimal_coerce_round_trip(self):
-        expr = decimal.Decimal("15.7563")
-
-        val = testing.db.scalar(
-            select([sa.cast(sa.literal(expr), sa.types.DECIMAL(10, 4))])
-        )
-        eq_(val, expr)
-
-    # casting the value to avoid untyped parameter markers
-    def test_float_coerce_round_trip(self):
-        expr = 15.7563
-
-        val = testing.db.scalar(
-            select(
-                [sa.cast(sa.literal(expr), sa.types.DECIMAL(10, 4, asdecimal=False))]
-            )
-        )
-        eq_(val, expr)
-
-    # changed Numeric precision to 31 from 38 as DB2 for i supports a max
-    # precision of 31 digits
-    @testing.requires.precision_numerics_many_significant_digits
-    def test_many_significant_digits(self):
-        numbers = {
-            decimal.Decimal("31943874831932418390.01"),
-            decimal.Decimal("319438950232418390.273596"),
-            decimal.Decimal("87673.594069654243"),
-        }
-        self._do_test(Numeric(precision=31, scale=12), numbers, numbers)
 
 
 class InsertBehaviorTest(_InsertBehaviorTest):

@@ -143,7 +143,7 @@ from sqlalchemy import (
     __version__ as _SA_Version,
 )
 from sqlalchemy.sql import compiler, operators
-from sqlalchemy.sql.expression import and_
+from sqlalchemy.sql.expression import and_, cast
 from sqlalchemy.engine import default, reflection
 from sqlalchemy.types import (
     BLOB,
@@ -513,11 +513,9 @@ class DB2Compiler(compiler.SQLCompiler):
                 sa_types.DateTime,
                 sa_types.Date,
                 sa_types.Time,
-                sa_types.DECIMAL,
+                sa_types.Numeric,
                 sa_types.String,
-                sa_types.FLOAT,
-                sa_types.NUMERIC,
-                sa_types.INT,
+                sa_types.Integer,
             ),
         ):
             return super(DB2Compiler, self).visit_cast(cast, **kw)
@@ -606,6 +604,85 @@ class DB2Compiler(compiler.SQLCompiler):
             return "CAST(NULL AS INTEGER)"
         else:
             return "NULL"
+
+    def visit_bindparam(
+        self,
+        bindparam,
+        within_columns_clause=False,
+        literal_binds=False,
+        skip_bind_expression=False,
+        literal_execute=False,
+        render_postcompile=False,
+        **kwargs,
+    ):
+        if within_columns_clause and not literal_binds:
+            # Db2 doesn't support untyped parameter markers so we need to add a CAST
+            # clause around them to the appropriate type.
+            #
+            # Default Python type to SQLAlchemy type mapping:
+            # |    Python type    | SQLAlchemy type |
+            # |-------------------|-----------------|
+            # |        bool       |    Boolean      |
+            # |        int        |    Integer      |
+            # |       float       |    Float        |
+            # |        str        |    Unicode      |
+            # |       bytes       |    LargeBinary  |
+            # |  decimal.Decimal  |    Numeric      |
+            # | datetime.datetime |    DateTime     |
+            # |   datetime.date   |    DateTime     |
+            # |   datetime.time   |    DateTime     |
+            #
+            # Most types just need a cast, but some types we handle specially since we
+            # don't know how big the value will be and by literals will have its
+            # attributes set to default eg. length, precision, and scale all set to
+            # None. Since we can't base anything from the bindparam value as all literal
+            # values will end up caching to the same statement, we must assume the worst
+            # case scenario and try to handle any possible value. We could render
+            # everything as literals using bindparam.render_literal_execute(), but that
+            # will impact statement caching on the server as well as cause problems with
+            # bytes and str literals over 32k.
+            #
+            # - Integer: Cast to BigInteger
+            # - Unicode: Cast to UnicodeText if no length was specified, since default
+            #            Unicode mapping is VARCHAR
+            # - Decimal: Render as a literal if no precision was specified. There's no
+            #            precision and scale values we can use which could cover all
+            #            Decimal literals.
+            type_ = bindparam.type
+            use_cast = True
+
+            if isinstance(type_, sa_types.Numeric) and not isinstance(
+                type_, sa_types.Float
+            ):
+                if not type_.precision:
+                    # Render this value as a literal in post-process
+                    use_cast = False
+                    try:
+                        bindparam = bindparam.render_literal_execute()
+                    except AttributeError:
+                        # SQLAlchemy 1.3 doesn't have render_literal_execute
+                        literal_binds = True
+            elif isinstance(type_, sa_types.Unicode):
+                if not type_.length:
+                    type_ = sa_types.UnicodeText(length=type_.length)
+            elif isinstance(type_, sa_types.Integer):
+                type_ = sa_types.BigInteger()
+            elif isinstance(type_, sa_types.NullType):
+                # Can't cast to a NULL, just leave it as-is
+                use_cast = False
+
+            if use_cast:
+                return self.process(cast(bindparam, type_))
+
+        return super().visit_bindparam(
+            bindparam,
+            within_columns_clause,
+            literal_binds,
+            skip_bind_expression,
+            literal_execute=literal_execute,
+            render_postcompile=render_postcompile,
+            **kwargs,
+        )
 
 
 class DB2DDLCompiler(compiler.DDLCompiler):
