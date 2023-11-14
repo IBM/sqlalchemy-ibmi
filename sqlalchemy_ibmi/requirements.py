@@ -52,9 +52,7 @@ class Requirements(SuiteRequirements):
         """target backend supports values with many digits on both sides,
         such as 319438950232418390.273596, 87673.594069654243
         """
-        return exclusions.fails_if(
-            lambda: True, "Throws error SQL0604N, regarding Decimal(38, 12)"
-        )
+        return exclusions.open()
 
     @property
     def precision_numerics_retains_significant_digits(self):
