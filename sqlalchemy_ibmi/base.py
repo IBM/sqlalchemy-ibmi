@@ -505,19 +505,6 @@ class DB2Compiler(compiler.SQLCompiler):
         kw["_cast_applied"] = True
         return super().visit_cast(cast, **kw)
 
-    def visit_join(self, join, asfrom=False, **kwargs):
-        # NOTE: this is the same method as that used in mysql/base.py
-        # to render INNER JOIN
-        return "".join(
-            (
-                self.process(join.left, asfrom=True, **kwargs),
-                (join.isouter and " LEFT OUTER JOIN " or " INNER JOIN "),
-                self.process(join.right, asfrom=True, **kwargs),
-                " ON ",
-                self.process(join.onclause, **kwargs),
-            )
-        )
-
     def visit_savepoint(self, savepoint_stmt):
         return "SAVEPOINT %(sid)s ON ROLLBACK RETAIN CURSORS" % {
             "sid": self.preparer.format_savepoint(savepoint_stmt)
