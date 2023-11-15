@@ -132,3 +132,8 @@ class Requirements(SuiteRequirements):
         # In addition, we don't seem to handle schema_translate_map properly, so
         # test_nextval_direct_schema_translate fails.
         return exclusions.closed()
+
+    @property
+    def views(self):
+        """Target database must support VIEWs."""
+        return exclusions.open()

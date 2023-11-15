@@ -1,10 +1,8 @@
-import operator
 import pytest
-import sqlalchemy as sa
 
 from .util import SA_Version
 from sqlalchemy.testing.suite import *  # noqa - need * to import test suite
-from sqlalchemy.testing.suite import Table, Column, MetaData, eq_, testing
+from sqlalchemy.testing.suite import testing
 
 from sqlalchemy.testing.suite import ComponentReflectionTest as _ComponentReflectionTest
 from sqlalchemy.testing.suite import ExpandingBoundInTest as _ExpandingBoundInTest
@@ -21,85 +19,30 @@ if SA_Version >= [1, 4]:
     from sqlalchemy.testing.suite import HasSequenceTestEmpty as _HasSequenceTest
 
 
-# removed constraint that used same columns with different name as it caused
-# a duplicate constraint error
-class ComponentReflectionTest(_ComponentReflectionTest):
-    def _test_get_unique_constraints(self, schema=None):
-        # SQLite dialect needs to parse the names of the constraints
-        # separately from what it gets from PRAGMA index_list(), and
-        # then matches them up.  so same set of column_names in two
-        # constraints will confuse it.    Perhaps we should no longer
-        # bother with index_list() here since we have the whole
-        # CREATE TABLE?
-        uniques = sorted(
-            [
-                {"name": "unique_a", "column_names": ["a"]},
-                {"name": "unique_a_b_c", "column_names": ["a", "b", "c"]},
-                {"name": "unique_asc_key", "column_names": ["asc", "key"]},
-                {"name": "i.have.dots", "column_names": ["b"]},
-                {"name": "i have spaces", "column_names": ["c"]},
-            ],
-            key=operator.itemgetter("name"),
+if SA_Version < [1, 4]:
+
+    class ComponentReflectionTest(_ComponentReflectionTest):
+        @testing.requires.unique_constraint_reflection
+        @testing.requires.schemas
+        @testing.skip("ibmi", "Db2 doesn't support duplicate constraints")
+        def test_get_unique_constraints_with_schema(self):
+            pass
+
+        @testing.requires.unique_constraint_reflection
+        @testing.skip("ibmi", "Db2 doesn't support duplicate constraints")
+        def test_get_unique_constraints(self):
+            pass
+
+else:
+
+    class ComponentReflectionTest(_ComponentReflectionTest):
+        @testing.combinations(
+            (True, testing.requires.schemas), (False,), argnames="use_schema"
         )
-        orig_meta = self.metadata
-        table = Table(
-            "testtbl",
-            orig_meta,
-            Column("a", sa.String(20)),
-            Column("b", sa.String(30)),
-            Column("c", sa.Integer),
-            # reserved identifiers
-            Column("asc", sa.String(30)),
-            Column("key", sa.String(30)),
-            schema=schema,
-        )
-        for uc in uniques:
-            table.append_constraint(
-                sa.UniqueConstraint(*uc["column_names"], name=uc["name"])
-            )
-        orig_meta.create_all()
-
-        inspector = sa.inspect(orig_meta.bind)
-        reflected = sorted(
-            inspector.get_unique_constraints("testtbl", schema=schema),
-            key=operator.itemgetter("name"),
-        )
-
-        names_that_duplicate_index = set()
-
-        for orig, refl in zip(uniques, reflected):
-            # Different dialects handle duplicate index and constraints
-            # differently, so ignore this flag
-            dupe = refl.pop("duplicates_index", None)
-            if dupe:
-                names_that_duplicate_index.add(dupe)
-            eq_(orig, refl)
-
-        reflected_metadata = MetaData()
-        reflected = Table(
-            "testtbl",
-            reflected_metadata,
-            autoload_with=orig_meta.bind,
-            schema=schema,
-        )
-
-        # test "deduplicates for index" logic.   MySQL and Oracle
-        # "unique constraints" are actually unique indexes (with possible
-        # exception of a unique that is a dupe of another one in the case
-        # of Oracle).  make sure # they aren't duplicated.
-        idx_names = set([idx.name for idx in reflected.indexes])
-        uq_names = set(
-            [
-                uq.name
-                for uq in reflected.constraints
-                if isinstance(uq, sa.UniqueConstraint)
-            ]
-        ).difference(["unique_c_a_b"])
-
-        assert not idx_names.intersection(uq_names)
-        if names_that_duplicate_index:
-            eq_(names_that_duplicate_index, idx_names)
-            eq_(uq_names, set())
+        @testing.requires.unique_constraint_reflection
+        @testing.skip("ibmi", "Db2 doesn't support duplicate constraints")
+        def test_get_unique_constraints(self, metadata, connection, use_schema):
+            pass
 
 
 # empty set tests not possible on DB2 for i
