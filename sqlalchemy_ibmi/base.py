@@ -748,7 +748,7 @@ class DB2IdentifierPreparer(compiler.IdentifierPreparer):
     """IBM i Db2 specific identifier preparer"""
 
     reserved_words = RESERVED_WORDS
-    illegal_initial_characters = set(range(0, 10)).union(["_", "$"])
+    illegal_initial_characters = {str(x) for x in range(0, 10)}.union(["_", "$"])
 
 
 class DB2ExecutionContext(default.DefaultExecutionContext):
