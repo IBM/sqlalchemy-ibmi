@@ -1061,6 +1061,7 @@ class IBMiDb2Dialect(default.DefaultDialect):
         Column("TABLE_SCHEMA", sa_types.Unicode, key="tabschema"),
         Column("TABLE_NAME", sa_types.Unicode, key="tabname"),
         Column("TABLE_TYPE", sa_types.Unicode, key="tabtype"),
+        Column("SYSTEM_TABLE", sa_types.Unicode, key="tabsys"),
         Column("LONG_COMMENT", sa_types.Unicode, key="tabcomment"),
         schema="QSYS2",
     )
@@ -1217,22 +1218,26 @@ class IBMiDb2Dialect(default.DefaultDialect):
     @reflection.cache
     def get_table_names(self, connection, schema=None, **kw):
         current_schema = self.denormalize_name(schema or self.default_schema_name)
-        systbl = self.sys_tables
+
         query = (
-            select([systbl.c.tabname])
-            .where(systbl.c.tabtype.in_(["T", "P"]))
-            .where(systbl.c.tabschema == current_schema)
-            .order_by(systbl.c.tabname)
+            select([self.sys_tables.c.tabname])
+            .where(self.sys_tables.c.tabschema == current_schema)
+            .where(self.sys_tables.c.tabtype.in_(["T", "P"]))
+            .where(self.sys_tables.c.tabsys == "N")
+            .order_by(self.sys_tables.c.tabname)
         )
+
         return [self.normalize_name(r[0]) for r in connection.execute(query)]
 
     def get_view_names(self, connection, schema=None, **kw):
         current_schema = self.denormalize_name(schema or self.default_schema_name)
 
         query = (
-            select([self.sys_views.c.viewname])
-            .where(and_(self.sys_views.c.viewschema == current_schema))
-            .order_by(self.sys_views.c.viewname)
+            select([self.sys_tables.c.tabname])
+            .where(self.sys_tables.c.tabschema == current_schema)
+            .where(self.sys_tables.c.tabtype.in_(["V"]))
+            .where(self.sys_tables.c.tabsys == "N")
+            .order_by(self.sys_tables.c.tabname)
         )
 
         return [self.normalize_name(r[0]) for r in connection.execute(query)]
