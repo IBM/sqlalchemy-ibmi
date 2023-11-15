@@ -1030,11 +1030,7 @@ class IBMiDb2Dialect(default.DefaultDialect):
         return tuple(version[0:2])
 
     def _get_default_schema_name(self, connection):
-        """Return: current setting of the schema attribute"""
-        default_schema_name = connection.execute("VALUES CURRENT_SCHEMA").scalar()
-        if isinstance(default_schema_name, str):
-            default_schema_name = default_schema_name.strip()
-        return self.normalize_name(default_schema_name)
+        return self.normalize_name(connection.execute("VALUES CURRENT_SCHEMA").scalar())
 
     # Driver version for IBM i Access ODBC Driver is given as
     # VV.RR.SSSF where VV (major), RR (release), and SSS (service pack)
