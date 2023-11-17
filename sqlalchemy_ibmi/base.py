@@ -304,23 +304,8 @@ class DB2TypeCompiler(compiler.GenericTypeCompiler):
         else:
             return "TIMESTAMP"
 
-    def visit_DATE(self, type_, **kw):
-        return "DATE"
-
-    def visit_TIME(self, type_, **kw):
-        return "TIME"
-
     def visit_DATETIME(self, type_, **kw):
         return self.visit_TIMESTAMP(type_)
-
-    def visit_SMALLINT(self, type_, **kw):
-        return "SMALLINT"
-
-    def visit_INT(self, type_):
-        return "INT"
-
-    def visit_BIGINT(self, type_, **kw):
-        return "BIGINT"
 
     def visit_FLOAT(self, type_, **kw):
         return (
@@ -378,52 +363,21 @@ class DB2TypeCompiler(compiler.GenericTypeCompiler):
             else "GRAPHIC(%(length)s)" % {"length": type_.length}
         )
 
-    def visit_DECIMAL(self, type_, **kw):
-        if not type_.precision:
-            return "DECIMAL(31, 0)"
-        if not type_.scale:
-            return "DECIMAL(%(precision)s, 0)" % {"precision": type_.precision}
-
-        return "DECIMAL(%(precision)s, %(scale)s)" % {
-            "precision": type_.precision,
-            "scale": type_.scale,
-        }
-
-    def visit_numeric(self, type_, **kw):
-        return self.visit_DECIMAL(type_)
-
-    def visit_datetime(self, type_, **kw):
-        return self.visit_TIMESTAMP(type_)
-
-    def visit_date(self, type_, **kw):
-        return self.visit_DATE(type_)
-
-    def visit_time(self, type_, **kw):
-        return self.visit_TIME(type_)
-
-    def visit_integer(self, type_, **kw):
-        return self.visit_INT(type_)
-
-    def visit_boolean(self, type_, **kw):
-        return self.visit_SMALLINT(type_)
-
-    def visit_float(self, type_, **kw):
-        return self.visit_FLOAT(type_)
-
-    def visit_unicode(self, type_):
-        return self.visit_VARCHAR(type_)
-
-    def visit_unicode_text(self, type_):
-        return self.visit_LONGVARCHAR(type_)
-
-    def visit_string(self, type_, **kw):
-        return self.visit_VARCHAR(type_)
-
     def visit_TEXT(self, type_, **kw):
         return self.visit_CLOB(type_)
 
-    def visit_large_binary(self, type_, **kw):
-        return self.visit_BLOB(type_)
+    def visit_BOOLEAN(self, type_, **kw):
+        return self.visit_SMALLINT(type_)
+
+    def visit_numeric(self, type_, **kw):
+        # For many databases, NUMERIC and DECIMAL are equivalent aliases, but for Db2
+        # NUMERIC is zoned while DECIMAL is packed. Packed format gives better space
+        # usage and performance, so we prefer that by default. If a user really wants
+        # zoned, they can use types.NUMERIC class instead.
+        return self.visit_DECIMAL(type_)
+
+    def visit_unicode_text(self, type_):
+        return self.visit_LONGVARCHAR(type_)
 
 
 class DB2Compiler(compiler.SQLCompiler):
