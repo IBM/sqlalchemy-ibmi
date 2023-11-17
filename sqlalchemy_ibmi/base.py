@@ -305,7 +305,7 @@ class DB2TypeCompiler(compiler.GenericTypeCompiler):
             return "TIMESTAMP"
 
     def visit_DATETIME(self, type_, **kw):
-        return self.visit_TIMESTAMP(type_)
+        return self.visit_TIMESTAMP(type_, **kw)
 
     def visit_FLOAT(self, type_, **kw):
         return (
@@ -364,20 +364,20 @@ class DB2TypeCompiler(compiler.GenericTypeCompiler):
         )
 
     def visit_TEXT(self, type_, **kw):
-        return self.visit_CLOB(type_)
+        return self.visit_CLOB(type_, **kw)
 
     def visit_BOOLEAN(self, type_, **kw):
-        return self.visit_SMALLINT(type_)
+        return self.visit_SMALLINT(type_, **kw)
 
     def visit_numeric(self, type_, **kw):
         # For many databases, NUMERIC and DECIMAL are equivalent aliases, but for Db2
         # NUMERIC is zoned while DECIMAL is packed. Packed format gives better space
         # usage and performance, so we prefer that by default. If a user really wants
         # zoned, they can use types.NUMERIC class instead.
-        return self.visit_DECIMAL(type_)
+        return self.visit_DECIMAL(type_, **kw)
 
-    def visit_unicode_text(self, type_):
-        return self.visit_LONGVARCHAR(type_)
+    def visit_unicode_text(self, type_, **kw):
+        return self.visit_LONGVARCHAR(type_, **kw)
 
 
 class DB2Compiler(compiler.SQLCompiler):
