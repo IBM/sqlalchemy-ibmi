@@ -329,6 +329,15 @@ class DB2TypeCompiler(compiler.GenericTypeCompiler):
     def visit_CLOB(self, type_, **kw):
         return self._extend(type_, "CLOB", ccsid=1208, length=type_.length or "2G")
 
+    def visit_NCHAR(self, type_, **kw):
+        return self._extend(type_, "NCHAR")
+
+    def visit_NVARCHAR(self, type_, **kw):
+        return self._extend(type_, "NVARCHAR")
+
+    def visit_NCLOB(self, type_, **kw):
+        return self._extend(type_, "NCLOB", length=type_.length or "1G")
+
     def visit_TEXT(self, type_, **kw):
         return self.visit_CLOB(type_, **kw)
 
