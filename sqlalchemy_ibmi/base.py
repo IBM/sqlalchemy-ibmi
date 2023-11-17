@@ -226,18 +226,6 @@ class DOUBLE(sa_types.Numeric):
     __visit_name__ = "DOUBLE"
 
 
-class LONGVARCHAR(sa_types.VARCHAR):
-    """Represents a Db2 Longvarchar Column"""
-
-    __visit_name_ = "LONGVARCHAR"
-
-
-class DBCLOB(sa_types.CLOB):
-    """Represents a Db2 Dbclob Column"""
-
-    __visit_name__ = "DBCLOB"
-
-
 class GRAPHIC(sa_types.CHAR):
     """Represents a Db2 Graphic Column"""
 
@@ -250,10 +238,10 @@ class VARGRAPHIC(sa_types.Unicode):
     __visit_name__ = "VARGRAPHIC"
 
 
-class LONGVARGRAPHIC(sa_types.UnicodeText):
-    """Represents a Db2 longvargraphic Column"""
+class DBCLOB(sa_types.CLOB):
+    """Represents a Db2 Dbclob Column"""
 
-    __visit_name__ = "LONGVARGRAPHIC"
+    __visit_name__ = "DBCLOB"
 
 
 class XML(sa_types.Text):
@@ -285,11 +273,9 @@ ISCHEMA_NAMES = {
     "TIME": TIME,
     "TIMESTAMP": TIMESTAMP,
     "VARCHAR": VARCHAR,
-    "LONGVARCHAR": LONGVARCHAR,
     "XML": XML,
     "GRAPHIC": GRAPHIC,
     "VARGRAPHIC": VARGRAPHIC,
-    "LONGVARGRAPHIC": LONGVARGRAPHIC,
     "DBCLOB": DBCLOB,
 }
 
@@ -314,60 +300,41 @@ class DB2TypeCompiler(compiler.GenericTypeCompiler):
             else "FLOAT(%(precision)s)" % {"precision": type_.precision}
         )
 
-    def visit_DOUBLE(self, type_):
-        return "DOUBLE"
+    def visit_BOOLEAN(self, type_, **kw):
+        return self.visit_SMALLINT(type_, **kw)
 
-    def visit_XML(self, type_):
-        return "XML"
+    def _extend(self, type_, name, ccsid=None, length=None):
+        text = name
 
-    def visit_CLOB(self, type_, **kw):
-        return "CLOB"
+        if not length:
+            length = type_.length
 
-    def visit_BLOB(self, type_, **kw):
-        return (
-            "BLOB(1M)"
-            if type_.length in (None, 0)
-            else "BLOB(%(length)s)" % {"length": type_.length}
-        )
+        if length:
+            text += f"({length})"
 
-    def visit_DBCLOB(self, type_, **kw):
-        return (
-            "DBCLOB(1M)"
-            if type_.length in (None, 0)
-            else "DBCLOB(%(length)s)" % {"length": type_.length}
-        )
+        if ccsid:
+            text += f" CCSID {ccsid}"
 
-    def visit_VARCHAR(self, type_, **kw):
-        return "VARCHAR(%(length)s) CCSID 1208" % {"length": type_.length}
-
-    def visit_LONGVARCHAR(self, type_):
-        return "LONG VARCHAR CCSID 1208"
-
-    def visit_VARGRAPHIC(self, type_):
-        return "VARGRAPHIC(%(length)s)" % {"length": type_.length}
-
-    def visit_LONGVARGRAPHIC(self, type_):
-        return "LONG VARGRAPHIC"
+        # TODO: Handle collation instead of CCSID
+        # if type_.collation:
+        #     text += ' COLLATE "%s"' % type_.collation
+        return text
 
     def visit_CHAR(self, type_, **kw):
-        return (
-            "CHAR"
-            if type_.length in (None, 0)
-            else "CHAR(%(length)s)" % {"length": type_.length}
-        )
+        return self._extend(type_, "CHAR", 1208)
 
-    def visit_GRAPHIC(self, type_):
-        return (
-            "GRAPHIC"
-            if type_.length in (None, 0)
-            else "GRAPHIC(%(length)s)" % {"length": type_.length}
-        )
+    def visit_VARCHAR(self, type_, **kw):
+        return self._extend(type_, "VARCHAR", 1208)
+
+    def visit_CLOB(self, type_, **kw):
+        return self._extend(type_, "CLOB", ccsid=1208, length=type_.length or "2G")
 
     def visit_TEXT(self, type_, **kw):
         return self.visit_CLOB(type_, **kw)
 
-    def visit_BOOLEAN(self, type_, **kw):
-        return self.visit_SMALLINT(type_, **kw)
+    def visit_BLOB(self, type_, **kw):
+        length = type_.length or "2G"
+        return f"BLOB({length})"
 
     def visit_numeric(self, type_, **kw):
         # For many databases, NUMERIC and DECIMAL are equivalent aliases, but for Db2
@@ -376,8 +343,24 @@ class DB2TypeCompiler(compiler.GenericTypeCompiler):
         # zoned, they can use types.NUMERIC class instead.
         return self.visit_DECIMAL(type_, **kw)
 
-    def visit_unicode_text(self, type_, **kw):
-        return self.visit_LONGVARCHAR(type_, **kw)
+    # dialect-specific types
+
+    # This is now part of SQLAlchemy as of 2.0. We can drop this function once
+    # we drop support for earlier versions.
+    def visit_DOUBLE(self, type_):
+        return "DOUBLE"
+
+    def visit_GRAPHIC(self, type_):
+        return self._extend(type_, "GRAPHIC")
+
+    def visit_VARGRAPHIC(self, type_):
+        return self._extend(type_, "VARGRAPHIC")
+
+    def visit_DBCLOB(self, type_, **kw):
+        return self._extend(type_, "DBCLOB", length=type_.length or "1G")
+
+    def visit_XML(self, type_):
+        return "XML"
 
 
 class DB2Compiler(compiler.SQLCompiler):
