@@ -136,6 +136,14 @@ class Requirements(SuiteRequirements):
     @property
     def views(self):
         """Target database must support VIEWs."""
+
+    @property
+    def array_type(self):
+        return exclusions.closed()
+
+    @property
+    def reflects_pk_names(self):
+        """Target driver reflects the name of primary key constraints."""
         return exclusions.open()
 
     @property
