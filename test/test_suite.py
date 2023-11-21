@@ -5,22 +5,14 @@ from sqlalchemy.testing.suite import Table, Column, MetaData, eq_, testing
 from sqlalchemy.testing.suite import requirements, select
 import sqlalchemy as sa
 import operator
-from sqlalchemy.testing.suite \
-    import ComponentReflectionTest as _ComponentReflectionTest
-from sqlalchemy.testing.suite \
-    import ExpandingBoundInTest as _ExpandingBoundInTest
-from sqlalchemy.testing.suite \
-    import NumericTest as _NumericTest
-from sqlalchemy.testing.suite \
-    import InsertBehaviorTest as _InsertBehaviorTest
-from sqlalchemy.testing.suite \
-    import StringTest as _StringTest
-from sqlalchemy.testing.suite \
-    import TextTest as _TextTest
-from sqlalchemy.testing.suite \
-    import UnicodeTextTest as _UnicodeTextTest
-from sqlalchemy.testing.suite \
-    import UnicodeVarcharTest as _UnicodeVarcharTest
+from sqlalchemy.testing.suite import ComponentReflectionTest as _ComponentReflectionTest
+from sqlalchemy.testing.suite import ExpandingBoundInTest as _ExpandingBoundInTest
+from sqlalchemy.testing.suite import NumericTest as _NumericTest
+from sqlalchemy.testing.suite import InsertBehaviorTest as _InsertBehaviorTest
+from sqlalchemy.testing.suite import StringTest as _StringTest
+from sqlalchemy.testing.suite import TextTest as _TextTest
+from sqlalchemy.testing.suite import UnicodeTextTest as _UnicodeTextTest
+from sqlalchemy.testing.suite import UnicodeVarcharTest as _UnicodeVarcharTest
 
 
 # removed constraint that used same columns with different name as it caused
@@ -106,7 +98,6 @@ class ComponentReflectionTest(_ComponentReflectionTest):
 
 # empty set tests not possible on DB2 for i
 class ExpandingBoundInTest(_ExpandingBoundInTest):
-
     def test_multiple_empty_sets(self):
         return
 
@@ -127,14 +118,12 @@ class ExpandingBoundInTest(_ExpandingBoundInTest):
 
 
 class NumericTest(_NumericTest):
-
     # casting the value to avoid untyped parameter markers
     @testing.emits_warning(r".*does \*not\* support Decimal objects natively")
     def test_decimal_coerce_round_trip_w_cast(self):
         expr = decimal.Decimal("15.7563")
 
-        val = testing.db.scalar(
-            select([sa.cast(expr, sa.types.DECIMAL(10, 4))]))
+        val = testing.db.scalar(select([sa.cast(expr, sa.types.DECIMAL(10, 4))]))
         eq_(val, expr)
 
     # casting the value to avoid untyped parameter markers
@@ -144,7 +133,8 @@ class NumericTest(_NumericTest):
         expr = decimal.Decimal("15.7563")
 
         val = testing.db.scalar(
-            select([sa.cast(sa.literal(expr), sa.types.DECIMAL(10, 4))]))
+            select([sa.cast(sa.literal(expr), sa.types.DECIMAL(10, 4))])
+        )
         eq_(val, expr)
 
     # casting the value to avoid untyped parameter markers
@@ -153,24 +143,24 @@ class NumericTest(_NumericTest):
 
         val = testing.db.scalar(
             select(
-                [
-                    sa.cast(sa.literal(expr),
-                            sa.types.DECIMAL(10, 4, asdecimal=False))
-                ]))
+                [sa.cast(sa.literal(expr), sa.types.DECIMAL(10, 4, asdecimal=False))]
+            )
+        )
         eq_(val, expr)
 
     # changed Numeric precision to 31 from 38 as DB2 for i supports a max
     # precision of 31 digits
     @testing.requires.precision_numerics_many_significant_digits
     def test_many_significant_digits(self):
-        numbers = {decimal.Decimal("31943874831932418390.01"),
-                   decimal.Decimal("319438950232418390.273596"),
-                   decimal.Decimal("87673.594069654243")}
+        numbers = {
+            decimal.Decimal("31943874831932418390.01"),
+            decimal.Decimal("319438950232418390.273596"),
+            decimal.Decimal("87673.594069654243"),
+        }
         self._do_test(Numeric(precision=31, scale=12), numbers, numbers)
 
 
 class InsertBehaviorTest(_InsertBehaviorTest):
-
     # Skipping test due to incompatible sql query with Db2. Using parameter
     # markers in a arithmetic expression is not supported. To force this to
     # work, one can cast the parameter marker to int or float before
@@ -186,8 +176,8 @@ class InsertBehaviorTest(_InsertBehaviorTest):
 # will be skipped in the StringTest. TextTest, UnicodeTextTest,
 # and UnicodeVarcharTest classes.
 
-class StringTest(_StringTest):
 
+class StringTest(_StringTest):
     def test_literal_non_ascii(self):
         return
 
@@ -198,7 +188,6 @@ class TextTest(_TextTest):
 
 
 class UnicodeTextTest(_UnicodeTextTest):
-
     def test_literal_non_ascii(self):
         return
 
@@ -207,7 +196,6 @@ class UnicodeTextTest(_UnicodeTextTest):
 
 
 class UnicodeVarcharTest(_UnicodeVarcharTest):
-
     def test_literal(self):
         return
 

@@ -26,7 +26,7 @@ Base = declarative_base()
 
 # defining the User object mapping
 class User(Base):
-    __tablename__ = 'users'
+    __tablename__ = "users"
     id = Column(Integer, primary_key=True)
     name = Column(String(50))
     fullname = Column(String(50))
@@ -34,7 +34,10 @@ class User(Base):
 
     def __repr__(self):
         return "<User(name='%s', fullname='%s', nickname='%s')>" % (
-            self.name, self.fullname, self.nickname)
+            self.name,
+            self.fullname,
+            self.nickname,
+        )
 
 
 # create the mapping
@@ -47,22 +50,25 @@ Session = sessionmaker(bind=engine)
 session = Session()
 
 # define and add user
-ed_user = User(name='ed', fullname='Ed Jones', nickname='edsnickname')
+ed_user = User(name="ed", fullname="Ed Jones", nickname="edsnickname")
 session.add(ed_user)
 
 # search for added user
-our_user = session.query(User).filter_by(name='ed').first()
+our_user = session.query(User).filter_by(name="ed").first()
 
 print(our_user)
 
 # Adding and Updating Objects
 
-session.add_all([
-    User(name='wendy', fullname='Wendy Williams', nickname='windy'),
-    User(name='mary', fullname='Mary Contrary', nickname='mary'),
-    User(name='fred', fullname='Fred Flintstone', nickname='freddy')])
+session.add_all(
+    [
+        User(name="wendy", fullname="Wendy Williams", nickname="windy"),
+        User(name="mary", fullname="Mary Contrary", nickname="mary"),
+        User(name="fred", fullname="Fred Flintstone", nickname="freddy"),
+    ]
+)
 
-ed_user.nickname = 'eddie'
+ed_user.nickname = "eddie"
 
 print("Changed data: " + str(session.dirty))
 
@@ -72,7 +78,7 @@ session.commit()
 
 # Rolling Back
 
-fake_user = User(name='fakeuser', fullname='Invalid', nickname='12345')
+fake_user = User(name="fakeuser", fullname="Invalid", nickname="12345")
 session.add(fake_user)
 print("Data: ", session.query(User).all())
 
@@ -93,10 +99,10 @@ for name, fullname in session.query(User.name, User.fullname):
 
 # Relationships
 class Address(Base):
-    __tablename__ = 'addresses'
+    __tablename__ = "addresses"
     id = Column(Integer, primary_key=True)
     email_address = Column(String(50), nullable=False)
-    user_id = Column(Integer, ForeignKey('users.id'))
+    user_id = Column(Integer, ForeignKey("users.id"))
 
     # create relationship with user
     user = relationship("User", back_populates="addresses")
@@ -106,28 +112,31 @@ class Address(Base):
 
 
 # create User relationship with Address
-User.addresses = relationship(
-    "Address", order_by=Address.id, back_populates="user")
+User.addresses = relationship("Address", order_by=Address.id, back_populates="user")
 # add cascade="all, delete, delete-orphan" to relationship to cascade delete
 
 Base.metadata.create_all(engine)
 
-jack = User(name='jack', fullname='Jack Bean', nickname='gjffdd')
+jack = User(name="jack", fullname="Jack Bean", nickname="gjffdd")
 
 jack.addresses = [
-                Address(email_address='jack@google.com'),
-                Address(email_address='j25@yahoo.com')]
+    Address(email_address="jack@google.com"),
+    Address(email_address="j25@yahoo.com"),
+]
 
 session.add(jack)
 session.commit()
 
-print("Data with addresses: ", session.query(User).filter_by(name='jack').one())
+print("Data with addresses: ", session.query(User).filter_by(name="jack").one())
 
 # Joins
 
-print("Data using join: ", session.query(User).join(Address, User.id == Address.user_id).all())
+print(
+    "Data using join: ",
+    session.query(User).join(Address, User.id == Address.user_id).all(),
+)
 
 # Deleting
 
 session.delete(jack)
-print("Count after deletion: ", session.query(User).filter_by(name='jack').count())
+print("Count after deletion: ", session.query(User).filter_by(name="jack").count())

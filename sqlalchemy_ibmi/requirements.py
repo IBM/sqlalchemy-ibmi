@@ -12,7 +12,7 @@ class Requirements(SuiteRequirements):
 
     @property
     def on_update_cascade(self):
-        """"target database must support ON UPDATE..CASCADE behavior in
+        """target database must support ON UPDATE..CASCADE behavior in
         foreign keys."""
 
         return exclusions.closed()
@@ -53,8 +53,8 @@ class Requirements(SuiteRequirements):
         such as 319438950232418390.273596, 87673.594069654243
         """
         return exclusions.fails_if(
-            lambda: True,
-            "Throws error SQL0604N, regarding Decimal(38, 12)")
+            lambda: True, "Throws error SQL0604N, regarding Decimal(38, 12)"
+        )
 
     @property
     def precision_numerics_retains_significant_digits(self):
