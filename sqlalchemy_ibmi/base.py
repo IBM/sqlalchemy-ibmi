@@ -914,7 +914,8 @@ class IBMiDb2Dialect(default.DefaultDialect):
             "REPEATABLE READ": self.dbapi.SQL_TXN_REPEATABLE_READ,
         }
 
-    # Methods merged from PyODBCConnector
+    def get_isolation_level_values(self, dbapi_conn):
+        return list(self._isolation_lookup)
 
     def get_isolation_level(self, dbapi_conn):
         return self.isolation_level
@@ -922,16 +923,17 @@ class IBMiDb2Dialect(default.DefaultDialect):
     def set_isolation_level(self, connection, level):
         self.isolation_level = level
         level = level.replace("_", " ")
-        if level in self._isolation_lookup:
-            connection.set_attr(
-                self.dbapi.SQL_ATTR_TXN_ISOLATION, self._isolation_lookup[level]
-            )
-        else:
+        if level not in self._isolation_lookup:
             raise exc.ArgumentError(
                 "Invalid value '%s' for isolation_level. "
                 "Valid isolation levels for %s are %s"
                 % (level, self.name, ", ".join(self._isolation_lookup.keys()))
             )
+
+        connection.set_attr(
+            self.dbapi.SQL_ATTR_TXN_ISOLATION, self._isolation_lookup[level]
+        )
+        self.isolation_level = level
 
     @classmethod
     def dbapi(cls):
