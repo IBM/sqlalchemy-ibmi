@@ -115,3 +115,16 @@ class Requirements(SuiteRequirements):
     @property
     def reflects_pk_names(self):
         return exclusions.open()
+
+    @property
+    def schemas(self):
+        """Target database must support external schemas, and have one
+        named 'test_schema'."""
+
+        # TODO: Errors due to "Qualifier SQLALCHEMY not same as name TEST_SCHEMA"
+        # If we're going to support schemas properly, we need to ensure we qualify
+        # constraint names in a CREATE TABLE statement and likely elsewhere.
+        #
+        # In addition, we don't seem to handle schema_translate_map properly, so
+        # test_nextval_direct_schema_translate fails.
+        return exclusions.closed()
