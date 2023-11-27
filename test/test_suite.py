@@ -11,8 +11,6 @@ from sqlalchemy.testing.suite import StringTest as _StringTest
 from sqlalchemy.testing.suite import TextTest as _TextTest
 from sqlalchemy.testing.suite import UnicodeTextTest as _UnicodeTextTest
 from sqlalchemy.testing.suite import UnicodeVarcharTest as _UnicodeVarcharTest
-from sqlalchemy.testing.suite import QuotedNameArgumentTest as _QuotedNameArgumentTest
-from sqlalchemy.testing.suite import LongNameBlowoutTest as _LongNameBlowoutTest
 
 if SA_Version >= [1, 4]:
     from sqlalchemy.testing.suite import HasSequenceTestEmpty as _HasSequenceTestEmpty
@@ -119,19 +117,6 @@ class UnicodeVarcharTest(_UnicodeVarcharTest):
     @testing.skip("ibmi")
     def test_literal_non_ascii(self):
         pass
-
-
-class QuotedNameArgumentTest(_QuotedNameArgumentTest):
-    @_QuotedNameArgumentTest.quote_fixtures
-    def test_get_unique_constraints(self, name):
-        pytest.xfail("get_unique_constraints not implemented")
-
-
-class LongNameBlowoutTest(_LongNameBlowoutTest):
-    def uq(self, *args):
-        # Our get_unique_constraints implementation doesn't return anything
-        # TODO: Implement get_unique_constraints
-        pytest.xfail("get_unique_constraints not implemented")
 
 
 if SA_Version >= [1, 4]:

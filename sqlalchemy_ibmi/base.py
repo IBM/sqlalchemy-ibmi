@@ -130,6 +130,8 @@ installed, match will take advantage of the CONTAINS function that it provides.
 """  # noqa E501
 import datetime
 import re
+
+from collections import defaultdict
 from distutils.util import strtobool
 
 from sqlalchemy import (
@@ -1020,6 +1022,17 @@ class IBMiDb2Dialect(default.DefaultDialect):
         schema="QSYS2",
     )
 
+    sys_constraints_columns = Table(
+        "SYSCSTCOL",
+        ischema,
+        Column("TABLE_SCHEMA", sa_types.Unicode, key="tabschema"),
+        Column("TABLE_NAME", sa_types.Unicode, key="tabname"),
+        Column("COLUMN_NAME", sa_types.Unicode, key="colname"),
+        Column("CONSTRAINT_SCHEMA", sa_types.Unicode, key="conschema"),
+        Column("CONSTRAINT_NAME", sa_types.Unicode, key="conname"),
+        schema="QSYS2",
+    )
+
     sys_key_constraints = Table(
         "SYSKEYCST",
         ischema,
@@ -1382,8 +1395,39 @@ class IBMiDb2Dialect(default.DefaultDialect):
 
     @reflection.cache
     def get_unique_constraints(self, connection, table_name, schema=None, **kw):
-        unique_consts = []
-        return unique_consts
+        current_schema = self.denormalize_name(schema or self.default_schema_name)
+        table_name = self.denormalize_name(table_name)
+        sysconst = self.sys_table_constraints
+        sysconstcol = self.sys_constraints_columns
+
+        query = (
+            select([sysconst.c.conname, sysconstcol.c.colname])
+            .where(
+                and_(
+                    sysconstcol.c.conschema == sysconst.c.conschema,
+                    sysconstcol.c.conname == sysconst.c.conname,
+                    sysconst.c.tabschema == current_schema,
+                    sysconst.c.tabname == table_name,
+                    sysconst.c.contype == "UNIQUE",
+                )
+            )
+            .order_by(
+                sysconst.c.conname,
+                sysconstcol.c.colname,
+            )
+        )
+
+        constraints = defaultdict(list)
+        for name, column_name in connection.execute(query):
+            constraints[name].append(self.normalize_name(column_name))
+
+        return [
+            {
+                "name": self.normalize_name(name),
+                "column_names": value,
+            }
+            for name, value in constraints.items()
+        ]
 
     def _check_text_server(self, connection):
         stmt = "SELECT COUNT(*) FROM QSYS2.SYSTEXTSERVERS"
