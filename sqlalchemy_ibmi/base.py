@@ -1429,6 +1429,14 @@ class IBMiDb2Dialect(default.DefaultDialect):
             for name, value in constraints.items()
         ]
 
+    @reflection.cache
+    def get_sequence_names(self, connection, schema, **kw):
+        current_schema = self.denormalize_name(schema or self.default_schema_name)
+        query = select([self.sys_sequences.c.seqname]).where(
+            self.sys_sequences.c.seqschema == current_schema,
+        )
+        return [self.normalize_name(r[0]) for r in connection.execute(query)]
+
     def _check_text_server(self, connection):
         stmt = "SELECT COUNT(*) FROM QSYS2.SYSTEXTSERVERS"
         return connection.execute(stmt).scalar()
