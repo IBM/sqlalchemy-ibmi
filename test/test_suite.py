@@ -1,5 +1,3 @@
-import pytest
-
 from .util import SA_Version
 from sqlalchemy.testing.suite import *  # noqa - need * to import test suite
 from sqlalchemy.testing.suite import testing
@@ -11,11 +9,6 @@ from sqlalchemy.testing.suite import StringTest as _StringTest
 from sqlalchemy.testing.suite import TextTest as _TextTest
 from sqlalchemy.testing.suite import UnicodeTextTest as _UnicodeTextTest
 from sqlalchemy.testing.suite import UnicodeVarcharTest as _UnicodeVarcharTest
-
-if SA_Version >= [1, 4]:
-    from sqlalchemy.testing.suite import HasSequenceTestEmpty as _HasSequenceTestEmpty
-    from sqlalchemy.testing.suite import HasSequenceTestEmpty as _HasSequenceTest
-
 
 if SA_Version < [1, 4]:
 
@@ -117,14 +110,3 @@ class UnicodeVarcharTest(_UnicodeVarcharTest):
     @testing.skip("ibmi")
     def test_literal_non_ascii(self):
         pass
-
-
-if SA_Version >= [1, 4]:
-
-    class HasSequenceTestEmpty(_HasSequenceTestEmpty):
-        def test_get_sequence_names_no_sequence(self, connection):
-            pytest.xfail("get_sequence_names not implemented yet")
-
-    class HasSequenceTest(_HasSequenceTest):
-        def test_get_sequence_names_no_sequence(self, connection):
-            pytest.xfail("get_sequence_names not implemented yet")
