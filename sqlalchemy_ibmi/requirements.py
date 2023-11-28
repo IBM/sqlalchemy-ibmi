@@ -137,3 +137,9 @@ class Requirements(SuiteRequirements):
     def views(self):
         """Target database must support VIEWs."""
         return exclusions.open()
+
+    @property
+    def savepoints(self):
+        """Target database must support savepoints."""
+
+        return exclusions.open()
