@@ -734,12 +734,6 @@ class IBMiDb2Dialect(default.DefaultDialect):
     default_paramstyle = "qmark"
     colspecs = COLSPECS
     ischema_names = ISCHEMA_NAMES
-    if SA_Version < [1, 4]:
-        returns_unicode_strings = False
-    elif SA_Version < [2, 0]:
-        returns_unicode_strings = sa_types.String.RETURNS_CONDITIONAL
-    else:
-        returns_unicode_strings = True
     postfetch_lastrowid = True
     supports_native_boolean = False
     supports_alter = True
