@@ -734,7 +734,6 @@ class IBMiDb2Dialect(default.DefaultDialect):
     default_paramstyle = "qmark"
     colspecs = COLSPECS
     ischema_names = ISCHEMA_NAMES
-    supports_unicode_binds = True
     if SA_Version < [1, 4]:
         returns_unicode_strings = False
     elif SA_Version < [2, 0]:
@@ -743,23 +742,15 @@ class IBMiDb2Dialect(default.DefaultDialect):
         returns_unicode_strings = True
     postfetch_lastrowid = True
     supports_native_boolean = False
-    preexecute_sequences = False
     supports_alter = True
     supports_sequences = True
     sequences_optional = True
-    supports_unicode_statements = True
-    supports_sane_rowcount = False
     supports_sane_multi_rowcount = False
-    # TODO Investigate if supports_native_decimal needs to be True or False
+    supports_sane_rowcount_returning = True
     supports_native_decimal = True
-    supports_char_length = True
-    pyodbc_driver_name = "IBM i Access ODBC Driver"
     requires_name_normalize = True
     supports_default_values = False
     supports_empty_insert = False
-    two_phase_transactions = False
-    savepoints = True
-    supports_sane_rowcount_returning = False
     supports_statement_cache = False
 
     statement_compiler = DB2Compiler
@@ -939,8 +930,7 @@ class IBMiDb2Dialect(default.DefaultDialect):
         self.map_connect_opts(opts)
         return [
             [
-                "Driver={%s}; UNICODESQL=1; TRUEAUTOCOMMIT=1; XDYNAMIC=0"
-                % (self.pyodbc_driver_name)
+                "Driver=IBM i Access ODBC Driver; UNICODESQL=1; TRUEAUTOCOMMIT=1; XDYNAMIC=0"
             ],
             opts,
         ]
