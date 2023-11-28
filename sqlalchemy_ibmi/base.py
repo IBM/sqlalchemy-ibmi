@@ -469,14 +469,13 @@ class DB2Compiler(compiler.SQLCompiler):
         }
 
     def visit_unary(self, unary, **kw):
-        if (unary.operator == operators.exists) and kw.get(
+        usql = super().visit_unary(unary, **kw)
+
+        if unary.operator == operators.exists and kw.get(
             "within_columns_clause", False
         ):
-            usql = super(DB2Compiler, self).visit_unary(unary, **kw)
-            usql = "CASE WHEN " + usql + " THEN 1 ELSE 0 END"
-            return usql
-        else:
-            return super(DB2Compiler, self).visit_unary(unary, **kw)
+            usql = f"CASE WHEN {usql} THEN 1 ELSE 0 END"
+        return usql
 
     def visit_empty_set_op_expr(self, type_, expand_op):
         if expand_op is operators.not_in_op:
@@ -671,9 +670,7 @@ class DB2DDLCompiler(compiler.DDLCompiler):
     def visit_create_index(
         self, create, include_schema=True, include_table_schema=True
     ):
-        sql = super(DB2DDLCompiler, self).visit_create_index(
-            create, include_schema, include_table_schema
-        )
+        sql = super().visit_create_index(create, include_schema, include_table_schema)
         if getattr(create.element, "uConstraint_as_index", None):
             sql += " EXCLUDE NULL KEYS"
         return sql
