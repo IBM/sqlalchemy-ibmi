@@ -25,6 +25,8 @@ class CachingTest(fixtures.TestBase):
         (datetime(2000, 1, 1), datetime(2023, 11, 28)),
         (date(2000, 1, 1), date(2023, 11, 28)),
         (time(1), time(12)),
+        ("foo", "bar"),
+        (b"foo", b"bar"),
         argnames="first,second",
     )
     def test_cache_literal(self, connection, first, second):
