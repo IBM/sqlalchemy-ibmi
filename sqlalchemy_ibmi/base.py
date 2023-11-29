@@ -28,7 +28,7 @@ Connection string::
     engine = create_engine("ibmi://user:password@host/rdbname[?key=value&key=value...]")
 
 Connection Arguments
------------------
+--------------------
 
 The sqlalchemy-ibmi dialect supports multiple connection arguments that are
 passed in the URL to the `create_engine <https://docs.sqlalchemy.org/en/13/core/engines.html>`_ function.
@@ -37,25 +37,25 @@ Connection string keywords:
 
 * ``current_schema`` - Define the default schema to use for unqualified names.
 * ``library_list`` - Specify which IBM i libraries to add to the server job's
-library list. Can be specified in the URL as a comma separated list, or as a
-keyword argument to the create_engine function as a list of strings
+  library list. Can be specified in the URL as a comma separated list, or as a
+  keyword argument to the create_engine function as a list of strings
 * ``autocommit`` - If ``False``, Connection.commit must be called;
   otherwise each statement is automatically committed.
   Defaults to ``False``.
 * ``readonly`` - If ``True``, the connection is set to read-only. Defaults to ``False``.
 * ``timeout`` - The login timeout for the connection, in seconds.
 * ``use_system_naming`` - If ``True``, the connection is set to use the System
-   naming convention, otherwise it will use the SQL naming convention.
-   Defaults to ``False``.
+  naming convention, otherwise it will use the SQL naming convention.
+  Defaults to ``False``.
 * ``trim_char_fields`` - If ``True``, all character fields will be returned
-   with trailing spaces truncated. Defaults to ``False``.
+  with trailing spaces truncated. Defaults to ``False``.
 
 create-engine arguments:
 
 * ``fast_executemany`` - Enables PyODBC's `fast_executemany <https://github.com/mkleehammer/pyodbc/wiki/Cursor#executemanysql-params-with-fast_executemanytrue>`_ option.
-Conversion between input and target types is mostly unsupported when this
-feature is enabled. eg. Inserting a Decimal object into a Float column will
-produce the error "Converting decimal loses precision". Defaults to ``False``.
+  Conversion between input and target types is mostly unsupported when this
+  feature is enabled. eg. Inserting a Decimal object into a Float column will
+  produce the error "Converting decimal loses precision". Defaults to ``False``.
 
 Transaction Isolation Level / Autocommit
 ----------------------------------------
