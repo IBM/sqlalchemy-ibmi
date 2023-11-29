@@ -924,12 +924,15 @@ class IBMiDb2Dialect(default.DefaultDialect):
         )
 
         if not allowed_opts.issuperset(opts.keys()):
-            raise ValueError("Option entered not valid for " "IBM i Access ODBC Driver")
+            raise ValueError("Option entered not valid for IBM i Access ODBC Driver")
 
         self.map_connect_opts(opts)
         return [
             [
-                "Driver=IBM i Access ODBC Driver; UNICODESQL=1; TRUEAUTOCOMMIT=1; XDYNAMIC=0"
+                "Driver=IBM i Access ODBC Driver"
+                ";UNICODESQL=1"
+                ";TRUEAUTOCOMMIT=1"
+                ";XDYNAMIC=0"
             ],
             opts,
         ]
