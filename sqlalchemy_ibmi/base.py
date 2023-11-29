@@ -561,8 +561,12 @@ class DB2Compiler(compiler.SQLCompiler):
             # bytes and str literals over 32k.
             #
             # - Integer: Cast to BigInteger
-            # - Unicode: Cast to UnicodeText if no length was specified, since default
-            #            Unicode mapping is VARCHAR
+            # - Unicode: If no length was specified, set length to VARCHAR max length.
+            #            This will cause issues if users specify a >32k literal, but
+            #            this seems unlikely and using UnicodeText by default would
+            #            cause extra network flows for each literal. If a user needs
+            #            to query a >32k literal, they can specify the type for the
+            #            literal themselves.
             # - Decimal: Render as a literal if no precision was specified. There's no
             #            precision and scale values we can use which could cover all
             #            Decimal literals.
@@ -582,7 +586,8 @@ class DB2Compiler(compiler.SQLCompiler):
                         literal_binds = True
             elif isinstance(type_, sa_types.Unicode):
                 if not type_.length:
-                    type_ = sa_types.UnicodeText(length=type_.length)
+                    type_ = type_.copy()
+                    type_.length = 32739
             elif isinstance(type_, sa_types.Integer):
                 type_ = sa_types.BigInteger()
             elif isinstance(type_, sa_types.NullType):
