@@ -22,6 +22,10 @@ jobs:
         pip install poetry
         poetry config virtualenvs.create false
         poetry install
+    - name: Lint with black
+      run: |
+        # Stop the build if there are formatting issues and print out a diff
+        black --check --diff sqlalchemy_ibmi test
     - name: Lint with flake8
       run: |
         # stop the build if there are Python syntax errors or undefined names
