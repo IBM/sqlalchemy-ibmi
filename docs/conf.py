@@ -20,8 +20,7 @@ master_doc = 'index'
 # -- Project information -----------------------------------------------------
 
 project = 'sqlalchemy-ibmi'
-copyright = '2020, Kevin Adler and Naveen Ram'
-author = 'Kevin Adler and Naveen Ram'
+copyright = '2020-2023, the sqlalchemy-ibmi authors and contributors'
 
 # The full version, including alpha/beta/rc tags
 try:
