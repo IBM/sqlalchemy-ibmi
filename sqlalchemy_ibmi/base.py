@@ -745,7 +745,7 @@ class IBMiDb2Dialect(default.DefaultDialect):
     requires_name_normalize = True
     supports_default_values = False
     supports_empty_insert = False
-    supports_statement_cache = False
+    supports_statement_cache = True
 
     statement_compiler = DB2Compiler
     ddl_compiler = DB2DDLCompiler
