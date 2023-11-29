@@ -19,7 +19,7 @@
 """
 DBAPI Connection
 ----------------
-This dialect uses the `pyODBC <https://github.com/mkleehammer/pyodbc>`_ DBAPI
+This dialect uses the `pyodbc <https://github.com/mkleehammer/pyodbc>`_ DBAPI
 and the `IBM i Access ODBC Driver
 <https://www.ibm.com/support/pages/ibm-i-access-client-solutions>`_.
 
@@ -31,7 +31,8 @@ Connection Arguments
 --------------------
 
 The sqlalchemy-ibmi dialect supports multiple connection arguments that are
-passed in the URL to the `create_engine <https://docs.sqlalchemy.org/en/13/core/engines.html>`_ function.
+passed in the URL to the `create_engine
+<https://docs.sqlalchemy.org/en/20/core/engines.html>`_ function.
 
 Connection string keywords:
 
@@ -52,8 +53,9 @@ Connection string keywords:
 
 create-engine arguments:
 
-* ``fast_executemany`` - Enables PyODBC's `fast_executemany <https://github.com/mkleehammer/pyodbc/wiki/Cursor#executemanysql-params-with-fast_executemanytrue>`_ option.
-  Conversion between input and target types is mostly unsupported when this
+* ``fast_executemany`` - Enables PyODBC's `fast_executemany
+  <https://github.com/mkleehammer/pyodbc/wiki/Cursor#executemanysql-params-with-fast_executemanytrue>`_
+  option. Conversion between input and target types is mostly unsupported when this
   feature is enabled. eg. Inserting a Decimal object into a Float column will
   produce the error "Converting decimal loses precision". Defaults to ``False``.
 
@@ -170,8 +172,9 @@ specify the type (or use a `cast
 
 Text search support
 -------------------
-The ColumnOperators.match function is implemented using a basic LIKE operation
-by default. However, when `OmniFind Text Search Server for Db2 for i <https://www.ibm.com/support/knowledgecenter/ssw_ibm_i_74/rzash/rzashkickoff.htm>`_ is
+The ColumnOperators.match function is implemented using a basic LIKE operation by
+default. However, when `OmniFind Text Search Server for Db2 for i
+<https://www.ibm.com/support/knowledgecenter/ssw_ibm_i_75/rzash/rzashkickoff.htm>`_ is
 installed, match will take advantage of the CONTAINS function that it provides.
 
 """  # noqa E501
