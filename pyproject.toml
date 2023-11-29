@@ -27,6 +27,18 @@ include = [
     { path = "LICENSE", format = "sdist" },
 ]
 
+[tool.black]
+line-length = 88
+required-version = 22
+target-version = [
+    'py36',
+    'py37',
+    'py38',
+    'py39',
+    'py310',
+    'py311',
+]
+
 [tool.poetry.plugins."sqlalchemy.dialects"]
 ibmi = "sqlalchemy_ibmi.base:IBMiDb2Dialect"
 "ibmi.pyodbc" = "sqlalchemy_ibmi.base:IBMiDb2Dialect"
@@ -51,5 +63,4 @@ black = "^22.8.0"
 [build-system]
 requires = ["poetry-core>=1.0.0a6", "setuptools>=39.2"]
 build-backend = "poetry.core.masonry.api"
-
 
