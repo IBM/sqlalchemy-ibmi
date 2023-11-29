@@ -104,22 +104,69 @@ Provide the length for a String column as follows:
     )
 
 
-Query Function Strings
-----------------------
-Db2 for i doesn't support parameter markers in the SELECT clause of a statement.
-As a result, the following command will not work with sqlalchemy-ibmi::
+Literal Values and Untyped Parameters
+-------------------------------------
+SQLAlchemy will try to use parameter markers as much as possible, even for values
+specified with the `literal
+<https://docs.sqlalchemy.org/en/20/core/sqlelement.html#sqlalchemy.sql.expression.literal>`_,
+`null <https://docs.sqlalchemy.org/en/20/core/sqlelement.html#sqlalchemy.sql.expression.null>`_,
+`func <https://docs.sqlalchemy.org/en/20/core/sqlelement.html#sqlalchemy.sql.expression.func>`_
+sql expression functions. Because Db2 for i doesn't support untyped parameter markers,
+in places where the type is unknown, a CAST expression must be placed around it to
+give it a type. sqlalchemy-ibmi will automatically do this based on the type object
+provided to SQLAlchemy.
 
-    session.query(func.count("*")).select_from(User).scalar()
+In some cases, SQLAlchemy allows specifying a Python object directly without a type
+object. In this case, SQLAlchemy will deduce the type object based on the Python type:
 
-Instead, please use the following::
++-------------------+-----------------+
+|    Python type    | SQLAlchemy type |
++===================+=================+
+|        bool       |    Boolean      |
++-------------------+-----------------+
+|        int        |    Integer      |
++-------------------+-----------------+
+|       float       |    Float        |
++-------------------+-----------------+
+|        str        |    Unicode      |
++-------------------+-----------------+
+|       bytes       |    LargeBinary  |
++-------------------+-----------------+
+|  decimal.Decimal  |    Numeric      |
++-------------------+-----------------+
+| datetime.datetime |    DateTime     |
++-------------------+-----------------+
+|   datetime.date   |    DateTime     |
++-------------------+-----------------+
+|   datetime.time   |    DateTime     |
++-------------------+-----------------+
 
-    session.query(func.count()).select_from(User).scalar()
+The deduced SQLAlchemy type will be generic however, having no length, precision, or
+scale defined. This causes problems when generating these CAST expressions. To support
+handling the majority of cases, some types will be adjusted:
 
-Addtionally, column names cannot be passed as strings, so convert your column
-strings to literal columns as follows::
++-------------------+-----------------+
+|    Python type    | SQLAlchemy type |
++===================+=================+
+|        int        |    BigInteger   |
++-------------------+-----------------+
+|        str        |  Unicode(32739) |
++-------------------+-----------------+
 
-    from sqlalchemy.sql import literal_column
-    session.query(func.count(literal_column("colname"))).select_from(User).scalar()
+In addition, Numeric types will be rendered as inline literals. On SQLAlchemy 1.4 and
+up, this will be done using `render_literal_execute
+<https://docs.sqlalchemy.org/en/20/core/sqlelement.html#sqlalchemy.sql.expression.BindParameter.render_literal_execute>`_
+to support statement caching.
+
+If the type used is not appropriate (eg. when specifying a >32k string), you must
+specify the type (or use a `cast
+<https://docs.sqlalchemy.org/en/20/core/sqlelement.html#sqlalchemy.sql.expression.cast>`_)::
+
+    too_big_for_varchar = 'a' * 32768
+    connection.execute(
+        select(literal(too_big_for_varchar, UnicodeText()))
+    ).scalar()
+
 
 Text search support
 -------------------
