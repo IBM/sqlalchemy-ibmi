@@ -22,10 +22,8 @@ interface to Db2 for [IBM i](https://en.wikipedia.org/wiki/IBM_i).
 
 ### Python
 
-Python 3.6 - 3.11 are supported. Support for Python 3.12 and
+Python 3.7 - 3.11 are supported. Support for Python 3.12 and
 up is [currently broken](https://github.com/IBM/sqlalchemy-ibmi/issues/149).
-
-NOTE: sqlalchemy-ibmi 0.9.3 is the last version to support Python 3.6.
 
 ### IBM i Access ODBC Driver
 
