@@ -26,7 +26,7 @@ from . import base  # noqa: F401
 from .base import BIGINT
 from .base import BINARY
 from .base import BLOB
-from .base import BOOLEAN
+# from .base import BOOLEAN
 from .base import CHAR
 from .base import CLOB
 from .base import DATE
@@ -55,7 +55,7 @@ __all__ = (
     "BIGINT",
     "BINARY",
     "BLOB",
-    "BOOLEAN",
+    # "BOOLEAN",
     "CHAR",
     "CLOB",
     "DATE",

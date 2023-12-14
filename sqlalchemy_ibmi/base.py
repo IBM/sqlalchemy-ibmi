@@ -198,21 +198,25 @@ from sqlalchemy.sql import compiler, operators
 from sqlalchemy.sql.expression import and_, cast
 from sqlalchemy.engine import default, reflection
 from sqlalchemy.types import (
+    BIGINT,
+    BINARY,
     BLOB,
+    # BOOLEAN,
     CHAR,
     CLOB,
     DATE,
-    DATETIME,
-    INTEGER,
-    SMALLINT,
-    BIGINT,
     DECIMAL,
+    FLOAT,
+    INTEGER,
+    NCHAR,
+    NVARCHAR,
     NUMERIC,
     REAL,
+    SMALLINT,
     TIME,
     TIMESTAMP,
     VARCHAR,
-    FLOAT,
+    VARBINARY,
 )
 from sqlalchemy import types as sa_types
 
@@ -228,107 +232,114 @@ def get_sa_version():
 SA_Version = get_sa_version()
 
 
-class IBMBoolean(sa_types.Boolean):
-    """Represents a Db2 Boolean Column"""
+# class _Boolean(sa_types.Boolean):
+#     """Db2 for i BOOLEAN type."""
 
-    def result_processor(self, _, coltype):
-        def process(value):
-            if value is None:
-                return None
-            return bool(value)
+#     def result_processor(self, _, coltype):
+#         def process(value):
+#             if value is None:
+#                 return None
+#             return bool(value)
 
-        return process
+#         return process
 
-    def bind_processor(self, _):
-        def process(value):
-            if value is None:
-                return None
-            return "1" if value else "0"
+#     def bind_processor(self, _):
+#         def process(value):
+#             if value is None:
+#                 return None
+#             return "1" if value else "0"
 
-        return process
-
-
-class IBMDate(sa_types.Date):
-    """Represents a Db2 Date Column"""
-
-    def result_processor(self, _, coltype):
-        def process(value):
-            if value is None:
-                return None
-            if isinstance(value, datetime.datetime):
-                value = datetime.date(value.year, value.month, value.day)
-            return value
-
-        return process
-
-    def bind_processor(self, _):
-        def process(value):
-            if value is None:
-                return None
-            if isinstance(value, datetime.datetime):
-                value = datetime.date(value.year, value.month, value.day)
-            return str(value)
-
-        return process
+#         return process
 
 
-class DOUBLE(sa_types.Numeric):
-    """Represents a Db2 Double Column"""
+# class _Date(sa_types.Date):
+#     """Db2 for i DATE type."""
+
+#     def result_processor(self, _, coltype):
+#         def process(value):
+#             if value is None:
+#                 return None
+#             if isinstance(value, datetime.datetime):
+#                 value = datetime.date(value.year, value.month, value.day)
+#             return value
+
+#         return process
+
+#     def bind_processor(self, _):
+#         def process(value):
+#             if value is None:
+#                 return None
+#             if isinstance(value, datetime.datetime):
+#                 value = datetime.date(value.year, value.month, value.day)
+#             return str(value)
+
+#         return process
+
+
+class DOUBLE(sa_types.Float):
+    """Db2 for i DOUBLE type."""
 
     __visit_name__ = "DOUBLE"
 
 
-class GRAPHIC(sa_types.CHAR):
-    """Represents a Db2 Graphic Column"""
+class GRAPHIC(sa_types.String):
+    """Db2 for i GRAPHIC type."""
 
     __visit_name__ = "GRAPHIC"
 
 
-class VARGRAPHIC(sa_types.Unicode):
-    """Represents a Db2 Vargraphic Column"""
+class VARGRAPHIC(sa_types.String):
+    """Db2 for i VARGRAPHIC type."""
 
     __visit_name__ = "VARGRAPHIC"
 
 
-class DBCLOB(sa_types.CLOB):
-    """Represents a Db2 Dbclob Column"""
+class DBCLOB(sa_types.Text):
+    """Db2 for i DBCLOB type."""
 
     __visit_name__ = "DBCLOB"
 
+class NCLOB(sa_types.UnicodeText):
+    """Db2 for i NCLOB type."""
 
-class XML(sa_types.Text):
-    """Represents a Db2 XML Column"""
+    __visit_name__ = "NCLOB"
+
+
+class XML(sa_types.UnicodeText):
+    """Db2 for i XML type."""
 
     __visit_name__ = "XML"
 
 
 COLSPECS = {
-    sa_types.Boolean: IBMBoolean,
-    sa_types.Date: IBMDate,
+    # sa_types.Boolean: _Boolean,
+    # sa_types.Date: _Date,
 }
 
 ISCHEMA_NAMES = {
-    "BLOB": BLOB,
-    "CHAR": CHAR,
-    "CHARACTER": CHAR,
-    "CLOB": CLOB,
-    "DATE": DATE,
-    "DATETIME": DATETIME,
-    "INTEGER": INTEGER,
-    "SMALLINT": SMALLINT,
     "BIGINT": BIGINT,
-    "DECIMAL": DECIMAL,
-    "NUMERIC": NUMERIC,
-    "REAL": REAL,
-    "DOUBLE": DOUBLE,
-    "FLOAT": FLOAT,
-    "TIME": TIME,
-    "TIMESTAMP": TIMESTAMP,
-    "VARCHAR": VARCHAR,
-    "XML": XML,
-    "GRAPHIC": GRAPHIC,
-    "VARGRAPHIC": VARGRAPHIC,
+    "BINARY": BINARY,
+    "BLOB": BLOB,
+    # "BOOLEAN": BOOLEAN,
+    "CHAR": CHAR,
+    "CLOB": CLOB,
+    # "DATALINK": DATALINK,
+    "DATE": DATE,
     "DBCLOB": DBCLOB,
+    # "DECFLOAT": DECFLOAT,
+    "DECIMAL": DECIMAL,
+    "FLOAT": FLOAT,
+    "GRAPHIC": GRAPHIC,
+    "INTEGER": INTEGER,
+    "NUMERIC": NUMERIC,
+    # "ROWID": ROWID,
+    "SMALLINT": SMALLINT,
+    "TIME": TIME,
+    "TIMESTMP": TIMESTAMP,
+    "VARBIN": VARBINARY,
+    "VARCHAR": VARCHAR,
+    "VARG": VARGRAPHIC,
+    "XML": XML,
 }
 
 
@@ -1108,6 +1119,7 @@ class IBMiDb2Dialect(default.DefaultDialect):
         Column("LENGTH", sa_types.Integer, key="length"),
         Column("NUMERIC_SCALE", sa_types.Integer, key="scale"),
         Column("IS_NULLABLE", sa_types.Unicode, key="nullable"),
+        Column("CCSID", sa_types.Integer, key="ccsid"),
         Column("COLUMN_DEFAULT", sa_types.Unicode, key="defaultval"),
         Column("HAS_DEFAULT", sa_types.Unicode, key="hasdef"),
         Column("IS_IDENTITY", sa_types.Unicode, key="isid"),
@@ -1256,12 +1268,14 @@ class IBMiDb2Dialect(default.DefaultDialect):
         table_name = self.denormalize_name(table_name)
         syscols = self.sys_columns
 
+        # TODO: Change to SYSCOLUMNS2
         query = select(
             [
                 syscols.c.colname,
                 syscols.c.typename,
                 syscols.c.defaultval,
                 syscols.c.nullable,
+                syscols.c.ccsid,
                 syscols.c.length,
                 syscols.c.scale,
                 syscols.c.isid,
@@ -1272,33 +1286,77 @@ class IBMiDb2Dialect(default.DefaultDialect):
             ),
             order_by=[syscols.c.colno],
         )
+
         sa_columns = []
         for row in connection.execute(query):
-            coltype = row[1].upper()
-            if coltype in ["DECIMAL", "NUMERIC"]:
-                coltype = self.ischema_names.get(coltype)(
-                    precision=int(row[4]), scale=int(row[5])
-                )
-            elif coltype in ["CHARACTER", "CHAR", "VARCHAR", "GRAPHIC", "VARGRAPHIC"]:
-                coltype = self.ischema_names.get(coltype)(length=int(row[4]))
-            else:
-                try:
-                    coltype = self.ischema_names[coltype]
-                except KeyError:
-                    util.warn(
-                        "Did not recognize type '%s' of column '%s'" % (coltype, row[0])
-                    )
-                    coltype = sa_types.NULLTYPE
+            (
+                name,
+                type_,
+                default,
+                nullable,
+                ccsid,
+                length,
+                scale,
+                is_identity,
+                idgenerate,
+            ) = row
 
-            sa_columns.append(
-                {
-                    "name": self.normalize_name(row[0]),
-                    "type": coltype,
-                    "nullable": row[3] == "Y",
-                    "default": row[2],
-                    "autoincrement": (row[6] == "YES") and (row[7] is not None),
-                }
-            )
+            nullable = nullable == "Y"
+            autoincrement = (is_identity == "YES") and (idgenerate is not None)
+
+            coltype = self.ischema_names.get(type_, None)
+            kwargs = {}
+
+            if coltype in (
+                CHAR,
+                VARCHAR,
+                CLOB,
+                GRAPHIC,
+                VARGRAPHIC,
+                DBCLOB,
+                BINARY,
+                VARBINARY,
+                BLOB,
+
+            ):
+                kwargs["length"] = length
+
+                if ccsid == 1200:
+                    # NCHAR, NVARCHAR, NCLOB are just CCSID 1200 aliases
+                    if coltype is GRAPHIC:
+                        coltype = NCHAR
+                    elif coltype is VARGRAPHIC:
+                        coltype = NVARCHAR
+                    elif coltype is DBCLOB:
+                        coltype = NCLOB
+
+            if coltype is None:
+                util.warn(
+                    "Did not recognize type '%s' of column '%s'" % (type_, name)
+                )
+                coltype = sa_types.NULLTYPE
+            else:
+                if issubclass(coltype, sa_types.Numeric):
+                    kwargs["precision"] = length
+
+                    if issubclass(coltype, sa_types.Float):
+                        # FLOAT, REAL, DOUBLE all describe as "FLOAT"
+                        if length == 4:
+                            coltype = REAL
+                    else:
+                        kwargs["scale"] = scale
+
+                coltype = coltype(**kwargs)
+
+            cdict = {
+                "name": self.normalize_name(name),
+                "type": coltype,
+                "nullable": nullable,
+                "default": default,
+                "autoincrement": autoincrement,
+            }
+
+            sa_columns.append(cdict)
         return sa_columns
 
     @reflection.cache
