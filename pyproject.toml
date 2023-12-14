@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "sqlalchemy-ibmi"
-version = "0.9.3"
+version = "0.9.4-dev"
 description = "SQLAlchemy support for Db2 on IBM i"
 readme = "README.md"
 authors = [
