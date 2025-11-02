@@ -36,6 +36,7 @@ target-version = [
     'py39',
     'py310',
     'py311',
+    'py312',
 ]
 
 [tool.poetry.plugins."sqlalchemy.dialects"]
@@ -43,7 +44,7 @@ ibmi = "sqlalchemy_ibmi.base:IBMiDb2Dialect"
 "ibmi.pyodbc" = "sqlalchemy_ibmi.base:IBMiDb2Dialect"
 
 [tool.poetry.dependencies]
-python = ">=3.7"
+python = ">=3.7,<3.13"
 sqlalchemy = ">=1.3.0, <2.0"
 pyodbc = ">=4.0"
 
