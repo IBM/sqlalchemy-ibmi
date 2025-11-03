@@ -850,6 +850,7 @@ class IBMiDb2Dialect(default.DefaultDialect):
         self.driver_version = self._get_driver_version(connection.connection)
         self.text_server_available = self._check_text_server(connection)
 
+    @reflection.cache
     def get_check_constraints(self, connection, table_name, schema=None, **kw):
         current_schema = self.denormalize_name(schema or self.default_schema_name)
         table_name = self.denormalize_name(table_name)
@@ -1522,7 +1523,7 @@ class IBMiDb2Dialect(default.DefaultDialect):
                 indexes[key] = {
                     "name": self.normalize_name(row[0]),
                     "column_names": [self.normalize_name(row[2])],
-                    "unique": row[1] == "Y",
+                    "unique": row[1] in ('U', 'P'),  # U=unique, P=primary key
                 }
         return [value for key, value in indexes.items()]
 
