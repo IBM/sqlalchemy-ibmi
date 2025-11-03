@@ -923,15 +923,14 @@ class IBMiDb2Dialect(default.DefaultDialect):
         called on an active connection or during a transaction. The isolation level
         will still be validated and stored for reference.
         
-        For guaranteed isolation level setting, use the CommitMode connection parameter:
-            CommitMode=0  -> *NONE (no transactions)
-            CommitMode=1  -> *CHG  (READ UNCOMMITTED)
-            CommitMode=2  -> *CS   (READ COMMITTED) - default
-            CommitMode=3  -> *ALL  (REPEATABLE READ)
-            CommitMode=4  -> *RR   (SERIALIZABLE)
+        For guaranteed isolation level setting, use the commit_mode connection parameter:
+            commit_mode=0  -> *CHG  (READ UNCOMMITTED)
+            commit_mode=1  -> *CS   (READ COMMITTED) - default
+            commit_mode=2  -> *ALL  (REPEATABLE READ)
+            commit_mode=3  -> *NONE (no transactions)
         
         Example:
-            engine = create_engine("ibmi+pyodbc://user:pass@host/db?CommitMode=2")
+            engine = create_engine("ibmi+pyodbc://user:pass@host/db?commit_mode=1")
         """
         if level is None:
             level = self.default_isolation_level
@@ -962,7 +961,7 @@ class IBMiDb2Dialect(default.DefaultDialect):
                     "This is expected when called on an active connection. "
                     "Isolation level stored but not applied via ODBC. "
                     "To guarantee isolation level is set, use connection string "
-                    "parameter CommitMode (e.g., CommitMode=2 for READ COMMITTED).",
+                    "parameter commit_mode (e.g., commit_mode=1 for READ COMMITTED).",
                     UserWarning,
                     stacklevel=2
                 )
@@ -972,7 +971,7 @@ class IBMiDb2Dialect(default.DefaultDialect):
                     f"Failed to set isolation level via ODBC: {e}. "
                     "Isolation level will be stored but may not be active. "
                     "To ensure isolation level is set, use connection string "
-                    "parameter CommitMode (e.g., CommitMode=2 for READ COMMITTED).",
+                    "parameter commit_mode (e.g., commit_mode=1 for READ COMMITTED).",
                     UserWarning,
                     stacklevel=2
                 )
@@ -1007,6 +1006,7 @@ class IBMiDb2Dialect(default.DefaultDialect):
         "use_system_naming": ("NAM", to_bool, False),
         "trim_char_fields": ("TRIMCHAR", to_bool, None),
         "lob_threshold_kb": ("MAXFIELDLEN", int, None),
+        "commit_mode": ("CMT", int, None),  # 0=*CHG, 1=*CS, 2=*ALL, 3=*NONE
     }
 
     DRIVER_KEYWORDS_SPECIAL = {
