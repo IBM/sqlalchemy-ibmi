@@ -1468,7 +1468,7 @@ class IBMiDb2Dialect(default.DefaultDialect):
                     sysfkeys.c.fktabname == table_name,
                 )
             )
-            .order_by(sysfkeys.c.colno)
+            .order_by(sysfkeys.c.fkname, sysfkeys.c.colno)
         )
         fschema = {}
         for row in connection.execute(query):
