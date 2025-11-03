@@ -854,6 +854,13 @@ class IBMiDb2Dialect(default.DefaultDialect):
     def get_check_constraints(self, connection, table_name, schema=None, **kw):
         current_schema = self.denormalize_name(schema or self.default_schema_name)
         table_name = self.denormalize_name(table_name)
+        
+        # Check if table exists
+        if not self.has_table(connection, table_name, schema):
+            raise exc.NoSuchTableError(
+                f"Table '{table_name}' not found in schema '{current_schema}'"
+            )
+        
         sysconst = self.sys_table_constraints
         syschkconst = self.sys_check_constraints
 
@@ -1337,12 +1344,24 @@ class IBMiDb2Dialect(default.DefaultDialect):
             )
         )
 
-        return connection.execute(query).scalar()
+        result = connection.execute(query).scalar()
+        if result is None:
+            raise exc.NoSuchTableError(
+                f"View '{viewname}' not found in schema '{current_schema}'"
+            )
+        return result
 
     @reflection.cache
     def get_columns(self, connection, table_name, schema=None, **kw):
         current_schema = self.denormalize_name(schema or self.default_schema_name)
         table_name = self.denormalize_name(table_name)
+        
+        # Check if table exists
+        if not self.has_table(connection, table_name, schema):
+            raise exc.NoSuchTableError(
+                f"Table '{table_name}' not found in schema '{current_schema}'"
+            )
+        
         syscols = self.sys_columns
 
         query = (
@@ -1396,6 +1415,13 @@ class IBMiDb2Dialect(default.DefaultDialect):
     def get_pk_constraint(self, connection, table_name, schema=None, **kw):
         current_schema = self.denormalize_name(schema or self.default_schema_name)
         table_name = self.denormalize_name(table_name)
+        
+        # Check if table exists
+        if not self.has_table(connection, table_name, schema):
+            raise exc.NoSuchTableError(
+                f"Table '{table_name}' not found in schema '{current_schema}'"
+            )
+        
         sysconst = self.sys_table_constraints
         syskeyconst = self.sys_key_constraints
 
@@ -1450,6 +1476,13 @@ class IBMiDb2Dialect(default.DefaultDialect):
         current_schema = self.denormalize_name(schema or default_schema)
         default_schema = self.normalize_name(default_schema)
         table_name = self.denormalize_name(table_name)
+        
+        # Check if table exists
+        if not self.has_table(connection, table_name, schema):
+            raise exc.NoSuchTableError(
+                f"Table '{table_name}' not found in schema '{current_schema}'"
+            )
+        
         sysfkeys = self.sys_foreignkeys
         query = (
             select(
@@ -1499,6 +1532,13 @@ class IBMiDb2Dialect(default.DefaultDialect):
     def get_indexes(self, connection, table_name, schema=None, **kw):
         current_schema = self.denormalize_name(schema or self.default_schema_name)
         table_name = self.denormalize_name(table_name)
+        
+        # Check if table exists
+        if not self.has_table(connection, table_name, schema):
+            raise exc.NoSuchTableError(
+                f"Table '{table_name}' not found in schema '{current_schema}'"
+            )
+        
         sysidx = self.sys_indexes
         syskey = self.sys_keys
 
@@ -1531,6 +1571,13 @@ class IBMiDb2Dialect(default.DefaultDialect):
     def get_unique_constraints(self, connection, table_name, schema=None, **kw):
         current_schema = self.denormalize_name(schema or self.default_schema_name)
         table_name = self.denormalize_name(table_name)
+        
+        # Check if table exists
+        if not self.has_table(connection, table_name, schema):
+            raise exc.NoSuchTableError(
+                f"Table '{table_name}' not found in schema '{current_schema}'"
+            )
+        
         sysconst = self.sys_table_constraints
         sysconstcol = self.sys_constraints_columns
 
