@@ -554,6 +554,17 @@ class DB2Compiler(compiler.SQLCompiler):
     def visit_empty_set_expr(self, element_types, **kw):
         return "SELECT 1 FROM SYSIBM.SYSDUMMY1 WHERE 1!=1"
 
+    def visit_over(self, over, **kw):
+        """Override window function handling to avoid CAST in frame clause.
+        
+        IBM i DB2 doesn't support CAST expressions in ROWS BETWEEN clauses.
+        We need to render literal values directly instead of using bind parameters.
+        """
+        # Render with literal binds to avoid CAST(? AS BIGINT) in frame clause
+        kw = kw.copy()
+        kw['literal_binds'] = True
+        return super().visit_over(over, **kw)
+
     def visit_null(self, expr, **kw):
         if not kw.get("within_columns_clause", False):
             return "NULL"
