@@ -766,6 +766,17 @@ class DB2ExecutionContext(default.DefaultExecutionContext):
             seq_column = tbl._autoincrement_column
             insert_has_sequence = seq_column is not None
 
+            # IBM i doesn't support RETURNING clause, so we fetch lastrowid
+            # using VALUES IDENTITY_VAL_LOCAL() in post_exec.
+            # We should fetch it whenever:
+            # - The table has an autoincrement column
+            # - No explicit RETURNING clause was specified (self.compiled.returning)
+            # - Not an inline INSERT
+            #
+            # Note: We ignore implicit_returning=False on the table because:
+            # 1. IBM i doesn't support RETURNING syntax anyway
+            # 2. implicit_returning=False just means "don't use RETURNING syntax"
+            # 3. But we still need to return the lastrowid for test compatibility
             self._select_lastrowid = (
                 insert_has_sequence
                 and not self.compiled.returning
@@ -779,6 +790,11 @@ class DB2ExecutionContext(default.DefaultExecutionContext):
             row = self.cursor.fetchall()[0]
             if row[0] is not None:
                 self._lastrowid = int(row[0])
+            
+            # Mark this as a DML statement with no user-facing cursor
+            # This ensures returns_rows is False even though we fetched lastrowid
+            from sqlalchemy.engine import cursor as _cursor
+            self.cursor_fetch_strategy = _cursor._NO_CURSOR_DML
 
     def fire_sequence(self, seq, type_):
         return self._execute_scalar(
