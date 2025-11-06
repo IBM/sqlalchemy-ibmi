@@ -866,7 +866,7 @@ class IBMiDb2Dialect(default.DefaultDialect):
                 sysconst.c.tabschema == current_schema,
                 sysconst.c.tabname == table_name,
             )
-        )
+        ).order_by(syschkconst.c.conname)
 
         check_consts = []
         print(query)
