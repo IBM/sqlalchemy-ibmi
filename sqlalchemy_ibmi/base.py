@@ -180,6 +180,7 @@ installed, match will take advantage of the CONTAINS function that it provides.
 """  # noqa E501
 import datetime
 import re
+import warnings
 
 from collections import defaultdict
 
@@ -197,6 +198,7 @@ from sqlalchemy import (
 from sqlalchemy.sql import compiler, operators
 from sqlalchemy.sql.expression import and_, cast
 from sqlalchemy.engine import default, reflection
+from sqlalchemy.engine import cursor as _cursor
 from sqlalchemy.types import (
     BLOB,
     CHAR,
@@ -793,7 +795,6 @@ class DB2ExecutionContext(default.DefaultExecutionContext):
             
             # Mark this as a DML statement with no user-facing cursor
             # This ensures returns_rows is False even though we fetched lastrowid
-            from sqlalchemy.engine import cursor as _cursor
             self.cursor_fetch_strategy = _cursor._NO_CURSOR_DML
 
     def fire_sequence(self, seq, type_):
@@ -987,7 +988,6 @@ class IBMiDb2Dialect(default.DefaultDialect):
             )
         except Exception as e:
             error_msg = str(e)
-            import warnings
             
             # HY011 (Operation invalid at this time) is expected when connection is active
             if "HY011" in error_msg or "30033" in error_msg:
