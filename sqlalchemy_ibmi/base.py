@@ -182,7 +182,6 @@ import datetime
 import re
 
 from collections import defaultdict
-from distutils.util import strtobool
 
 from sqlalchemy import (
     select,
@@ -775,10 +774,29 @@ class DB2ExecutionContext(default.DefaultExecutionContext):
         )
 
 
+def _strtobool(val):
+    """Convert a string representation of truth to boolean.
+    
+    This replaces distutils.util.strtobool which was removed in Python 3.12.
+    True values are y, yes, t, true, on and 1.
+    False values are n, no, f, false, off and 0.
+    Raises ValueError if val is anything else.
+    
+    This implementation follows PEP 632 guidance for replacing distutils functions.
+    """
+    val = str(val).lower()
+    if val in {'y', 'yes', 't', 'true', 'on', '1'}:
+        return True
+    elif val in {'n', 'no', 'f', 'false', 'off', '0'}:
+        return False
+    else:
+        raise ValueError(f"Invalid truth value: {val}")
+
+
 def to_bool(obj):
     if isinstance(obj, bool):
         return obj
-    return strtobool(obj)
+    return _strtobool(obj)
 
 
 class IBMiDb2Dialect(default.DefaultDialect):
