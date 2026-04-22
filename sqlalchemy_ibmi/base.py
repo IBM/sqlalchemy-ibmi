@@ -924,7 +924,7 @@ class IBMiDb2Dialect(default.DefaultDialect):
         "use_system_naming": ("NAM", to_bool, False),
         "trim_char_fields": ("TRIMCHAR", to_bool, None),
         "lob_threshold_kb": ("MAXFIELDLEN", int, None),
-        "ssl": ("SSL", int, 0)
+        "ssl": ("SSL", to_bool, False)
     }
 
     DRIVER_KEYWORDS_SPECIAL = {
