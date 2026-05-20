@@ -377,7 +377,8 @@ class DB2TypeCompiler(compiler.GenericTypeCompiler):
         return self._extend(type_, "CHAR", 1208)
 
     def visit_VARCHAR(self, type_, **kw):
-        return self._extend(type_, "VARCHAR", 1208)
+        length = type_.length or 32672
+        return self._extend(type_, "VARCHAR", 1208, length)
 
     def visit_CLOB(self, type_, **kw):
         return self._extend(type_, "CLOB", ccsid=1208, length=type_.length or "2G")
@@ -903,7 +904,6 @@ class IBMiDb2Dialect(default.DefaultDialect):
         ).order_by(syschkconst.c.conname)
 
         check_consts = []
-        print(query)
         for res in connection.execute(query):
             check_consts.append(
                 {"name": self.normalize_name(res[0]), "sqltext": res[1]}
