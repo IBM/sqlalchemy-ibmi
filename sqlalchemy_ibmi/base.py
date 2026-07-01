@@ -377,8 +377,7 @@ class DB2TypeCompiler(compiler.GenericTypeCompiler):
         return self._extend(type_, "CHAR", 1208)
 
     def visit_VARCHAR(self, type_, **kw):
-        length = type_.length or 32672
-        return self._extend(type_, "VARCHAR", 1208, length)
+        return self._extend(type_, "VARCHAR", 1208)
 
     def visit_CLOB(self, type_, **kw):
         return self._extend(type_, "CLOB", ccsid=1208, length=type_.length or "2G")
@@ -647,7 +646,7 @@ class DB2Compiler(compiler.SQLCompiler):
                     except AttributeError:
                         # SQLAlchemy 1.3 doesn't have render_literal_execute
                         literal_binds = True
-            elif isinstance(type_, sa_types.Unicode):
+            elif isinstance(type_, sa_types.String):
                 if not type_.length:
                     type_ = type_.copy()
                     type_.length = 32739
