@@ -183,7 +183,6 @@ installed, match will take advantage of the CONTAINS function that it provides.
 """  # noqa E501
 import datetime
 import re
-import warnings
 
 from collections import defaultdict
 
@@ -650,7 +649,7 @@ class DB2Compiler(compiler.SQLCompiler):
                     except AttributeError:
                         # SQLAlchemy 1.3 doesn't have render_literal_execute
                         literal_binds = True
-            elif isinstance(type_, sa_types.Unicode):
+            elif isinstance(type_, sa_types.String):
                 if not type_.length:
                     type_ = type_.copy()
                     type_.length = 32739
@@ -853,7 +852,7 @@ class IBMiDb2Dialect(default.DefaultDialect):
     supports_default_values = False
     supports_empty_insert = False
     supports_statement_cache = True
-    default_isolation_level = "READ COMMITTED"
+    default_isolation_level = "READ UNCOMMITTED"
 
     statement_compiler = DB2Compiler
     ddl_compiler = DB2DDLCompiler
@@ -907,7 +906,6 @@ class IBMiDb2Dialect(default.DefaultDialect):
         ).order_by(syschkconst.c.conname)
 
         check_consts = []
-        print(query)
         for res in connection.execute(query):
             check_consts.append(
                 {"name": self.normalize_name(res[0]), "sqltext": res[1]}
@@ -950,8 +948,8 @@ class IBMiDb2Dialect(default.DefaultDialect):
     # Methods merged from PyODBCConnector
 
     def get_isolation_level(self, dbapi_conn):
-        # Return the stored isolation level. IBM i ODBC doesn't support
-        # querying isolation level from an active connection.
+        # Return the stored isolation level. pyodbc doesn't provide a way to
+        # get attributes, only set them
         return self.isolation_level
 
     def set_isolation_level(self, connection, level):
@@ -959,62 +957,20 @@ class IBMiDb2Dialect(default.DefaultDialect):
         
         This method attempts to set the isolation level using ODBC attributes.
         Due to IBM i ODBC driver limitations, this may fail with error HY011 if
-        called on an active connection or during a transaction. The isolation level
-        will still be validated and stored for reference.
-        
-        For guaranteed isolation level setting, use the commit_mode connection parameter:
-            commit_mode=0  -> *CHG  (READ UNCOMMITTED)
-            commit_mode=1  -> *CS   (READ COMMITTED) - default
-            commit_mode=2  -> *ALL  (REPEATABLE READ)
-            commit_mode=3  -> *NONE (no transactions)
-        
-        Example:
-            engine = create_engine("ibmi+pyodbc://user:pass@host/db?commit_mode=1")
+        called during a transaction.
         """
-        if level is None:
-            level = self.default_isolation_level
-        level = str(level).replace("_", " ")
-        if level not in self._isolation_lookup:
+        self.isolation_level = level
+        level = level.replace("_", " ")
+        if level in self._isolation_lookup:
+            connection.set_attr(
+                self.dbapi.SQL_ATTR_TXN_ISOLATION, self._isolation_lookup[level]
+            )
+        else:
             raise exc.ArgumentError(
                 "Invalid value '%s' for isolation_level. "
                 "Valid isolation levels for %s are %s"
                 % (level, self.name, ", ".join(self._isolation_lookup.keys()))
             )
-        
-        # Try to set via ODBC attribute
-        # This should work when called during on_connect(), but may fail with HY011
-        # if called on an active connection or during a transaction
-        try:
-            connection.set_attr(
-                self.dbapi.SQL_ATTR_TXN_ISOLATION,
-                self._isolation_lookup[level]
-            )
-        except Exception as e:
-            error_msg = str(e)
-            
-            # HY011 (Operation invalid at this time) is expected when connection is active
-            if "HY011" in error_msg or "30033" in error_msg:
-                warnings.warn(
-                    f"IBM i ODBC driver returned HY011 when setting isolation level to '{level}'. "
-                    "This is expected when called on an active connection. "
-                    "Isolation level stored but not applied via ODBC. "
-                    "To guarantee isolation level is set, use connection string "
-                    "parameter commit_mode (e.g., commit_mode=1 for READ COMMITTED).",
-                    UserWarning,
-                    stacklevel=2
-                )
-            else:
-                # Unexpected error - may indicate a real problem
-                warnings.warn(
-                    f"Failed to set isolation level via ODBC: {e}. "
-                    "Isolation level will be stored but may not be active. "
-                    "To ensure isolation level is set, use connection string "
-                    "parameter commit_mode (e.g., commit_mode=1 for READ COMMITTED).",
-                    UserWarning,
-                    stacklevel=2
-                )
-        
-        self.isolation_level = level
 
     def reset_isolation_level(self, connection):
         self.set_isolation_level(connection, self.default_isolation_level)
@@ -1045,7 +1001,6 @@ class IBMiDb2Dialect(default.DefaultDialect):
         "trim_char_fields": ("TRIMCHAR", to_bool, None),
         "lob_threshold_kb": ("MAXFIELDLEN", int, None),
         "ssl": ("SSL", to_bool, False)
-        "commit_mode": ("CMT", int, None),  # 0=*CHG, 1=*CS, 2=*ALL, 3=*NONE
     }
 
     DRIVER_KEYWORDS_SPECIAL = {
