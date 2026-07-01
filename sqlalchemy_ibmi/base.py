@@ -646,7 +646,7 @@ class DB2Compiler(compiler.SQLCompiler):
                     except AttributeError:
                         # SQLAlchemy 1.3 doesn't have render_literal_execute
                         literal_binds = True
-            elif isinstance(type_, sa_types.Unicode):
+            elif isinstance(type_, sa_types.String):
                 if not type_.length:
                     type_ = type_.copy()
                     type_.length = 32739
@@ -903,7 +903,6 @@ class IBMiDb2Dialect(default.DefaultDialect):
         ).order_by(syschkconst.c.conname)
 
         check_consts = []
-        print(query)
         for res in connection.execute(query):
             check_consts.append(
                 {"name": self.normalize_name(res[0]), "sqltext": res[1]}
