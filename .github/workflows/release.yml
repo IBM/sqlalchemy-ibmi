@@ -25,7 +25,7 @@ jobs:
 
       - name: Install Poetry
         run: |
-          curl -sSL https://install.python-poetry.org | python - -y --version 2.4
+          curl -sSL https://install.python-poetry.org | python - -y --version 2.4.1
           echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Build project for distribution
