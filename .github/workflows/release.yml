@@ -8,6 +8,11 @@ on:
 jobs:
   Release:
     runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/project/sqlalchemy-ibmi/
+    permissions:
+      id-token: write
 
     steps:
       - name: Checkout code
@@ -32,7 +37,5 @@ jobs:
           files: "dist/*"
           generate_release_notes: true
 
-      - name: Publish to PyPI
-        env:
-          POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
-        run: poetry publish
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
