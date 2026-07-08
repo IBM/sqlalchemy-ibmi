@@ -1,6 +1,6 @@
 [project]
 name = "sqlalchemy-ibmi"
-version = "0.9.4-dev"
+version = "0.9.4-rc"
 description = "SQLAlchemy support for Db2 on IBM i"
 readme = "README.md"
 license = "Apache-2.0"
@@ -77,7 +77,7 @@ line-length = 88
 required-version = 22
 
 [tool.bumpversion]
-current_version = "0.9.4-dev"
+current_version = "0.9.4-rc"
 commit = true
 tag = true
 tag_name = "{new_version}"
