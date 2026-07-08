@@ -560,13 +560,13 @@ class DB2Compiler(compiler.SQLCompiler):
 
     def visit_over(self, over, **kw):
         """Override window function handling to avoid CAST in frame clause.
-        
+
         IBM i DB2 doesn't support CAST expressions in ROWS BETWEEN clauses.
         We need to render literal values directly instead of using bind parameters.
         """
         # Render with literal binds to avoid CAST(? AS BIGINT) in frame clause
         kw = kw.copy()
-        kw['literal_binds'] = True
+        kw["literal_binds"] = True
         return super().visit_over(over, **kw)
 
     def visit_null(self, expr, **kw):
@@ -644,11 +644,7 @@ class DB2Compiler(compiler.SQLCompiler):
                 if not type_.precision:
                     # Render this value as a literal in post-process
                     use_cast = False
-                    try:
-                        bindparam = bindparam.render_literal_execute()
-                    except AttributeError:
-                        # SQLAlchemy 1.3 doesn't have render_literal_execute
-                        literal_binds = True
+                    bindparam = bindparam.render_literal_execute()
             elif isinstance(type_, sa_types.String):
                 if not type_.length:
                     type_ = type_.copy()
@@ -741,7 +737,10 @@ class DB2DDLCompiler(compiler.DDLCompiler):
         self, create, include_schema=True, include_table_schema=True, **kw
     ):
         sql = super().visit_create_index(
-            create, include_schema=include_schema, include_table_schema=include_table_schema, **kw
+            create,
+            include_schema=include_schema,
+            include_table_schema=include_table_schema,
+            **kw,
         )
         if getattr(create.element, "uConstraint_as_index", None):
             sql += " EXCLUDE NULL KEYS"
@@ -794,7 +793,7 @@ class DB2ExecutionContext(default.DefaultExecutionContext):
             row = self.cursor.fetchall()[0]
             if row[0] is not None:
                 self._lastrowid = int(row[0])
-            
+
             # Mark this as a DML statement with no user-facing cursor
             # This ensures returns_rows is False even though we fetched lastrowid
             self.cursor_fetch_strategy = _cursor._NO_CURSOR_DML
@@ -809,18 +808,18 @@ class DB2ExecutionContext(default.DefaultExecutionContext):
 
 def _strtobool(val):
     """Convert a string representation of truth to boolean.
-    
+
     This replaces distutils.util.strtobool which was removed in Python 3.12.
     True values are y, yes, t, true, on and 1.
     False values are n, no, f, false, off and 0.
     Raises ValueError if val is anything else.
-    
+
     This implementation follows PEP 632 guidance for replacing distutils functions.
     """
     val = str(val).lower()
-    if val in {'y', 'yes', 't', 'true', 'on', '1'}:
+    if val in {"y", "yes", "t", "true", "on", "1"}:
         return True
-    elif val in {'n', 'no', 'f', 'false', 'off', '0'}:
+    elif val in {"n", "no", "f", "false", "off", "0"}:
         return False
     else:
         raise ValueError(f"Invalid truth value: {val}")
@@ -884,26 +883,28 @@ class IBMiDb2Dialect(default.DefaultDialect):
     def get_check_constraints(self, connection, table_name, schema=None, **kw):
         current_schema = self.denormalize_name(schema or self.default_schema_name)
         table_name = self.denormalize_name(table_name)
-        
+
         # Check if table exists
         if not self.has_table(connection, table_name, schema):
             raise exc.NoSuchTableError(
                 f"Table '{table_name}' not found in schema '{current_schema}'"
             )
-        
+
         sysconst = self.sys_table_constraints
         syschkconst = self.sys_check_constraints
 
-        query = select(
-            syschkconst.c.conname, syschkconst.c.chkclause
-        ).where(
-            and_(
-                syschkconst.c.conschema == sysconst.c.conschema,
-                syschkconst.c.conname == sysconst.c.conname,
-                sysconst.c.tabschema == current_schema,
-                sysconst.c.tabname == table_name,
+        query = (
+            select(syschkconst.c.conname, syschkconst.c.chkclause)
+            .where(
+                and_(
+                    syschkconst.c.conschema == sysconst.c.conschema,
+                    syschkconst.c.conname == sysconst.c.conname,
+                    sysconst.c.tabschema == current_schema,
+                    sysconst.c.tabname == table_name,
+                )
             )
-        ).order_by(syschkconst.c.conname)
+            .order_by(syschkconst.c.conname)
+        )
 
         check_consts = []
         for res in connection.execute(query):
@@ -954,7 +955,7 @@ class IBMiDb2Dialect(default.DefaultDialect):
 
     def set_isolation_level(self, connection, level):
         """Set the isolation level for this connection.
-        
+
         This method attempts to set the isolation level using ODBC attributes.
         Due to IBM i ODBC driver limitations, this may fail with error HY011 if
         called during a transaction.
@@ -978,7 +979,7 @@ class IBMiDb2Dialect(default.DefaultDialect):
     @classmethod
     def import_dbapi(cls):
         return __import__("pyodbc")
-    
+
     # Backwards compatibility alias
     @classmethod
     def dbapi(cls):
@@ -1000,7 +1001,7 @@ class IBMiDb2Dialect(default.DefaultDialect):
         "use_system_naming": ("NAM", to_bool, False),
         "trim_char_fields": ("TRIMCHAR", to_bool, None),
         "lob_threshold_kb": ("MAXFIELDLEN", int, None),
-        "ssl": ("SSL", to_bool, False)
+        "ssl": ("SSL", to_bool, False),
     }
 
     DRIVER_KEYWORDS_SPECIAL = {
@@ -1097,7 +1098,9 @@ class IBMiDb2Dialect(default.DefaultDialect):
         return tuple(version[0:2])
 
     def _get_default_schema_name(self, connection):
-        return self.normalize_name(connection.execute(text("VALUES CURRENT_SCHEMA")).scalar())
+        return self.normalize_name(
+            connection.execute(text("VALUES CURRENT_SCHEMA")).scalar()
+        )
 
     # Driver version for IBM i Access ODBC Driver is given as
     # VV.RR.SSSF where VV (major), RR (release), and SSS (service pack)
@@ -1341,13 +1344,13 @@ class IBMiDb2Dialect(default.DefaultDialect):
     def get_columns(self, connection, table_name, schema=None, **kw):
         current_schema = self.denormalize_name(schema or self.default_schema_name)
         table_name = self.denormalize_name(table_name)
-        
+
         # Check if table exists
         if not self.has_table(connection, table_name, schema):
             raise exc.NoSuchTableError(
                 f"Table '{table_name}' not found in schema '{current_schema}'"
             )
-        
+
         syscols = self.sys_columns
 
         query = (
@@ -1363,7 +1366,8 @@ class IBMiDb2Dialect(default.DefaultDialect):
             )
             .where(
                 and_(
-                    syscols.c.tabschema == current_schema, syscols.c.tabname == table_name
+                    syscols.c.tabschema == current_schema,
+                    syscols.c.tabname == table_name,
                 )
             )
             .order_by(syscols.c.colno)
@@ -1401,13 +1405,13 @@ class IBMiDb2Dialect(default.DefaultDialect):
     def get_pk_constraint(self, connection, table_name, schema=None, **kw):
         current_schema = self.denormalize_name(schema or self.default_schema_name)
         table_name = self.denormalize_name(table_name)
-        
+
         # Check if table exists
         if not self.has_table(connection, table_name, schema):
             raise exc.NoSuchTableError(
                 f"Table '{table_name}' not found in schema '{current_schema}'"
             )
-        
+
         sysconst = self.sys_table_constraints
         syskeyconst = self.sys_key_constraints
 
@@ -1462,13 +1466,13 @@ class IBMiDb2Dialect(default.DefaultDialect):
         current_schema = self.denormalize_name(schema or default_schema)
         default_schema = self.normalize_name(default_schema)
         table_name = self.denormalize_name(table_name)
-        
+
         # Check if table exists
         if not self.has_table(connection, table_name, schema):
             raise exc.NoSuchTableError(
                 f"Table '{table_name}' not found in schema '{current_schema}'"
             )
-        
+
         sysfkeys = self.sys_foreignkeys
         query = (
             select(
@@ -1518,13 +1522,13 @@ class IBMiDb2Dialect(default.DefaultDialect):
     def get_indexes(self, connection, table_name, schema=None, **kw):
         current_schema = self.denormalize_name(schema or self.default_schema_name)
         table_name = self.denormalize_name(table_name)
-        
+
         # Check if table exists
         if not self.has_table(connection, table_name, schema):
             raise exc.NoSuchTableError(
                 f"Table '{table_name}' not found in schema '{current_schema}'"
             )
-        
+
         sysidx = self.sys_indexes
         syskey = self.sys_keys
 
@@ -1549,7 +1553,7 @@ class IBMiDb2Dialect(default.DefaultDialect):
                 indexes[key] = {
                     "name": self.normalize_name(row[0]),
                     "column_names": [self.normalize_name(row[2])],
-                    "unique": row[1] in ('U', 'P'),  # U=unique, P=primary key
+                    "unique": row[1] in ("U", "P"),  # U=unique, P=primary key
                 }
         return [value for key, value in indexes.items()]
 
@@ -1557,13 +1561,13 @@ class IBMiDb2Dialect(default.DefaultDialect):
     def get_unique_constraints(self, connection, table_name, schema=None, **kw):
         current_schema = self.denormalize_name(schema or self.default_schema_name)
         table_name = self.denormalize_name(table_name)
-        
+
         # Check if table exists
         if not self.has_table(connection, table_name, schema):
             raise exc.NoSuchTableError(
                 f"Table '{table_name}' not found in schema '{current_schema}'"
             )
-        
+
         sysconst = self.sys_table_constraints
         sysconstcol = self.sys_constraints_columns
 
