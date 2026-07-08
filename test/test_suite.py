@@ -1,4 +1,3 @@
-from .util import SA_Version
 from sqlalchemy.testing.suite import *  # noqa - need * to import test suite
 from sqlalchemy.testing.suite import testing
 
@@ -10,30 +9,15 @@ from sqlalchemy.testing.suite import TextTest as _TextTest
 from sqlalchemy.testing.suite import UnicodeTextTest as _UnicodeTextTest
 from sqlalchemy.testing.suite import UnicodeVarcharTest as _UnicodeVarcharTest
 
-if SA_Version < [1, 4]:
 
-    class ComponentReflectionTest(_ComponentReflectionTest):
-        @testing.requires.unique_constraint_reflection
-        @testing.requires.schemas
-        @testing.skip("ibmi", "Db2 doesn't support duplicate constraints")
-        def test_get_unique_constraints_with_schema(self):
-            pass
-
-        @testing.requires.unique_constraint_reflection
-        @testing.skip("ibmi", "Db2 doesn't support duplicate constraints")
-        def test_get_unique_constraints(self):
-            pass
-
-else:
-
-    class ComponentReflectionTest(_ComponentReflectionTest):
-        @testing.combinations(
-            (True, testing.requires.schemas), (False,), argnames="use_schema"
-        )
-        @testing.requires.unique_constraint_reflection
-        @testing.skip("ibmi", "Db2 doesn't support duplicate constraints")
-        def test_get_unique_constraints(self, metadata, connection, use_schema):
-            pass
+class ComponentReflectionTest(_ComponentReflectionTest):
+    @testing.combinations(
+        (True, testing.requires.schemas), (False,), argnames="use_schema"
+    )
+    @testing.requires.unique_constraint_reflection
+    @testing.skip("ibmi", "Db2 doesn't support duplicate constraints")
+    def test_get_unique_constraints(self, metadata, connection, use_schema):
+        pass
 
 
 # empty set tests not possible on DB2 for i
