@@ -22,7 +22,7 @@ interface to Db2 for [IBM i](https://en.wikipedia.org/wiki/IBM_i).
 
 ### Python
 
-Python 3.7 - 3.12+ are supported.
+Python 3.10+ is supported.
 
 ### IBM i Access ODBC Driver
 

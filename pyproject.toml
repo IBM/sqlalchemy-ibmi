@@ -10,20 +10,20 @@ authors = [
     {name = "Korinne Adler", email = "kadler@us.ibm.com"},
     {name = "Naveen Ram", email = "naveen.ram@ibm.com"}
 ]
-requires-python = ">=3.7,<3.13"
+requires-python = ">=3.10"
 dependencies = [
     "sqlalchemy (>=1.4.0,<3.0)",
-    "pyodbc (>=4.0)",
+    "pyodbc (>=5.0); python_version>='3.13'",
+    "pyodbc (>=4.0); python_version<'3.13'",
 ]
 
 [dependency-groups]
 test = [
     "pytest >=7.2.1; python_version>='3.11'",
     "pytest >=6.2.5; python_version~='3.10'",
-    "pytest <5.4; python_version<'3.10'",
 ]
 lint = [
-    "flake8 ~=3.7.9",
+    "flake8",
     "black ~=22.8.0",
 ]
 dev = [
