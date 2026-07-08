@@ -16,9 +16,9 @@ interface to Db2 for [IBM i](https://en.wikipedia.org/wiki/IBM_i).
 
 | SQLAlchemy Version | Supported | Notes                                           |
 |--------------------|-----------|-------------------------------------------------|
-| SQLAlchemy 1.3     |    ✅     | Most tested.                                    |
-| SQLAlchemy 1.4     |    ✅     | Preliminary support added in 0.9.3.             |
-| SQLAlchemy 2.0+    |    ❌     | Currently not supported, but planned for 0.9.4. |
+| SQLAlchemy 2.0     |    ✅     | Support added in 0.9.4.                         |
+| SQLAlchemy 1.4     |    ✅     | Support added in 0.9.3.                         |
+| SQLAlchemy 1.3     |    ❌     | Support removed in 0.9.4.                       |
 
 ### Python
 
@@ -27,7 +27,7 @@ Python 3.10+ is supported.
 ### IBM i Access ODBC Driver
 
 It is best to use the latest version of the driver, which is currently available in the
-IBM i Access Client Solutions Application Package 1.1.0.27.
+IBM i Access Client Solutions Application Package 1.1.0.30.
 
 Some options may require certain minimum driver versions to be enabled. Because the
 driver ignores any unknown options, using them on older driver versions will not cause
@@ -39,7 +39,7 @@ an error but instead be silently ignored.
 
 ### IBM i
 
-This adapter is only tested against IBM i 7.3 and up. It may support older IBM i
+This adapter is only tested against IBM i 7.5 and up. It may support older IBM i
 releases, but no support is guaranteed.
 
 ## Installation
@@ -131,4 +131,4 @@ git push origin main --tags
 - ibm_db_sa for SQLAlchemy was first produced by IBM Inc., targeting version 0.4.
 - The library was ported for version 0.6 and 0.7 by Jaimy Azle.
 - Port for version 0.8 and modernization of test suite by Mike Bayer.
-- Port for sqlalchemy-ibmi by Naveen Ram/Kevin Adler.
+- Port for sqlalchemy-ibmi by Naveen Ram/Korinne Adler.
