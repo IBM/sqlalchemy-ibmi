@@ -13,6 +13,7 @@ jobs:
       url: https://pypi.org/project/sqlalchemy-ibmi/
     permissions:
       id-token: write
+      contents: write
 
     steps:
       - name: Checkout code
