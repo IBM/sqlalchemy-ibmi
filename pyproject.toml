@@ -29,7 +29,7 @@ lint = [
 dev = [
     { include-group = "test" },
     { include-group = "lint" },
-    "bumpversion ~=0.5.0",
+    "bump-my-version",
 ]
 docs = [
     "sphinx >1.0.0",
@@ -75,3 +75,35 @@ requires-poetry = ">=2.0.0,<3.0.0"
 [tool.black]
 line-length = 88
 required-version = 22
+
+[tool.bumpversion]
+current_version = "0.9.4-dev"
+commit = true
+tag = true
+tag_name = "{new_version}"
+message = "Bump version: {current_version} → {new_version}"
+tag_message = "Bump version: {current_version} → {new_version}"
+allow_dirty = false
+serialize = [
+	"{major}.{minor}.{patch}-{release}",
+	"{major}.{minor}.{patch}",
+]
+parse = """(?x)
+    (?P<major>0|[1-9]\\d*)\\.
+    (?P<minor>0|[1-9]\\d*)\\.
+    (?P<patch>0|[1-9]\\d*)
+    (?:
+        -                             # dash separator for pre-release section
+        (?P<release>[a-zA-Z-]+)       # pre-release label
+    )?                                # pre-release section is optional
+"""
+
+[tool.bumpversion.parts.release]
+values = ["dev", "rc", "final"]
+optional_value = "final"
+
+[[tool.bumpversion.files]]
+filename = "sqlalchemy_ibmi/__init__.py"
+
+[[tool.bumpversion.files]]
+filename = "pyproject.toml"

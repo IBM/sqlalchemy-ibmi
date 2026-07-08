@@ -108,15 +108,18 @@ DCO 1.1 Signed-off-by: Random J Developer <random@developer.org>
 git checkout main
 git pull
 
+# install package and dependencies
+poetry install
+
 # bump to a release version (a tag and commit are made)
-bumpversion release
+poetry run -- bump-my-version bump release
 
 # To skip a release candidate
-bumpversion --no-tag --no-commit release
-bumpversion --allow-dirty release
+poetry run -- bump-my-version bump --no-tag --no-commit release
+poetry run -- bump-my-version bump --allow-dirty release
 
 # bump to the new dev version (a commit is made)
-bumpversion --no-tag patch
+poetry run -- bump-my-version bump --no-tag patch
 
 # push the new tag and commits
 git push origin main --tags
