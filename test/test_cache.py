@@ -2,18 +2,9 @@ from decimal import Decimal
 from datetime import date, time, datetime
 
 from sqlalchemy import literal
+from sqlalchemy import select
 from sqlalchemy import testing
 from sqlalchemy.testing import fixtures
-
-from .util import SA_Version
-
-if SA_Version >= [1, 4]:
-    from sqlalchemy import select
-else:
-    from sqlalchemy import select as _select
-
-    def select(*args):
-        return _select(args)
 
 
 class CachingTest(fixtures.TestBase):
