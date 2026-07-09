@@ -27,7 +27,7 @@ Python 3.10+ is supported.
 ### IBM i Access ODBC Driver
 
 It is best to use the latest version of the driver, which is currently available in the
-IBM i Access Client Solutions Application Package 1.1.0.30.
+IBM i Access Client Solutions Application Package 1.1.0.29.
 
 Some options may require certain minimum driver versions to be enabled. Because the
 driver ignores any unknown options, using them on older driver versions will not cause
